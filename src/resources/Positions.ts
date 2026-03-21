@@ -1,8 +1,11 @@
-import { HttpClient } from "../client/HttpClient";
+import type {
+  HoldingResponse,
+  PositionConversionRequest,
+  PositionResponse,
+  UserIPResponse,
+} from "../generated";
 
-export interface PositionResponse {
-  [key: string]: unknown;
-}
+import { HttpClient } from "../client/HttpClient";
 
 export class Positions {
   constructor(private readonly httpClient: HttpClient) {}
@@ -15,11 +18,30 @@ export class Positions {
     });
   }
 
-  public async listHoldings(): Promise<PositionResponse[]> {
-    return this.httpClient.request<PositionResponse[]>({
+  public async listHoldings(): Promise<HoldingResponse[]> {
+    return this.httpClient.request<HoldingResponse[]>({
       method: "GET",
       url: "/holdings",
       safeToRetry: true,
+    });
+  }
+
+  public async convert(
+    request: PositionConversionRequest,
+  ): Promise<unknown> {
+    return this.httpClient.request<unknown, PositionConversionRequest>({
+      method: "POST",
+      url: "/positions/convert",
+      data: request,
+      safeToRetry: false,
+    });
+  }
+
+  public async exitAll(): Promise<UserIPResponse> {
+    return this.httpClient.request<UserIPResponse>({
+      method: "DELETE",
+      url: "/positions",
+      safeToRetry: false,
     });
   }
 }

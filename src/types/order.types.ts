@@ -4,8 +4,9 @@ export type TransactionType = "BUY" | "SELL";
 export type ExchangeSegment =
   | "NSE_EQ"
   | "NSE_FNO"
-  | "NSE_CURRENCY"
+  | "NSE_COMM"
   | "BSE_EQ"
+  | "BSE_FNO"
   | "MCX_COMM";
 export type ProductType =
   | "CNC"
@@ -35,6 +36,8 @@ export interface PlaceOrderRequest extends CorrelatedRequest {
   afterMarketOrder?: boolean;
   amoTime?: string;
   securityId: string;
+  boProfitValue?: number;
+  boStopLossValue?: number;
 }
 
 export interface ModifyOrderRequest {
@@ -49,6 +52,12 @@ export interface ModifyOrderRequest {
 
 export interface CancelOrderRequest {
   orderId: string;
+}
+
+export interface TradeHistoryRequest {
+  fromDate: string;
+  toDate: string;
+  pageNumber?: string;
 }
 
 export interface OrderResponse {

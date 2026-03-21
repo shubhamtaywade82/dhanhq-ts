@@ -8,8 +8,9 @@ export const orderSchema = z
     exchangeSegment: z.enum([
       "NSE_EQ",
       "NSE_FNO",
-      "NSE_CURRENCY",
+      "NSE_COMM",
       "BSE_EQ",
+      "BSE_FNO",
       "MCX_COMM",
     ]),
     productType: z.enum(["CNC", "INTRADAY", "MARGIN", "MTF", "BO", "CO"]),
@@ -27,6 +28,8 @@ export const orderSchema = z
     afterMarketOrder: z.boolean().optional(),
     amoTime: z.string().min(1).optional(),
     securityId: z.string().min(1),
+    boProfitValue: z.number().nonnegative().optional(),
+    boStopLossValue: z.number().nonnegative().optional(),
   })
   .superRefine((value, ctx) => {
     if (

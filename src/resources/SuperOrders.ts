@@ -6,6 +6,7 @@ import { superOrderSchema } from "../contracts/super-order.schema";
 import { ValidationError } from "../errors";
 import type { OrderOperationResult } from "../types/common.types";
 import type {
+  CancelSuperOrderRequest,
   ModifySuperOrderRequest,
   PlaceSuperOrderRequest,
   SuperOrderResponse,
@@ -45,24 +46,6 @@ export class SuperOrders {
     });
   }
 
-  public async getById(orderId: string): Promise<SuperOrderResponse> {
-    return this.httpClient.request<SuperOrderResponse>({
-      method: "GET",
-      url: `/super/orders/${encodeURIComponent(orderId)}`,
-      safeToRetry: true,
-    });
-  }
-
-  public async getByCorrelationId(
-    correlationId: string,
-  ): Promise<SuperOrderResponse> {
-    return this.httpClient.request<SuperOrderResponse>({
-      method: "GET",
-      url: `/super/orders/external/${encodeURIComponent(correlationId)}`,
-      safeToRetry: true,
-    });
-  }
-
   public async modify(
     request: ModifySuperOrderRequest,
   ): Promise<SuperOrderResponse> {
@@ -74,7 +57,6 @@ export class SuperOrders {
       url: `/super/orders/${encodeURIComponent(request.orderId)}`,
       data: {
         price: request.price,
-        triggerPrice: request.triggerPrice,
         targetPrice: request.targetPrice,
         stopLossPrice: request.stopLossPrice,
         quantity: request.quantity,
@@ -83,10 +65,14 @@ export class SuperOrders {
     });
   }
 
-  public async cancel(orderId: string): Promise<SuperOrderResponse> {
+  public async cancel(
+    request: CancelSuperOrderRequest,
+  ): Promise<SuperOrderResponse> {
     return this.httpClient.request<SuperOrderResponse>({
       method: "DELETE",
-      url: `/super/orders/${encodeURIComponent(orderId)}`,
+      url: `/super/orders/${encodeURIComponent(request.orderId)}/${encodeURIComponent(
+        request.orderLeg,
+      )}`,
       safeToRetry: false,
     });
   }

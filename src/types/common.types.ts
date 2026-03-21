@@ -5,6 +5,9 @@ export interface DhanClientConfig {
   timeoutMs?: number;
   rateLimitMinTimeMs?: number;
   wsUrl?: string;
+  marketFeedUrl?: string;
+  orderUpdateUrl?: string;
+  wsReconnectDelayMs?: number;
 }
 
 export interface CorrelatedRequest {

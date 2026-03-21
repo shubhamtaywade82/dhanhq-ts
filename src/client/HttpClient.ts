@@ -28,12 +28,14 @@ export interface HttpClientDependencies {
 export class HttpClient {
   private readonly axiosInstance: AxiosInstance;
   private readonly rateLimiter: RateLimiter;
+  private readonly accessToken: string;
   private readonly clientId: string;
 
   constructor(
     config: DhanClientConfig,
     dependencies: HttpClientDependencies = {},
   ) {
+    this.accessToken = config.token;
     this.clientId = config.clientId;
     this.rateLimiter =
       dependencies.rateLimiter ??
@@ -68,6 +70,10 @@ export class HttpClient {
 
   public getClientId(): string {
     return this.clientId;
+  }
+
+  public getAccessToken(): string {
+    return this.accessToken;
   }
 
   private async execute<TResponse, TBody>(
@@ -122,19 +128,21 @@ export class HttpClient {
       return error;
     }
 
-    if (error instanceof AxiosError) {
-      if (error.response) {
+    if (error instanceof AxiosError || isAxiosLikeError(error)) {
+      const axiosError = error as AxiosError;
+
+      if (axiosError.response) {
         return new ApiResponseError(
-          `Dhan API request failed with status ${error.response.status}`,
-          error.response.status,
-          this.extractErrorPayload(error.response),
+          `Dhan API request failed with status ${axiosError.response.status}`,
+          axiosError.response.status,
+          this.extractErrorPayload(axiosError.response),
           error,
         );
       }
 
-      if (error.request) {
+      if (axiosError.request) {
         return new NetworkError(
-          `Network request failed: ${error.message}`,
+          `Network request failed: ${axiosError.message}`,
           error,
         );
       }
@@ -160,3 +168,11 @@ export class HttpClient {
 }
 
 class BottleneckError extends Error {}
+
+function isAxiosLikeError(error: unknown): error is AxiosError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "isAxiosError" in error
+  );
+}

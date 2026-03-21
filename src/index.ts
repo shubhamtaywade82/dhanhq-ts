@@ -9,5 +9,6 @@ export * from "./resources";
 export * from "./types/common.types";
 export * from "./types/order.types";
 export * from "./types/super-order.types";
+export * from "./types/ws.types";
 export * from "./ws";
 export * as Generated from "./generated";

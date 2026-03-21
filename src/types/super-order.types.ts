@@ -1,22 +1,21 @@
 import type {
   ExchangeSegment,
-  OrderType,
-  ProductType,
   TransactionType,
-  Validity,
 } from "./order.types";
 import type { CorrelatedRequest } from "./common.types";
+
+export type SuperOrderProductType = "CNC" | "INTRADAY" | "MARGIN" | "MTF";
+export type SuperOrderType = "MARKET" | "LIMIT";
+export type SuperOrderLeg = "ENTRY_LEG" | "STOP_LOSS_LEG" | "TARGET_LEG";
 
 export interface PlaceSuperOrderRequest extends CorrelatedRequest {
   dhanClientId?: string;
   transactionType: TransactionType;
   exchangeSegment: ExchangeSegment;
-  productType: Exclude<ProductType, "BO" | "CO"> | "BO" | "CO";
-  orderType: OrderType;
-  validity?: Validity;
+  productType: SuperOrderProductType;
+  orderType: SuperOrderType;
   quantity: number;
   price?: number;
-  triggerPrice?: number;
   targetPrice?: number;
   stopLossPrice?: number;
   trailingJump?: number;
@@ -26,10 +25,14 @@ export interface PlaceSuperOrderRequest extends CorrelatedRequest {
 export interface ModifySuperOrderRequest {
   orderId: string;
   price?: number;
-  triggerPrice?: number;
   targetPrice?: number;
   stopLossPrice?: number;
   quantity?: number;
+}
+
+export interface CancelSuperOrderRequest {
+  orderId: string;
+  orderLeg: SuperOrderLeg;
 }
 
 export interface SuperOrderResponse {

@@ -3,8 +3,9 @@ import type { AxiosInstance } from "axios";
 import {
   ApiResponseError,
   DhanClient,
-  DhanWS,
   HttpClient,
+  MarketFeedWS,
+  OrderUpdateWS,
   ValidationError,
 } from "../src";
 
@@ -44,16 +45,23 @@ function createAxiosStub() {
 }
 
 class FakeSocket {
-  private readonly handlers = new Map<string, (...args: unknown[]) => void>();
+  private readonly handlers = new Map<string, Array<(...args: unknown[]) => void>>();
   public readonly sent: string[] = [];
   public closed = false;
+  public readonly url?: string;
 
-  public on(event: string, listener: (...args: unknown[]) => void): void {
-    this.handlers.set(event, listener);
+  constructor(url?: string) {
+    this.url = url;
   }
 
-  public send(data: string): void {
-    this.sent.push(data);
+  public on(event: string, listener: (...args: unknown[]) => void): void {
+    const existing = this.handlers.get(event) ?? [];
+    existing.push(listener);
+    this.handlers.set(event, existing);
+  }
+
+  public send(data: string | Buffer): void {
+    this.sent.push(typeof data === "string" ? data : data.toString("hex"));
   }
 
   public close(): void {
@@ -61,11 +69,41 @@ class FakeSocket {
   }
 
   public emit(event: string, ...args: unknown[]): void {
-    const handler = this.handlers.get(event);
-    if (handler) {
-      handler(...args);
+    const handlers = this.handlers.get(event);
+    if (handlers) {
+      for (const handler of handlers) {
+        handler(...args);
+      }
     }
   }
+}
+
+function createFullPacket(options: {
+  responseCode?: number;
+  exchangeSegmentCode?: number;
+  securityId?: number;
+  ltp?: number;
+}) {
+  const buffer = Buffer.alloc(162);
+  buffer.writeUInt8(options.responseCode ?? 8, 0);
+  buffer.writeInt16LE(162, 1);
+  buffer.writeUInt8(options.exchangeSegmentCode ?? 1, 3);
+  buffer.writeInt32LE(options.securityId ?? 12345, 4);
+  buffer.writeFloatLE(options.ltp ?? 100.5, 8);
+  buffer.writeInt16LE(2, 12);
+  buffer.writeInt32LE(1711000000, 14);
+  buffer.writeFloatLE(100.25, 18);
+  buffer.writeInt32LE(5000, 22);
+  buffer.writeInt32LE(2000, 26);
+  buffer.writeInt32LE(3000, 30);
+  buffer.writeInt32LE(100, 34);
+  buffer.writeInt32LE(125, 38);
+  buffer.writeInt32LE(95, 42);
+  buffer.writeFloatLE(99, 46);
+  buffer.writeFloatLE(98, 50);
+  buffer.writeFloatLE(101, 54);
+  buffer.writeFloatLE(97, 58);
+  return buffer;
 }
 
 describe("DhanClient", () => {
@@ -223,52 +261,113 @@ describe("DhanClient", () => {
     expect(axiosStub.requests).toHaveLength(1);
   });
 
-  it("tracks ws subscriptions and emits ticks", () => {
+  it("tracks market feed subscriptions and updates ltp store", () => {
     const socket = new FakeSocket();
-    const ws = new DhanWS({
-      token: "token",
-      clientId: "client-id",
-      webSocketFactory: () => socket,
-    });
+    const market = new MarketFeedWS(
+      {
+        token: "token",
+        clientId: "client-id",
+        webSocketFactory: () => socket,
+      },
+      clientLtpStore(),
+    );
     const onTick = jest.fn();
     const onOpen = jest.fn();
 
-    ws.on("tick", onTick);
-    ws.on("open", onOpen);
+    market.on("tick", onTick);
+    market.on("open", onOpen);
 
-    ws.subscribe([{ securityId: "12345", exchangeSegment: "NSE_FNO" }]);
-    ws.connect();
+    market.subscribe([{ securityId: "12345", exchangeSegment: "NSE_FNO" }]);
+    market.connect();
 
     socket.emit("open");
 
     expect(onOpen).toHaveBeenCalled();
-    expect(socket.sent).toEqual([
-      JSON.stringify({
-        action: "authenticate",
-        token: "token",
-        clientId: "client-id",
-      }),
-      JSON.stringify({
-        action: "subscribe",
-        instruments: [{ securityId: "12345", exchangeSegment: "NSE_FNO" }],
-      }),
-    ]);
+    expect(JSON.parse(socket.sent[0] ?? "")).toEqual({
+      RequestCode: 21,
+      InstrumentCount: 1,
+      InstrumentList: [{ SecurityId: "12345", ExchangeSegment: "NSE_FNO" }],
+    });
 
-    socket.emit(
-      "message",
-      JSON.stringify({
-        securityId: "12345",
-        exchangeSegment: "NSE_FNO",
-        ltp: 100.5,
-      }),
-    );
+    socket.emit("message", createFullPacket({ securityId: 12345, ltp: 100.5 }));
 
     expect(onTick).toHaveBeenCalledWith(
       expect.objectContaining({
+        type: "full",
         securityId: "12345",
         exchangeSegment: "NSE_FNO",
         ltp: 100.5,
       }),
     );
   });
+
+  it("authenticates order update ws and stores events", () => {
+    const socket = new FakeSocket();
+    const orderStore = clientOrderStore();
+    const orders = new OrderUpdateWS({
+      token: "token",
+      clientId: "client-id",
+      webSocketFactory: () => socket,
+    }, orderStore);
+    const onOrder = jest.fn();
+    const onOpen = jest.fn();
+
+    orders.on("order", onOrder);
+    orders.on("open", onOpen);
+
+    orders.connect();
+
+    socket.emit("open");
+
+    expect(onOpen).toHaveBeenCalled();
+    expect(socket.sent).toEqual([
+      JSON.stringify({
+        LoginReq: {
+          MsgCode: 42,
+          ClientId: "client-id",
+          Token: "token",
+        },
+        UserType: "SELF",
+      }),
+    ]);
+
+    socket.emit(
+      "message",
+      JSON.stringify({
+        Type: "order_alert",
+        Data: {
+          OrderNo: "order-1",
+          CorrelationId: "corr-1",
+          Status: "TRADED",
+          TradedQty: 10,
+          AvgTradedPrice: 100.5,
+          SecurityId: "12345",
+        },
+      }),
+    );
+
+    expect(onOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: "order-1",
+        correlationId: "corr-1",
+        status: "TRADED",
+      }),
+    );
+    expect(orderStore.getByOrderId("order-1")).toEqual(
+      expect.objectContaining({
+        correlationId: "corr-1",
+        status: "TRADED",
+      }),
+    );
+  });
 });
+
+function clientLtpStore() {
+  const { LTPStore } = require("../src");
+  return new LTPStore();
+}
+
+function clientOrderStore() {
+  const { OrderStore } = require("../src");
+  return new OrderStore();
+}

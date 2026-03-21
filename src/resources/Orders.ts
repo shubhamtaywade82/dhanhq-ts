@@ -3,14 +3,12 @@ import { ZodError } from "zod";
 
 import { orderSchema } from "../contracts/order.schema";
 import { ValidationError } from "../errors";
-import type {
-  OrderOperationResult,
-  TickEvent,
-} from "../types/common.types";
+import type { OrderOperationResult } from "../types/common.types";
 import type {
   ModifyOrderRequest,
   OrderResponse,
   PlaceOrderRequest,
+  TradeHistoryRequest,
   TradeResponse,
 } from "../types/order.types";
 import { HttpClient } from "../client/HttpClient";
@@ -69,6 +67,39 @@ export class Orders {
       method: "GET",
       url: `/trades/${encodeURIComponent(orderId)}`,
       safeToRetry: true,
+    });
+  }
+
+  public async listTrades(): Promise<TradeResponse[]> {
+    return this.httpClient.request<TradeResponse[]>({
+      method: "GET",
+      url: "/trades",
+      safeToRetry: true,
+    });
+  }
+
+  public async getTradeHistory(
+    request: TradeHistoryRequest,
+  ): Promise<TradeResponse[]> {
+    return this.httpClient.request<TradeResponse[]>({
+      method: "GET",
+      url: `/trades/${encodeURIComponent(request.fromDate)}/${encodeURIComponent(
+        request.toDate,
+      )}/${encodeURIComponent(request.pageNumber ?? "0")}`,
+      safeToRetry: true,
+    });
+  }
+
+  public async placeSlice(
+    request: PlaceOrderRequest,
+  ): Promise<Array<OrderResponse>> {
+    const payload = this.parsePlaceRequest(request);
+
+    return this.httpClient.request<Array<OrderResponse>, PlaceOrderRequest>({
+      method: "POST",
+      url: "/orders/slicing",
+      data: payload,
+      safeToRetry: false,
     });
   }
 

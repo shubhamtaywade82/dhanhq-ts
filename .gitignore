@@ -1,7 +1,7 @@
 node_modules/
 
 # Build output
-dist/
+dist/**/*
 coverage/
 
 # TypeScript
@@ -21,4 +21,3 @@ pnpm-debug.log*
 # OS/editor noise
 .DS_Store
 Thumbs.db
-dist/**/*
