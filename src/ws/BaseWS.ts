@@ -7,6 +7,7 @@ export abstract class BaseWS extends EventEmitter {
   protected connection?: WebSocketLike;
   protected manuallyClosed = false;
   protected reconnectAttempts = 0;
+  public isConnected = false;
 
   constructor(
     private readonly urlFactory: () => Promise<string> | string,
@@ -39,6 +40,7 @@ export abstract class BaseWS extends EventEmitter {
   private bindConnection(connection: WebSocketLike): void {
     connection.on("open", () => {
       this.reconnectAttempts = 0;
+      this.isConnected = true;
       void this.onOpen();
     });
 
@@ -51,6 +53,7 @@ export abstract class BaseWS extends EventEmitter {
     });
 
     connection.on("close", () => {
+      this.isConnected = false;
       this.onClose();
       if (!this.manuallyClosed) {
         this.scheduleReconnect();

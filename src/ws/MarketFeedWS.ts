@@ -53,7 +53,9 @@ export class MarketFeedWS extends BaseWS {
       });
     }
 
-    this.sendSubscription(instruments);
+    if (this.isConnected) {
+      this.sendSubscription(instruments);
+    }
   }
 
   public unsubscribe(instruments: InstrumentSubscription[]): void {

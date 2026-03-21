@@ -81,6 +81,11 @@ async function runPositions(client: DhanClient) {
 async function runWebSockets(client: DhanClient) {
   console.log("Connecting WebSocket streams...");
   await client.ws.connect();
+
+  // Wait for market feed to be ready
+  await new Promise<void>((resolve) => client.ws.market.once("open", resolve));
+  console.log("Market feed connected.");
+
   client.ws.market.subscribe([instrument]);
 
   const tickPromise = new Promise<void>((resolve) => {
