@@ -15,6 +15,7 @@ export class DhanWS {
     this.market = new MarketFeedWS(
       {
         token: options.token,
+        tokenProvider: options.tokenProvider,
         clientId: options.clientId,
         url: options.marketFeedUrl,
         reconnectDelayMs: options.reconnectDelayMs,
@@ -25,18 +26,21 @@ export class DhanWS {
     this.orders = new OrderUpdateWS(
       {
         token: options.token,
+        tokenProvider: options.tokenProvider,
         clientId: options.clientId,
         url: options.orderUpdateUrl,
         reconnectDelayMs: options.reconnectDelayMs,
         webSocketFactory: options.orderSocketFactory,
+        userType: options.orderUserType,
+        partnerId: options.partnerId,
+        partnerSecret: options.partnerSecret,
       },
       this.orderStore,
     );
   }
 
-  public connect(): void {
-    this.market.connect();
-    this.orders.connect();
+  public async connect(): Promise<void> {
+    await Promise.all([this.market.connect(), this.orders.connect()]);
   }
 
   public disconnect(): void {

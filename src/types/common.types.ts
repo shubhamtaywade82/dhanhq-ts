@@ -1,6 +1,8 @@
 export interface DhanClientConfig {
-  token: string;
+  token?: string;
   clientId: string;
+  tokenProvider?: () => Promise<string> | string;
+  onTokenExpired?: (error: unknown) => Promise<void> | void;
   baseURL?: string;
   timeoutMs?: number;
   rateLimitMinTimeMs?: number;
@@ -8,6 +10,9 @@ export interface DhanClientConfig {
   marketFeedUrl?: string;
   orderUpdateUrl?: string;
   wsReconnectDelayMs?: number;
+  wsOrderUserType?: "SELF" | "PARTNER";
+  partnerId?: string;
+  partnerSecret?: string;
 }
 
 export interface CorrelatedRequest {

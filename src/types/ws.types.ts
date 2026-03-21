@@ -106,30 +106,39 @@ export interface OrderState {
 }
 
 export interface MarketFeedWSOptions {
-  token: string;
+  token?: string;
   clientId: string;
   url?: string;
   reconnectDelayMs?: number;
   mode?: MarketFeedMode;
   webSocketFactory?: (url: string) => WebSocketLike;
+  tokenProvider?: () => Promise<string> | string;
 }
 
 export interface OrderUpdateWSOptions {
-  token: string;
+  token?: string;
   clientId: string;
   url?: string;
   reconnectDelayMs?: number;
   webSocketFactory?: (url: string) => WebSocketLike;
+  tokenProvider?: () => Promise<string> | string;
+  userType?: "SELF" | "PARTNER";
+  partnerId?: string;
+  partnerSecret?: string;
 }
 
 export interface DhanWSOptions {
-  token: string;
+  token?: string;
   clientId: string;
   marketFeedUrl?: string;
   orderUpdateUrl?: string;
   reconnectDelayMs?: number;
   marketSocketFactory?: (url: string) => WebSocketLike;
   orderSocketFactory?: (url: string) => WebSocketLike;
+  tokenProvider?: () => Promise<string> | string;
+  orderUserType?: "SELF" | "PARTNER";
+  partnerId?: string;
+  partnerSecret?: string;
 }
 
 export interface WebSocketLike {

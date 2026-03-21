@@ -5,6 +5,7 @@ import axios, {
   AxiosResponse,
 } from "axios";
 
+import { AuthResolver } from "../auth";
 import { ApiResponseError, NetworkError, RateLimitError } from "../errors";
 import type { DhanClientConfig } from "../types/common.types";
 import { RateLimiter } from "./RateLimiter";
@@ -28,14 +29,14 @@ export interface HttpClientDependencies {
 export class HttpClient {
   private readonly axiosInstance: AxiosInstance;
   private readonly rateLimiter: RateLimiter;
-  private readonly accessToken: string;
+  private readonly authResolver: AuthResolver;
   private readonly clientId: string;
 
   constructor(
     config: DhanClientConfig,
     dependencies: HttpClientDependencies = {},
   ) {
-    this.accessToken = config.token;
+    this.authResolver = new AuthResolver(config);
     this.clientId = config.clientId;
     this.rateLimiter =
       dependencies.rateLimiter ??
@@ -46,7 +47,6 @@ export class HttpClient {
         baseURL: config.baseURL ?? "https://api.dhan.co/v2",
         timeout: config.timeoutMs ?? 5000,
         headers: {
-          "access-token": config.token,
           Accept: "application/json",
         },
       });
@@ -72,8 +72,8 @@ export class HttpClient {
     return this.clientId;
   }
 
-  public getAccessToken(): string {
-    return this.accessToken;
+  public async getAccessToken(): Promise<string> {
+    return this.authResolver.resolveAccessToken();
   }
 
   private async execute<TResponse, TBody>(
@@ -81,11 +81,19 @@ export class HttpClient {
   ): Promise<TResponse> {
     try {
       const response = await this.axiosInstance.request<TResponse>(
-        this.toAxiosConfig(options),
+        await this.toAxiosConfig(options),
       );
       return response.data;
     } catch (error) {
       const normalized = this.normalizeError(error);
+
+      if (this.isAuthenticationFailure(normalized)) {
+        await this.authResolver.handleTokenExpired(normalized);
+        const response = await this.axiosInstance.request<TResponse>(
+          await this.toAxiosConfig(options),
+        );
+        return response.data;
+      }
 
       if (
         options.safeToRetry &&
@@ -93,7 +101,7 @@ export class HttpClient {
         options.method === "GET"
       ) {
         const response = await this.axiosInstance.request<TResponse>(
-          this.toAxiosConfig(options),
+          await this.toAxiosConfig(options),
         );
         return response.data;
       }
@@ -102,15 +110,20 @@ export class HttpClient {
     }
   }
 
-  private toAxiosConfig<TBody>(
+  private async toAxiosConfig<TBody>(
     options: RequestOptions<TBody>,
-  ): AxiosRequestConfig<TBody> {
+  ): Promise<AxiosRequestConfig<TBody>> {
+    const token = await this.authResolver.resolveAccessToken();
+
     return {
       method: options.method,
       url: options.url,
       data: options.data,
       params: options.params,
-      headers: options.headers,
+      headers: {
+        "access-token": token,
+        ...options.headers,
+      },
     };
   }
 
@@ -120,6 +133,14 @@ export class HttpClient {
       (error instanceof ApiResponseError &&
         error.status !== undefined &&
         error.status >= 500)
+    );
+  }
+
+  private isAuthenticationFailure(error: unknown): boolean {
+    return (
+      error instanceof ApiResponseError &&
+      error.status !== undefined &&
+      error.status === 401
     );
   }
 

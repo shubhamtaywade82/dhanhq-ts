@@ -5,8 +5,10 @@ export class GeneratedClient {
   constructor(config: DhanClientConfig) {
     OpenAPI.BASE = config.baseURL ?? "https://api.dhan.co/v2";
     OpenAPI.TOKEN = undefined;
-    OpenAPI.HEADERS = {
-      "access-token": config.token,
-    };
+    OpenAPI.HEADERS = config.token
+      ? {
+          "access-token": config.token,
+        }
+      : undefined;
   }
 }

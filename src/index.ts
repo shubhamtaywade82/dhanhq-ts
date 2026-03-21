@@ -1,3 +1,4 @@
+export * from "./auth";
 export * from "./client/DhanClient";
 export * from "./client/GeneratedClient";
 export * from "./client/HttpClient";

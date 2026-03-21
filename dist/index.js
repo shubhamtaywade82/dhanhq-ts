@@ -10323,6 +10323,231 @@ var require_form_data = __commonJS({
   }
 });
 
+// src/errors/DhanError.ts
+var DhanError = class extends Error {
+  constructor(message, options = {}) {
+    super(message);
+    this.name = "DhanError";
+    this.code = options.code ?? "DHAN_ERROR";
+    this.status = options.status;
+    this.details = options.details;
+    this.cause = options.cause;
+  }
+};
+
+// src/errors/ApiResponseError.ts
+var ApiResponseError = class extends DhanError {
+  constructor(message, status, details, cause) {
+    super(message, {
+      code: "API_RESPONSE_ERROR",
+      status,
+      details,
+      cause
+    });
+    this.name = "ApiResponseError";
+  }
+};
+
+// src/errors/NetworkError.ts
+var NetworkError = class extends DhanError {
+  constructor(message, cause) {
+    super(message, {
+      code: "NETWORK_ERROR",
+      cause
+    });
+    this.name = "NetworkError";
+  }
+};
+
+// src/errors/RateLimitError.ts
+var RateLimitError = class extends DhanError {
+  constructor(message = "Request rate limit exhausted", cause) {
+    super(message, {
+      code: "RATE_LIMIT_ERROR",
+      cause
+    });
+    this.name = "RateLimitError";
+  }
+};
+
+// src/errors/ValidationError.ts
+var ValidationError = class extends DhanError {
+  constructor(error) {
+    super("Request validation failed", {
+      code: "VALIDATION_ERROR",
+      details: error.flatten(),
+      cause: error
+    });
+    this.name = "ValidationError";
+    this.issues = error.issues;
+  }
+};
+
+// src/auth/AuthResolver.ts
+var AuthResolver = class {
+  constructor(config) {
+    this.config = config;
+  }
+  async resolveAccessToken() {
+    if (this.config.tokenProvider) {
+      const token = await this.config.tokenProvider();
+      if (!token || token.trim().length === 0) {
+        throw new DhanError("tokenProvider returned an empty token", {
+          code: "AUTHENTICATION_ERROR"
+        });
+      }
+      return token;
+    }
+    if (!this.config.token || this.config.token.trim().length === 0) {
+      throw new DhanError("Missing access token", {
+        code: "AUTHENTICATION_ERROR"
+      });
+    }
+    return this.config.token;
+  }
+  async handleTokenExpired(error) {
+    await this.config.onTokenExpired?.(error);
+  }
+};
+
+// src/auth/DhanAuth.ts
+import { createHmac } from "crypto";
+import axios from "axios";
+var DhanAuth = class {
+  static generateTotp(secret, options = {}) {
+    const digits = options.digits ?? 6;
+    const period = options.period ?? 30;
+    const timestamp = options.timestamp ?? Date.now();
+    const counter = Math.floor(timestamp / 1e3 / period);
+    const key = base32Decode(secret);
+    const buffer = Buffer.alloc(8);
+    buffer.writeUInt32BE(Math.floor(counter / 4294967296), 0);
+    buffer.writeUInt32BE(counter % 4294967296, 4);
+    const digest = createHmac("sha1", key).update(buffer).digest();
+    const offset = digest[digest.length - 1] & 15;
+    const code = (digest.readUInt32BE(offset) & 2147483647) % 10 ** digits;
+    return code.toString().padStart(digits, "0");
+  }
+  static async generateAccessToken(request2, dependencies = {}) {
+    const client = dependencies.axiosInstance ?? axios.create({
+      baseURL: "https://auth.dhan.co",
+      timeout: 5e3
+    });
+    const response = await client.post(
+      "/app/generateAccessToken",
+      void 0,
+      {
+        params: {
+          dhanClientId: request2.clientId,
+          pin: request2.pin,
+          totp: request2.totp
+        },
+        headers: {
+          Accept: "application/json"
+        }
+      }
+    );
+    return response.data;
+  }
+  static async renewWebToken(request2, dependencies = {}) {
+    const client = dependencies.axiosInstance ?? axios.create({
+      baseURL: request2.baseURL ?? "https://api.dhan.co/v2",
+      timeout: 5e3
+    });
+    const response = await client.post(
+      "/RenewToken",
+      void 0,
+      {
+        headers: {
+          "access-token": request2.token,
+          dhanClientId: request2.clientId,
+          Accept: "application/json"
+        }
+      }
+    );
+    return response.data;
+  }
+};
+function base32Decode(input) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const cleaned = input.toUpperCase().replace(/=+$/g, "").replace(/\s+/g, "");
+  let bits = "";
+  for (const char of cleaned) {
+    const index = alphabet.indexOf(char);
+    if (index === -1) {
+      throw new Error(`Invalid base32 character: ${char}`);
+    }
+    bits += index.toString(2).padStart(5, "0");
+  }
+  const bytes = [];
+  for (let offset = 0; offset + 8 <= bits.length; offset += 8) {
+    bytes.push(Number.parseInt(bits.slice(offset, offset + 8), 2));
+  }
+  return Buffer.from(bytes);
+}
+
+// src/auth/TokenManager.ts
+var TokenManager = class {
+  constructor(config, options) {
+    this.config = config;
+    this.options = options;
+    this.renewBeforeMs = options.renewBeforeMs ?? 5 * 60 * 1e3;
+  }
+  async ensureValidToken() {
+    if (!this.token) {
+      return this.generate();
+    }
+    if (!this.needsRefresh()) {
+      return this.token;
+    }
+    return this.refresh();
+  }
+  async generate() {
+    const totp = DhanAuth.generateTotp(this.options.totpSecret);
+    const response = await DhanAuth.generateAccessToken({
+      clientId: this.options.clientId,
+      pin: this.options.pin,
+      totp
+    });
+    return this.apply(response);
+  }
+  async refresh() {
+    if (!this.token) {
+      return this.generate();
+    }
+    try {
+      const response = await DhanAuth.renewWebToken({
+        token: this.token,
+        clientId: this.options.clientId,
+        baseURL: this.config.baseURL
+      });
+      return this.apply(response);
+    } catch {
+      return this.generate();
+    }
+  }
+  apply(response) {
+    const accessToken = typeof response.accessToken === "string" ? response.accessToken : typeof response.access_token === "string" ? response.access_token : void 0;
+    if (!accessToken) {
+      throw new Error("Token response did not contain accessToken");
+    }
+    this.token = accessToken;
+    this.config.token = accessToken;
+    const expiryTime = typeof response.expiryTime === "string" ? response.expiryTime : typeof response.expiry_time === "string" ? response.expiry_time : void 0;
+    this.expiryAt = expiryTime ? Date.parse(expiryTime) : void 0;
+    return accessToken;
+  }
+  needsRefresh() {
+    if (!this.expiryAt) {
+      return false;
+    }
+    return Date.now() >= this.expiryAt - this.renewBeforeMs;
+  }
+};
+
+// src/client/DhanClient.ts
+import axios4 from "axios";
+
 // src/generated/index.ts
 var generated_exports = {};
 __export(generated_exports, {
@@ -11384,7 +11609,7 @@ var TradeResponse;
 
 // src/generated/core/request.ts
 var import_form_data = __toESM(require_form_data());
-import axios from "axios";
+import axios2 from "axios";
 var isDefined = (value) => {
   return value !== void 0 && value !== null;
 };
@@ -11523,7 +11748,7 @@ var getRequestBody = (options) => {
   return void 0;
 };
 var sendRequest = async (config, options, url, body, formData, headers, onCancel, axiosClient) => {
-  const source = axios.CancelToken.source();
+  const source = axios2.CancelToken.source();
   const requestConfig = {
     url,
     headers,
@@ -11591,7 +11816,7 @@ var catchErrorCodes = (options, result) => {
     );
   }
 };
-var request = (config, options, axiosClient = axios) => {
+var request = (config, options, axiosClient = axios2) => {
   return new CancelablePromise(async (resolve2, reject, onCancel) => {
     try {
       const url = getUrl(config, options);
@@ -12551,76 +12776,16 @@ var GeneratedClient = class {
   constructor(config) {
     OpenAPI.BASE = config.baseURL ?? "https://api.dhan.co/v2";
     OpenAPI.TOKEN = void 0;
-    OpenAPI.HEADERS = {
+    OpenAPI.HEADERS = config.token ? {
       "access-token": config.token
-    };
+    } : void 0;
   }
 };
 
 // src/client/HttpClient.ts
-import axios2, {
+import axios3, {
   AxiosError
 } from "axios";
-
-// src/errors/DhanError.ts
-var DhanError = class extends Error {
-  constructor(message, options = {}) {
-    super(message);
-    this.name = "DhanError";
-    this.code = options.code ?? "DHAN_ERROR";
-    this.status = options.status;
-    this.details = options.details;
-    this.cause = options.cause;
-  }
-};
-
-// src/errors/ApiResponseError.ts
-var ApiResponseError = class extends DhanError {
-  constructor(message, status, details, cause) {
-    super(message, {
-      code: "API_RESPONSE_ERROR",
-      status,
-      details,
-      cause
-    });
-    this.name = "ApiResponseError";
-  }
-};
-
-// src/errors/NetworkError.ts
-var NetworkError = class extends DhanError {
-  constructor(message, cause) {
-    super(message, {
-      code: "NETWORK_ERROR",
-      cause
-    });
-    this.name = "NetworkError";
-  }
-};
-
-// src/errors/RateLimitError.ts
-var RateLimitError = class extends DhanError {
-  constructor(message = "Request rate limit exhausted", cause) {
-    super(message, {
-      code: "RATE_LIMIT_ERROR",
-      cause
-    });
-    this.name = "RateLimitError";
-  }
-};
-
-// src/errors/ValidationError.ts
-var ValidationError = class extends DhanError {
-  constructor(error) {
-    super("Request validation failed", {
-      code: "VALIDATION_ERROR",
-      details: error.flatten(),
-      cause: error
-    });
-    this.name = "ValidationError";
-    this.issues = error.issues;
-  }
-};
 
 // src/client/RateLimiter.ts
 import Bottleneck from "bottleneck";
@@ -12641,14 +12806,13 @@ var RateLimiter = class {
 // src/client/HttpClient.ts
 var HttpClient = class {
   constructor(config, dependencies = {}) {
-    this.accessToken = config.token;
+    this.authResolver = new AuthResolver(config);
     this.clientId = config.clientId;
     this.rateLimiter = dependencies.rateLimiter ?? new RateLimiter({ minTime: config.rateLimitMinTimeMs });
-    this.axiosInstance = dependencies.axiosInstance ?? axios2.create({
+    this.axiosInstance = dependencies.axiosInstance ?? axios3.create({
       baseURL: config.baseURL ?? "https://api.dhan.co/v2",
       timeout: config.timeoutMs ?? 5e3,
       headers: {
-        "access-token": config.token,
         Accept: "application/json"
       }
     });
@@ -12667,37 +12831,51 @@ var HttpClient = class {
   getClientId() {
     return this.clientId;
   }
-  getAccessToken() {
-    return this.accessToken;
+  async getAccessToken() {
+    return this.authResolver.resolveAccessToken();
   }
   async execute(options) {
     try {
       const response = await this.axiosInstance.request(
-        this.toAxiosConfig(options)
+        await this.toAxiosConfig(options)
       );
       return response.data;
     } catch (error) {
       const normalized = this.normalizeError(error);
+      if (this.isAuthenticationFailure(normalized)) {
+        await this.authResolver.handleTokenExpired(normalized);
+        const response = await this.axiosInstance.request(
+          await this.toAxiosConfig(options)
+        );
+        return response.data;
+      }
       if (options.safeToRetry && this.shouldRetry(normalized) && options.method === "GET") {
         const response = await this.axiosInstance.request(
-          this.toAxiosConfig(options)
+          await this.toAxiosConfig(options)
         );
         return response.data;
       }
       throw normalized;
     }
   }
-  toAxiosConfig(options) {
+  async toAxiosConfig(options) {
+    const token = await this.authResolver.resolveAccessToken();
     return {
       method: options.method,
       url: options.url,
       data: options.data,
       params: options.params,
-      headers: options.headers
+      headers: {
+        "access-token": token,
+        ...options.headers
+      }
     };
   }
   shouldRetry(error) {
     return error instanceof NetworkError || error instanceof ApiResponseError && error.status !== void 0 && error.status >= 500;
+  }
+  isAuthenticationFailure(error) {
+    return error instanceof ApiResponseError && error.status !== void 0 && error.status === 401;
   }
   normalizeError(error) {
     if (error instanceof Error && !(error instanceof AxiosError)) {
@@ -13337,17 +13515,18 @@ var TraderControls = class {
 // src/ws/BaseWS.ts
 import { EventEmitter } from "events";
 var BaseWS = class extends EventEmitter {
-  constructor(url, reconnectDelayMs, webSocketFactory) {
+  constructor(urlFactory, reconnectDelayMs, webSocketFactory) {
     super();
-    this.url = url;
+    this.urlFactory = urlFactory;
     this.reconnectDelayMs = reconnectDelayMs;
     this.webSocketFactory = webSocketFactory;
     this.manuallyClosed = false;
     this.reconnectAttempts = 0;
   }
-  connect() {
+  async connect() {
     this.manuallyClosed = false;
-    this.connection = this.webSocketFactory(this.url);
+    const url = await this.urlFactory();
+    this.connection = this.webSocketFactory(url);
     this.bindConnection(this.connection);
   }
   disconnect() {
@@ -13364,7 +13543,7 @@ var BaseWS = class extends EventEmitter {
   bindConnection(connection) {
     connection.on("open", () => {
       this.reconnectAttempts = 0;
-      this.onOpen();
+      void this.onOpen();
     });
     connection.on("message", (data) => {
       this.onMessage(data);
@@ -13386,7 +13565,7 @@ var BaseWS = class extends EventEmitter {
     );
     this.reconnectAttempts += 1;
     this.reconnectTimer = setTimeout(() => {
-      this.connect();
+      void this.connect();
     }, delay);
   }
 };
@@ -13575,8 +13754,16 @@ var REQUEST_CODE_BY_MODE = {
 };
 var MarketFeedWS = class extends BaseWS {
   constructor(options, ltpStore) {
+    const authResolver = new AuthResolver({
+      token: options.token,
+      tokenProvider: options.tokenProvider,
+      clientId: options.clientId
+    });
     super(
-      options.url ?? buildMarketFeedUrl(options.token, options.clientId),
+      async () => options.url ?? buildMarketFeedUrl(
+        await authResolver.resolveAccessToken(),
+        options.clientId
+      ),
       options.reconnectDelayMs ?? 1e3,
       options.webSocketFactory ?? defaultFactory
     );
@@ -13689,27 +13876,50 @@ function toBuffer(data) {
 import WebSocket2 from "ws";
 var OrderUpdateWS = class extends BaseWS {
   constructor(options, orderStore) {
+    const authResolver = new AuthResolver({
+      token: options.token,
+      tokenProvider: options.tokenProvider,
+      clientId: options.clientId
+    });
     super(
-      options.url ?? "wss://api-order-update.dhan.co",
+      () => options.url ?? "wss://api-order-update.dhan.co",
       options.reconnectDelayMs ?? 1e3,
       options.webSocketFactory ?? defaultFactory2
     );
-    this.token = options.token;
+    this.authResolver = authResolver;
     this.clientId = options.clientId;
     this.orderStore = orderStore;
+    this.userType = options.userType ?? "SELF";
+    this.partnerId = options.partnerId;
+    this.partnerSecret = options.partnerSecret;
   }
-  onOpen() {
-    this.emit("open");
+  async onOpen() {
+    if (this.userType === "PARTNER") {
+      this.send(
+        JSON.stringify({
+          LoginReq: {
+            MsgCode: 42,
+            ClientId: this.partnerId
+          },
+          UserType: "PARTNER",
+          Secret: this.partnerSecret
+        })
+      );
+      this.emit("open");
+      return;
+    }
+    const token = await this.authResolver.resolveAccessToken();
     this.send(
       JSON.stringify({
         LoginReq: {
           MsgCode: 42,
           ClientId: this.clientId,
-          Token: this.token
+          Token: token
         },
         UserType: "SELF"
       })
     );
+    this.emit("open");
   }
   onMessage(data) {
     const raw = toText(data);
@@ -13812,6 +14022,7 @@ var DhanWS = class {
     this.market = new MarketFeedWS(
       {
         token: options.token,
+        tokenProvider: options.tokenProvider,
         clientId: options.clientId,
         url: options.marketFeedUrl,
         reconnectDelayMs: options.reconnectDelayMs,
@@ -13822,17 +14033,20 @@ var DhanWS = class {
     this.orders = new OrderUpdateWS(
       {
         token: options.token,
+        tokenProvider: options.tokenProvider,
         clientId: options.clientId,
         url: options.orderUpdateUrl,
         reconnectDelayMs: options.reconnectDelayMs,
-        webSocketFactory: options.orderSocketFactory
+        webSocketFactory: options.orderSocketFactory,
+        userType: options.orderUserType,
+        partnerId: options.partnerId,
+        partnerSecret: options.partnerSecret
       },
       this.orderStore
     );
   }
-  connect() {
-    this.market.connect();
-    this.orders.connect();
+  async connect() {
+    await Promise.all([this.market.connect(), this.orders.connect()]);
   }
   disconnect() {
     this.market.disconnect();
@@ -13844,7 +14058,7 @@ var DhanWS = class {
 };
 
 // src/client/DhanClient.ts
-var DhanClient = class {
+var DhanClient = class _DhanClient {
   constructor(config, dependencies = {}) {
     this.config = config;
     const httpClient = new HttpClient(config, dependencies);
@@ -13862,21 +14076,59 @@ var DhanClient = class {
     this.ipSetup = new IpSetup(httpClient);
     this.ws = new DhanWS({
       token: config.token,
+      tokenProvider: config.tokenProvider,
       clientId: config.clientId,
       marketFeedUrl: config.marketFeedUrl ?? config.wsUrl,
       orderUpdateUrl: config.orderUpdateUrl,
-      reconnectDelayMs: config.wsReconnectDelayMs
+      reconnectDelayMs: config.wsReconnectDelayMs,
+      orderUserType: config.wsOrderUserType,
+      partnerId: config.partnerId,
+      partnerSecret: config.partnerSecret
     });
+    this.auth = {
+      generateAccessToken: DhanAuth.generateAccessToken,
+      generateTotp: DhanAuth.generateTotp,
+      renewWebToken: DhanAuth.renewWebToken,
+      enableAutoTokenManagement: (options) => {
+        this.tokenManager = new TokenManager(this.config, options);
+        this.config.tokenProvider = () => {
+          if (!this.tokenManager) {
+            throw new Error("Token manager is not initialized");
+          }
+          return this.tokenManager.ensureValidToken();
+        };
+        return this.tokenManager;
+      }
+    };
   }
   getConfig() {
     return this.config;
+  }
+  static async fromTokenEndpoint(options) {
+    const client = options.axiosInstance ?? axios4.create({
+      baseURL: options.endpointBaseUrl,
+      timeout: 5e3
+    });
+    const response = await client.get("/auth/dhan/token", {
+      headers: {
+        Authorization: `Bearer ${options.bearerToken}`,
+        Accept: "application/json"
+      }
+    });
+    return new _DhanClient({
+      token: response.data.access_token,
+      clientId: response.data.client_id ?? "",
+      baseURL: response.data.base_url
+    });
   }
 };
 export {
   Alerts,
   ApiResponseError,
+  AuthResolver,
   BaseWS,
   Charts,
+  DhanAuth,
   DhanClient,
   DhanError,
   DhanWS,
@@ -13898,6 +14150,7 @@ export {
   RateLimiter,
   Statements,
   SuperOrders,
+  TokenManager,
   TraderControls,
   ValidationError,
   orderSchema,

@@ -1,3 +1,10 @@
+import axios, { type AxiosInstance } from "axios";
+
+import {
+  DhanAuth,
+  TokenManager,
+  type EnableAutoTokenManagementOptions,
+} from "../auth";
 import { GeneratedClient } from "./GeneratedClient";
 import { HttpClient, type HttpClientDependencies } from "./HttpClient";
 import type { DhanClientConfig } from "../types/common.types";
@@ -32,6 +39,15 @@ export class DhanClient {
   public readonly traderControls: TraderControls;
   public readonly ipSetup: IpSetup;
   public readonly ws: DhanWS;
+  public readonly auth: {
+    generateAccessToken: typeof DhanAuth.generateAccessToken;
+    generateTotp: typeof DhanAuth.generateTotp;
+    renewWebToken: typeof DhanAuth.renewWebToken;
+    enableAutoTokenManagement: (
+      options: EnableAutoTokenManagementOptions,
+    ) => TokenManager;
+  };
+  private tokenManager?: TokenManager;
 
   constructor(
     private readonly config: DhanClientConfig,
@@ -53,14 +69,62 @@ export class DhanClient {
     this.ipSetup = new IpSetup(httpClient);
     this.ws = new DhanWS({
       token: config.token,
+      tokenProvider: config.tokenProvider,
       clientId: config.clientId,
       marketFeedUrl: config.marketFeedUrl ?? config.wsUrl,
       orderUpdateUrl: config.orderUpdateUrl,
       reconnectDelayMs: config.wsReconnectDelayMs,
+      orderUserType: config.wsOrderUserType,
+      partnerId: config.partnerId,
+      partnerSecret: config.partnerSecret,
     });
+    this.auth = {
+      generateAccessToken: DhanAuth.generateAccessToken,
+      generateTotp: DhanAuth.generateTotp,
+      renewWebToken: DhanAuth.renewWebToken,
+      enableAutoTokenManagement: (options) => {
+        this.tokenManager = new TokenManager(this.config, options);
+        this.config.tokenProvider = () => {
+          if (!this.tokenManager) {
+            throw new Error("Token manager is not initialized");
+          }
+          return this.tokenManager.ensureValidToken();
+        };
+        return this.tokenManager;
+      },
+    };
   }
 
   public getConfig(): DhanClientConfig {
     return this.config;
+  }
+
+  public static async fromTokenEndpoint(options: {
+    endpointBaseUrl: string;
+    bearerToken: string;
+    axiosInstance?: AxiosInstance;
+  }): Promise<DhanClient> {
+    const client =
+      options.axiosInstance ??
+      axios.create({
+        baseURL: options.endpointBaseUrl,
+        timeout: 5000,
+      });
+    const response = await client.get<{
+      access_token?: string;
+      client_id?: string;
+      base_url?: string;
+    }>("/auth/dhan/token", {
+      headers: {
+        Authorization: `Bearer ${options.bearerToken}`,
+        Accept: "application/json",
+      },
+    });
+
+    return new DhanClient({
+      token: response.data.access_token,
+      clientId: response.data.client_id ?? "",
+      baseURL: response.data.base_url,
+    });
   }
 }

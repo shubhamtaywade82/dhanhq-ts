@@ -2,6 +2,7 @@ import type { AxiosInstance } from "axios";
 
 import {
   ApiResponseError,
+  DhanAuth,
   DhanClient,
   HttpClient,
   MarketFeedWS,
@@ -227,6 +228,50 @@ describe("DhanClient", () => {
     expect(axiosStub.requests).toHaveLength(2);
   });
 
+  it("retries once on 401 with tokenProvider", async () => {
+    const axiosStub = createAxiosStub();
+    const onTokenExpired = jest.fn();
+    const tokenProvider = jest
+      .fn()
+      .mockResolvedValueOnce("token-1")
+      .mockResolvedValueOnce("token-2");
+    axiosStub.enqueueFailure({
+      isAxiosError: true,
+      response: {
+        status: 401,
+        data: { message: "expired" },
+      },
+      message: "unauthorized",
+      name: "AxiosError",
+    } as never);
+    axiosStub.enqueueSuccess([{ orderId: "order-1" }]);
+
+    const httpClient = new HttpClient(
+      {
+        clientId: "client-id",
+        tokenProvider,
+        onTokenExpired,
+      },
+      { axiosInstance: axiosStub.axiosInstance },
+    );
+
+    const response = await httpClient.request<Array<{ orderId: string }>>({
+      method: "GET",
+      url: "/orders",
+      safeToRetry: true,
+    });
+
+    expect(response).toEqual([{ orderId: "order-1" }]);
+    expect(onTokenExpired).toHaveBeenCalledTimes(1);
+    expect(tokenProvider).toHaveBeenCalledTimes(2);
+    expect(axiosStub.requests[0]?.headers).toMatchObject({
+      "access-token": "token-1",
+    });
+    expect(axiosStub.requests[1]?.headers).toMatchObject({
+      "access-token": "token-2",
+    });
+  });
+
   it("does not retry unsafe writes on API failures", async () => {
     const axiosStub = createAxiosStub();
     axiosStub.enqueueFailure({
@@ -261,7 +306,7 @@ describe("DhanClient", () => {
     expect(axiosStub.requests).toHaveLength(1);
   });
 
-  it("tracks market feed subscriptions and updates ltp store", () => {
+  it("tracks market feed subscriptions and updates ltp store", async () => {
     const socket = new FakeSocket();
     const market = new MarketFeedWS(
       {
@@ -278,7 +323,7 @@ describe("DhanClient", () => {
     market.on("open", onOpen);
 
     market.subscribe([{ securityId: "12345", exchangeSegment: "NSE_FNO" }]);
-    market.connect();
+    await market.connect();
 
     socket.emit("open");
 
@@ -301,7 +346,7 @@ describe("DhanClient", () => {
     );
   });
 
-  it("authenticates order update ws and stores events", () => {
+  it("authenticates order update ws and stores events", async () => {
     const socket = new FakeSocket();
     const orderStore = clientOrderStore();
     const orders = new OrderUpdateWS({
@@ -315,9 +360,10 @@ describe("DhanClient", () => {
     orders.on("order", onOrder);
     orders.on("open", onOpen);
 
-    orders.connect();
+    await orders.connect();
 
     socket.emit("open");
+    await Promise.resolve();
 
     expect(onOpen).toHaveBeenCalled();
     expect(socket.sent).toEqual([
@@ -359,6 +405,43 @@ describe("DhanClient", () => {
         status: "TRADED",
       }),
     );
+  });
+
+  it("supports partner auth for order update ws", async () => {
+    const socket = new FakeSocket();
+    const orders = new OrderUpdateWS(
+      {
+        clientId: "client-id",
+        userType: "PARTNER",
+        partnerId: "partner-id",
+        partnerSecret: "partner-secret",
+        webSocketFactory: () => socket,
+      },
+      clientOrderStore(),
+    );
+
+    await orders.connect();
+    socket.emit("open");
+    await Promise.resolve();
+
+    expect(socket.sent).toEqual([
+      JSON.stringify({
+        LoginReq: {
+          MsgCode: 42,
+          ClientId: "partner-id",
+        },
+        UserType: "PARTNER",
+        Secret: "partner-secret",
+      }),
+    ]);
+  });
+
+  it("generates deterministic totp for known timestamp", () => {
+    const code = DhanAuth.generateTotp("JBSWY3DPEHPK3PXP", {
+      timestamp: 0,
+    });
+
+    expect(code).toBe("282760");
   });
 });
 

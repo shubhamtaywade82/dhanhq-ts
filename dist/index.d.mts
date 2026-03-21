@@ -3,8 +3,10 @@ import { EventEmitter } from 'events';
 import { z, ZodError } from 'zod';
 
 interface DhanClientConfig {
-    token: string;
+    token?: string;
     clientId: string;
+    tokenProvider?: () => Promise<string> | string;
+    onTokenExpired?: (error: unknown) => Promise<void> | void;
     baseURL?: string;
     timeoutMs?: number;
     rateLimitMinTimeMs?: number;
@@ -12,6 +14,9 @@ interface DhanClientConfig {
     marketFeedUrl?: string;
     orderUpdateUrl?: string;
     wsReconnectDelayMs?: number;
+    wsOrderUserType?: "SELF" | "PARTNER";
+    partnerId?: string;
+    partnerSecret?: string;
 }
 interface CorrelatedRequest {
     correlationId?: string;
@@ -28,6 +33,64 @@ interface TickEvent extends InstrumentSubscription {
     ltp?: number;
     timestamp?: number;
     raw: unknown;
+}
+
+declare class AuthResolver {
+    private readonly config;
+    constructor(config: DhanClientConfig);
+    resolveAccessToken(): Promise<string>;
+    handleTokenExpired(error: unknown): Promise<void>;
+}
+
+interface GenerateAccessTokenRequest {
+    clientId: string;
+    pin: string;
+    totp: string;
+}
+interface RenewWebTokenRequest {
+    token: string;
+    clientId: string;
+    baseURL?: string;
+}
+interface TokenResponse {
+    accessToken?: string;
+    expiryTime?: string;
+    dhanClientId?: string;
+    access_token?: string;
+    expiry_time?: string;
+    [key: string]: unknown;
+}
+interface DhanAuthDependencies {
+    axiosInstance?: AxiosInstance;
+}
+declare class DhanAuth {
+    static generateTotp(secret: string, options?: {
+        timestamp?: number;
+        digits?: number;
+        period?: number;
+    }): string;
+    static generateAccessToken(request: GenerateAccessTokenRequest, dependencies?: DhanAuthDependencies): Promise<TokenResponse>;
+    static renewWebToken(request: RenewWebTokenRequest, dependencies?: DhanAuthDependencies): Promise<TokenResponse>;
+}
+
+interface EnableAutoTokenManagementOptions {
+    clientId: string;
+    pin: string;
+    totpSecret: string;
+    renewBeforeMs?: number;
+}
+declare class TokenManager {
+    private readonly config;
+    private readonly options;
+    private token?;
+    private expiryAt?;
+    private readonly renewBeforeMs;
+    constructor(config: DhanClientConfig, options: EnableAutoTokenManagementOptions);
+    ensureValidToken(): Promise<string>;
+    generate(): Promise<string>;
+    refresh(): Promise<string>;
+    private apply;
+    private needsRefresh;
 }
 
 declare class GeneratedClient {
@@ -61,15 +124,16 @@ interface HttpClientDependencies {
 declare class HttpClient {
     private readonly axiosInstance;
     private readonly rateLimiter;
-    private readonly accessToken;
+    private readonly authResolver;
     private readonly clientId;
     constructor(config: DhanClientConfig, dependencies?: HttpClientDependencies);
     request<TResponse, TBody = unknown>(options: RequestOptions<TBody>): Promise<TResponse>;
     getClientId(): string;
-    getAccessToken(): string;
+    getAccessToken(): Promise<string>;
     private execute;
     private toAxiosConfig;
     private shouldRetry;
+    private isAuthenticationFailure;
     private normalizeError;
     private extractErrorPayload;
 }
@@ -4295,28 +4359,37 @@ interface OrderState {
     raw: Record<string, unknown>;
 }
 interface MarketFeedWSOptions {
-    token: string;
+    token?: string;
     clientId: string;
     url?: string;
     reconnectDelayMs?: number;
     mode?: MarketFeedMode;
     webSocketFactory?: (url: string) => WebSocketLike;
+    tokenProvider?: () => Promise<string> | string;
 }
 interface OrderUpdateWSOptions {
-    token: string;
+    token?: string;
     clientId: string;
     url?: string;
     reconnectDelayMs?: number;
     webSocketFactory?: (url: string) => WebSocketLike;
+    tokenProvider?: () => Promise<string> | string;
+    userType?: "SELF" | "PARTNER";
+    partnerId?: string;
+    partnerSecret?: string;
 }
 interface DhanWSOptions {
-    token: string;
+    token?: string;
     clientId: string;
     marketFeedUrl?: string;
     orderUpdateUrl?: string;
     reconnectDelayMs?: number;
     marketSocketFactory?: (url: string) => WebSocketLike;
     orderSocketFactory?: (url: string) => WebSocketLike;
+    tokenProvider?: () => Promise<string> | string;
+    orderUserType?: "SELF" | "PARTNER";
+    partnerId?: string;
+    partnerSecret?: string;
 }
 interface WebSocketLike {
     on(event: string, listener: (...args: unknown[]) => void): unknown;
@@ -4328,20 +4401,20 @@ interface StoredSubscription extends InstrumentSubscription {
 }
 
 declare abstract class BaseWS extends EventEmitter {
-    private readonly url;
+    private readonly urlFactory;
     private readonly reconnectDelayMs;
     private readonly webSocketFactory;
     private reconnectTimer?;
     protected connection?: WebSocketLike;
     protected manuallyClosed: boolean;
     protected reconnectAttempts: number;
-    constructor(url: string, reconnectDelayMs: number, webSocketFactory: (url: string) => WebSocketLike);
-    connect(): void;
+    constructor(urlFactory: () => Promise<string> | string, reconnectDelayMs: number, webSocketFactory: (url: string) => WebSocketLike);
+    connect(): Promise<void>;
     disconnect(): void;
     protected send(payload: string | Buffer): void;
     private bindConnection;
     private scheduleReconnect;
-    protected abstract onOpen(): void;
+    protected abstract onOpen(): Promise<void> | void;
     protected abstract onMessage(data: unknown): void;
     protected abstract onClose(): void;
 }
@@ -4379,11 +4452,14 @@ declare class OrderStore {
 }
 
 declare class OrderUpdateWS extends BaseWS {
-    private readonly token;
+    private readonly authResolver;
     private readonly clientId;
     private readonly orderStore;
+    private readonly userType;
+    private readonly partnerId?;
+    private readonly partnerSecret?;
     constructor(options: OrderUpdateWSOptions, orderStore: OrderStore);
-    protected onOpen(): void;
+    protected onOpen(): Promise<void>;
     protected onMessage(data: unknown): void;
     protected onClose(): void;
 }
@@ -4394,7 +4470,7 @@ declare class DhanWS {
     readonly market: MarketFeedWS;
     readonly orders: OrderUpdateWS;
     constructor(options: DhanWSOptions);
-    connect(): void;
+    connect(): Promise<void>;
     disconnect(): void;
     subscribe(instruments: InstrumentSubscription[]): void;
 }
@@ -4420,8 +4496,20 @@ declare class DhanClient {
     readonly traderControls: TraderControls;
     readonly ipSetup: IpSetup;
     readonly ws: DhanWS;
+    readonly auth: {
+        generateAccessToken: typeof DhanAuth.generateAccessToken;
+        generateTotp: typeof DhanAuth.generateTotp;
+        renewWebToken: typeof DhanAuth.renewWebToken;
+        enableAutoTokenManagement: (options: EnableAutoTokenManagementOptions) => TokenManager;
+    };
+    private tokenManager?;
     constructor(config: DhanClientConfig, dependencies?: DhanClientDependencies);
     getConfig(): DhanClientConfig;
+    static fromTokenEndpoint(options: {
+        endpointBaseUrl: string;
+        bearerToken: string;
+        axiosInstance?: AxiosInstance;
+    }): Promise<DhanClient>;
 }
 
 declare const orderSchema: z.ZodObject<{
@@ -4531,4 +4619,4 @@ declare class ValidationError extends DhanError {
     constructor(error: ZodError);
 }
 
-export { Alerts, ApiResponseError, BaseWS, type CancelOrderRequest, type CancelSuperOrderRequest, Charts, type CorrelatedRequest, DhanClient, type DhanClientConfig, type DhanClientDependencies, DhanError, DhanWS, type DhanWSOptions, Edis, type ExchangeSegment, ForeverOrders, Funds, index as Generated, GeneratedClient, HttpClient, type HttpClientDependencies, type InstrumentSubscription, IpSetup, LTPStore, type LedgerRequest, type MarketDepthLevel, type MarketDisconnectEvent, type MarketFeedEvent, type MarketFeedMode, MarketFeedWS, type MarketFeedWSOptions, type MarketFullEvent, type MarketOiEvent, type MarketPacketHeader, type MarketPrevCloseEvent, type MarketQuoteEvent, type MarketTickerEvent, type ModifyOrderRequest, type ModifySuperOrderRequest, NetworkError, type OrderOperationResult, type OrderResponse, type OrderState, OrderStore, type OrderType, type OrderUpdateEvent, OrderUpdateWS, type OrderUpdateWSOptions, Orders, type PlaceOrderRequest, type PlaceSuperOrderRequest, Positions, type ProductType, RateLimitError, RateLimiter, type RateLimiterConfig, type RequestOptions, Statements, type StoredSubscription, type SuperOrderLeg, type SuperOrderProductType, type SuperOrderResponse, type SuperOrderType, SuperOrders, type TickEvent, type TradeHistoryRequest, type TradeResponse, TraderControls, type TransactionType, ValidationError, type Validity, type WebSocketLike, orderSchema, parseMarketFeedPacket, splitPackets, superOrderSchema };
+export { Alerts, ApiResponseError, AuthResolver, BaseWS, type CancelOrderRequest, type CancelSuperOrderRequest, Charts, type CorrelatedRequest, DhanAuth, type DhanAuthDependencies, DhanClient, type DhanClientConfig, type DhanClientDependencies, DhanError, DhanWS, type DhanWSOptions, Edis, type EnableAutoTokenManagementOptions, type ExchangeSegment, ForeverOrders, Funds, type GenerateAccessTokenRequest, index as Generated, GeneratedClient, HttpClient, type HttpClientDependencies, type InstrumentSubscription, IpSetup, LTPStore, type LedgerRequest, type MarketDepthLevel, type MarketDisconnectEvent, type MarketFeedEvent, type MarketFeedMode, MarketFeedWS, type MarketFeedWSOptions, type MarketFullEvent, type MarketOiEvent, type MarketPacketHeader, type MarketPrevCloseEvent, type MarketQuoteEvent, type MarketTickerEvent, type ModifyOrderRequest, type ModifySuperOrderRequest, NetworkError, type OrderOperationResult, type OrderResponse, type OrderState, OrderStore, type OrderType, type OrderUpdateEvent, OrderUpdateWS, type OrderUpdateWSOptions, Orders, type PlaceOrderRequest, type PlaceSuperOrderRequest, Positions, type ProductType, RateLimitError, RateLimiter, type RateLimiterConfig, type RenewWebTokenRequest, type RequestOptions, Statements, type StoredSubscription, type SuperOrderLeg, type SuperOrderProductType, type SuperOrderResponse, type SuperOrderType, SuperOrders, type TickEvent, TokenManager, type TokenResponse, type TradeHistoryRequest, type TradeResponse, TraderControls, type TransactionType, ValidationError, type Validity, type WebSocketLike, orderSchema, parseMarketFeedPacket, splitPackets, superOrderSchema };

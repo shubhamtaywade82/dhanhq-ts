@@ -1,37 +1,70 @@
 import WebSocket from "ws";
 
-import type { OrderUpdateWSOptions, OrderState, WebSocketLike } from "../types/ws.types";
+import { AuthResolver } from "../auth";
+import type {
+  OrderState,
+  OrderUpdateWSOptions,
+  WebSocketLike,
+} from "../types/ws.types";
 import { BaseWS } from "./BaseWS";
 import { OrderStore } from "./store/OrderStore";
 
 export class OrderUpdateWS extends BaseWS {
-  private readonly token: string;
+  private readonly authResolver: AuthResolver;
   private readonly clientId: string;
   private readonly orderStore: OrderStore;
+  private readonly userType: "SELF" | "PARTNER";
+  private readonly partnerId?: string;
+  private readonly partnerSecret?: string;
 
   constructor(options: OrderUpdateWSOptions, orderStore: OrderStore) {
+    const authResolver = new AuthResolver({
+      token: options.token,
+      tokenProvider: options.tokenProvider,
+      clientId: options.clientId,
+    });
+
     super(
-      options.url ?? "wss://api-order-update.dhan.co",
+      () => options.url ?? "wss://api-order-update.dhan.co",
       options.reconnectDelayMs ?? 1000,
       options.webSocketFactory ?? defaultFactory,
     );
-    this.token = options.token;
+    this.authResolver = authResolver;
     this.clientId = options.clientId;
     this.orderStore = orderStore;
+    this.userType = options.userType ?? "SELF";
+    this.partnerId = options.partnerId;
+    this.partnerSecret = options.partnerSecret;
   }
 
-  protected onOpen(): void {
-    this.emit("open");
+  protected async onOpen(): Promise<void> {
+    if (this.userType === "PARTNER") {
+      this.send(
+        JSON.stringify({
+          LoginReq: {
+            MsgCode: 42,
+            ClientId: this.partnerId,
+          },
+          UserType: "PARTNER",
+          Secret: this.partnerSecret,
+        }),
+      );
+      this.emit("open");
+      return;
+    }
+
+    const token = await this.authResolver.resolveAccessToken();
     this.send(
       JSON.stringify({
         LoginReq: {
           MsgCode: 42,
           ClientId: this.clientId,
-          Token: this.token,
+          Token: token,
         },
         UserType: "SELF",
       }),
     );
+    this.emit("open");
   }
 
   protected onMessage(data: unknown): void {
@@ -85,16 +118,13 @@ function toText(data: unknown): string | null {
 
 function toOrderState(data: Record<string, unknown>): OrderState {
   return {
-    orderId:
-      typeof data.OrderNo === "string" ? data.OrderNo : undefined,
+    orderId: typeof data.OrderNo === "string" ? data.OrderNo : undefined,
     correlationId:
       typeof data.CorrelationId === "string" && data.CorrelationId.length > 0
         ? data.CorrelationId
         : undefined,
-    status:
-      typeof data.Status === "string" ? data.Status : undefined,
-    tradedQty:
-      typeof data.TradedQty === "number" ? data.TradedQty : undefined,
+    status: typeof data.Status === "string" ? data.Status : undefined,
+    tradedQty: typeof data.TradedQty === "number" ? data.TradedQty : undefined,
     averageTradedPrice:
       typeof data.AvgTradedPrice === "number"
         ? data.AvgTradedPrice

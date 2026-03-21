@@ -1,8 +1,8 @@
 import WebSocket from "ws";
 
+import { AuthResolver } from "../auth";
 import type { InstrumentSubscription } from "../types/common.types";
 import type {
-  MarketFeedEvent,
   MarketFeedMode,
   MarketFeedWSOptions,
   StoredSubscription,
@@ -25,9 +25,19 @@ export class MarketFeedWS extends BaseWS {
   private readonly mode: MarketFeedMode;
 
   constructor(options: MarketFeedWSOptions, ltpStore: LTPStore) {
+    const authResolver = new AuthResolver({
+      token: options.token,
+      tokenProvider: options.tokenProvider,
+      clientId: options.clientId,
+    });
+
     super(
-      options.url ??
-        buildMarketFeedUrl(options.token, options.clientId),
+      async () =>
+        options.url ??
+        buildMarketFeedUrl(
+          await authResolver.resolveAccessToken(),
+          options.clientId,
+        ),
       options.reconnectDelayMs ?? 1000,
       options.webSocketFactory ?? defaultFactory,
     );

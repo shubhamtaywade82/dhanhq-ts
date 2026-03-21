@@ -9,16 +9,17 @@ export abstract class BaseWS extends EventEmitter {
   protected reconnectAttempts = 0;
 
   constructor(
-    private readonly url: string,
+    private readonly urlFactory: () => Promise<string> | string,
     private readonly reconnectDelayMs: number,
     private readonly webSocketFactory: (url: string) => WebSocketLike,
   ) {
     super();
   }
 
-  public connect(): void {
+  public async connect(): Promise<void> {
     this.manuallyClosed = false;
-    this.connection = this.webSocketFactory(this.url);
+    const url = await this.urlFactory();
+    this.connection = this.webSocketFactory(url);
     this.bindConnection(this.connection);
   }
 
@@ -38,7 +39,7 @@ export abstract class BaseWS extends EventEmitter {
   private bindConnection(connection: WebSocketLike): void {
     connection.on("open", () => {
       this.reconnectAttempts = 0;
-      this.onOpen();
+      void this.onOpen();
     });
 
     connection.on("message", (data: unknown) => {
@@ -64,11 +65,11 @@ export abstract class BaseWS extends EventEmitter {
     );
     this.reconnectAttempts += 1;
     this.reconnectTimer = setTimeout(() => {
-      this.connect();
+      void this.connect();
     }, delay);
   }
 
-  protected abstract onOpen(): void;
+  protected abstract onOpen(): Promise<void> | void;
   protected abstract onMessage(data: unknown): void;
   protected abstract onClose(): void;
 }
