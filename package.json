@@ -11,6 +11,14 @@
       "require": "./dist/index.cjs"
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shubhamtaywade82/dhanhq-ts.git"
+  },
+  "homepage": "https://github.com/shubhamtaywade82/dhanhq-ts",
+  "bugs": {
+    "url": "https://github.com/shubhamtaywade82/dhanhq-ts/issues"
+  },
   "files": [
     "dist"
   ],

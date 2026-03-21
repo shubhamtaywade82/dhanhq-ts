@@ -16,6 +16,20 @@ Production-grade TypeScript SDK for DhanHQ APIs with **WebSocket market feed**, 
 
 ## Installation
 
+Install from GitHub until the package is published to npm:
+
+```bash
+npm install git+https://github.com/shubhamtaywade82/dhanhq-ts.git
+```
+
+Local development install also works:
+
+```bash
+npm install /absolute/path/to/dhanhq-ts
+```
+
+When the package is published, the install command will be:
+
 ```bash
 npm install @dhanhq/client
 ```
@@ -157,6 +171,12 @@ See `/examples`:
 npm install
 npm run build
 npm test -- --runInBand
+```
+
+Repository:
+
+```text
+https://github.com/shubhamtaywade82/dhanhq-ts
 ```
 
 ---
