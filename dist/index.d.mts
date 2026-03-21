@@ -4408,6 +4408,7 @@ declare abstract class BaseWS extends EventEmitter {
     protected connection?: WebSocketLike;
     protected manuallyClosed: boolean;
     protected reconnectAttempts: number;
+    isConnected: boolean;
     constructor(urlFactory: () => Promise<string> | string, reconnectDelayMs: number, webSocketFactory: (url: string) => WebSocketLike);
     connect(): Promise<void>;
     disconnect(): void;

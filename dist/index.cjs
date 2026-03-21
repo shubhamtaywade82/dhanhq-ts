@@ -13556,6 +13556,7 @@ var BaseWS = class extends import_events.EventEmitter {
     this.webSocketFactory = webSocketFactory;
     this.manuallyClosed = false;
     this.reconnectAttempts = 0;
+    this.isConnected = false;
   }
   async connect() {
     this.manuallyClosed = false;
@@ -13577,6 +13578,7 @@ var BaseWS = class extends import_events.EventEmitter {
   bindConnection(connection) {
     connection.on("open", () => {
       this.reconnectAttempts = 0;
+      this.isConnected = true;
       void this.onOpen();
     });
     connection.on("message", (data) => {
@@ -13586,6 +13588,7 @@ var BaseWS = class extends import_events.EventEmitter {
       this.emit("error", error);
     });
     connection.on("close", () => {
+      this.isConnected = false;
       this.onClose();
       if (!this.manuallyClosed) {
         this.scheduleReconnect();
@@ -13812,7 +13815,9 @@ var MarketFeedWS = class extends BaseWS {
         mode: this.mode
       });
     }
-    this.sendSubscription(instruments);
+    if (this.isConnected) {
+      this.sendSubscription(instruments);
+    }
   }
   unsubscribe(instruments) {
     for (const instrument of instruments) {
