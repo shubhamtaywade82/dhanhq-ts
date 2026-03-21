@@ -173,6 +173,14 @@ npm run build
 npm test -- --runInBand
 ```
 
+### Smoke Test
+
+```bash
+npm run smoke
+```
+
+Relies on `.env` carrying `DHAN_TOKEN` and `DHAN_CLIENT_ID`.
+
 Repository:
 
 ```text
