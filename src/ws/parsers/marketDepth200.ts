@@ -1,237 +1,196 @@
 import type {
-  MarketDepthLevel,
-  MarketFeedEvent,
-  MarketFullEvent,
-  MarketPacketHeader,
+  MarketDepth20Event,
+  MarketDepth20Level,
+  MarketDepth200Event,
+  MarketDepthEvent,
 } from "../../types/ws.types";
 
-/**
- * 200-Level Market Depth WebSocket packet parser.
- * 
- * This parser handles the distinct binary format used by the 200-level depth
- * endpoint (wss://full-depth-api.dhan.co/twohundreddepth), which differs from
- * the standard 5/20-level depth:
- * - 12-byte header (vs 8-byte)
- * - uint32 row count
- * - float64 prices (vs float32)
- * - 200 depth entries (vs 5)
- * 
- * @see https://dhan.co/help/docs/api/v2/#market-depth-websocket
- */
-
-export interface MarketDepth200Event {
-  type: "depth-200";
-  securityId: string;
-  exchangeSegment: string;
-  ltp: number;
-  ltq: number;
-  ltt: number;
-  atp: number;
-  volume: number;
-  totalSellQuantity: number;
-  totalBuyQuantity: number;
-  openInterest: number;
-  dayOpen: number;
-  dayClose: number;
-  dayHigh: number;
-  dayLow: number;
-  depth: MarketDepthLevel[]; // 200 levels
-  raw: Buffer;
-}
-
-export interface MarketDepth200Header {
-  responseCode: number;
-  messageLength: number;
-  exchangeSegmentCode: number;
-  exchangeSegment: string;
-  securityId: string;
-  rowCount: number; // Number of depth levels (up to 200)
-}
+const SEGMENT_CODE_MAP: Record<number, string> = {
+  1: "NSE_EQ",
+  2: "NSE_FNO",
+  3: "BSE_EQ",
+  4: "BSE_FNO",
+  5: "MCX_COMM",
+  6: "NSE_CURRENCY",
+  7: "IDX_I",
+};
 
 /**
- * Parse a 200-level market depth packet.
- * 
- * The packet structure is:
- * - Bytes 0-7: Standard 8-byte header (response code, length, segment, security ID)
- * - Bytes 8-11: LTP (float32)
- * - Bytes 12-15: LTQ (int16) + padding
- * - Bytes 16-19: LTT (int32)
- * - Bytes 20-27: ATP (float64)
- * - Bytes 28-35: Volume (int64)
- * - Bytes 36-43: Total Sell Quantity (int64)
- * - Bytes 44-51: Total Buy Quantity (int64)
- * - Bytes 52-59: Open Interest (int64)
- * - Bytes 60-67: Day Open (float64)
- * - Bytes 68-75: Day Close (float64)
- * - Bytes 76-83: Day High (float64)
- * - Bytes 84-91: Day Low (float64)
- * - Bytes 92-95: Row count (uint32) - number of depth levels
- * - Bytes 96+: Depth entries (16 bytes each: qty int32, price float64)
- * 
- * Note: The actual structure may vary slightly based on Dhan's implementation.
- * This parser assumes the documented format with float64 prices and 200 levels.
+ * Parses a 20-level market depth packet stream from `wss://depth-api-feed.dhan.co/twentydepth`.
+ *
+ * Packet format:
+ * - 12-byte header:
+ *   - [0-1]: int16 LE messageLength
+ *   - [2]: uint8 responseCode (41 = Bid, 51 = Ask)
+ *   - [3]: uint8 exchangeSegmentCode
+ *   - [4-7]: int32 LE securityId
+ *   - [8-11]: uint32 LE sequence number
+ * - Payload: up to 20 levels × 16 bytes:
+ *   - [+0-7]: float64 LE price
+ *   - [+8-11]: uint32 LE quantity
+ *   - [+12-15]: uint32 LE order count
  */
-export function parseMarketDepth200Packet(
-  packet: Buffer,
-  subscriptions: Array<{ securityId: string; exchangeSegment: string }>,
-): MarketDepth200Event | null {
-  // Minimum packet size: 96 bytes header + at least some depth data
-  if (packet.length < 96) {
-    return null;
-  }
+export function parseMarketDepth20Packet(
+  buf: Buffer,
+  subscriptions?: Array<{ securityId: string; exchangeSegment: string }>,
+): MarketDepth20Event[] {
+  const results: MarketDepth20Event[] = [];
+  let offset = 0;
 
-  const header = parseDepth200Header(packet, subscriptions);
-  
-  if (!header) {
-    return null;
-  }
+  while (offset + 12 <= buf.length) {
+    const msgLen = buf.readInt16LE(offset);
+    const responseCode = buf.readUInt8(offset + 2);
+    const segCode = buf.readUInt8(offset + 3);
+    const secId = String(buf.readInt32LE(offset + 4));
 
-  const rowCount = header.rowCount;
-  const depthStartOffset = 96;
-  const expectedSize = depthStartOffset + rowCount * 16;
-
-  if (packet.length < expectedSize) {
-    console.warn(
-      `200-level depth packet truncated: expected ${expectedSize} bytes, got ${packet.length}`,
-    );
-    return null;
-  }
-
-  const depth = parseDepth200Levels(packet, depthStartOffset, rowCount);
-
-  return {
-    type: "depth-200",
-    securityId: header.securityId,
-    exchangeSegment: header.exchangeSegment,
-    ltp: packet.readFloatLE(8),
-    ltq: packet.readInt16LE(12),
-    ltt: packet.readInt32LE(16),
-    atp: packet.readDoubleLE(20),
-    volume: Number(packet.readBigInt64LE(28)),
-    totalSellQuantity: Number(packet.readBigInt64LE(36)),
-    totalBuyQuantity: Number(packet.readBigInt64LE(44)),
-    openInterest: Number(packet.readBigInt64LE(52)),
-    dayOpen: packet.readDoubleLE(60),
-    dayClose: packet.readDoubleLE(68),
-    dayHigh: packet.readDoubleLE(76),
-    dayLow: packet.readDoubleLE(84),
-    depth,
-    raw: packet,
-  };
-}
-
-function parseDepth200Header(
-  packet: Buffer,
-  subscriptions: Array<{ securityId: string; exchangeSegment: string }>,
-): MarketDepth200Header | null {
-  const responseCode = packet.readUInt8(0);
-  const messageLength = packet.readInt16LE(1);
-  const exchangeSegmentCode = packet.readUInt8(3);
-  const securityId = String(packet.readInt32LE(4));
-  const rowCount = packet.readUInt32LE(92);
-
-  // Resolve exchange segment from subscriptions
-  const matches = subscriptions.filter(
-    (sub) => sub.securityId === securityId,
-  );
-  const exchangeSegment =
-    matches.length === 1 ? matches[0].exchangeSegment : `SEGMENT_${exchangeSegmentCode}`;
-
-  return {
-    responseCode,
-    messageLength,
-    exchangeSegmentCode,
-    exchangeSegment,
-    securityId,
-    rowCount,
-  };
-}
-
-function parseDepth200Levels(
-  packet: Buffer,
-  offset: number,
-  rowCount: number,
-): MarketDepthLevel[] {
-  const levels: MarketDepthLevel[] = [];
-  const maxLevels = Math.min(rowCount, 200); // Safety cap
-
-  for (let index = 0; index < maxLevels; index += 1) {
-    const start = offset + index * 16;
-    
-    if (start + 16 > packet.length) {
+    if (msgLen < 12 || offset + msgLen > buf.length) {
       break;
     }
 
-    // 200-level depth format: 4 bytes qty + 8 bytes price + 4 bytes orders?
-    // Adjust based on actual Dhan specification
-    const quantity = packet.readInt32LE(start);
-    const price = packet.readDoubleLE(start + 4);
-    const orders = packet.readInt16LE(start + 12);
+    if (responseCode !== 41 && responseCode !== 51) {
+      offset += Math.max(msgLen, 1);
+      continue;
+    }
 
-    // Alternate between bid and ask based on index
-    // First half are bids, second half are asks (or interleaved)
-    const isBid = index < maxLevels / 2;
-    
-    if (isBid) {
-      levels.push({
-        bidQuantity: quantity,
-        askQuantity: 0,
-        bidOrders: orders,
-        askOrders: 0,
-        bidPrice: price,
-        askPrice: 0,
-      });
-    } else {
-      const askIndex = index - Math.floor(maxLevels / 2);
-      if (askIndex < levels.length) {
-        levels[askIndex].askQuantity = quantity;
-        levels[askIndex].askOrders = orders;
-        levels[askIndex].askPrice = price;
-      } else {
+    const isAsk = responseCode === 51;
+    const levels: MarketDepth20Level[] = [];
+    const numLevels = Math.min(20, Math.floor((msgLen - 12) / 16));
+
+    for (let index = 0; index < numLevels; index += 1) {
+      const base = offset + 12 + index * 16;
+      if (base + 16 > buf.length) {
+        break;
+      }
+
+      const price = buf.readDoubleLE(base);
+      const qty = buf.readUInt32LE(base + 8);
+      const orders = buf.readUInt32LE(base + 12);
+
+      if (price > 0 && price < 1_000_000) {
         levels.push({
-          bidQuantity: 0,
-          askQuantity: quantity,
-          bidOrders: 0,
-          askOrders: orders,
-          bidPrice: 0,
-          askPrice: price,
+          price: Math.round(price * 100) / 100,
+          qty,
+          orders,
         });
       }
     }
+
+    const subMatch = subscriptions?.find((s) => s.securityId === secId);
+    const exchangeSegment =
+      subMatch?.exchangeSegment ??
+      SEGMENT_CODE_MAP[segCode] ??
+      `SEGMENT_${segCode}`;
+
+    const packetSlice = buf.subarray(offset, offset + msgLen);
+
+    results.push({
+      type: isAsk ? "depth-20-ask" : "depth-20-bid",
+      securityId: secId,
+      exchangeSegment,
+      levels,
+      raw: packetSlice,
+    });
+
+    offset += msgLen;
   }
 
-  return levels;
+  return results;
 }
 
 /**
- * Alternative parser for interleaved bid/ask depth format.
- * Some implementations interleave bids and asks rather than splitting them.
+ * Parses a 200-level market depth packet stream from `wss://full-depth-api.dhan.co/twohundreddepth`.
+ *
+ * Packet format:
+ * - 12-byte header:
+ *   - [0-1]: int16 LE messageLength
+ *   - [2]: uint8 responseCode (41 = Bid, 51 = Ask)
+ *   - [3]: uint8 exchangeSegmentCode
+ *   - [4-7]: int32 LE securityId
+ *   - [8-11]: uint32 LE row count (number of levels up to 200)
+ * - Payload: row count × 16 bytes:
+ *   - [+0-7]: float64 LE price
+ *   - [+8-11]: uint32 LE quantity
+ *   - [+12-15]: uint32 LE order count
  */
-export function parseDepth200Interleaved(
-  packet: Buffer,
-  offset: number,
-  rowCount: number,
-): MarketDepthLevel[] {
-  const levels: MarketDepthLevel[] = [];
-  const maxLevels = Math.min(Math.floor(rowCount / 2), 200);
+export function parseMarketDepth200Packet(
+  buf: Buffer,
+  subscriptions?: Array<{ securityId: string; exchangeSegment: string }>,
+): MarketDepth200Event[] {
+  const results: MarketDepth200Event[] = [];
+  let offset = 0;
 
-  for (let index = 0; index < maxLevels; index += 1) {
-    const bidStart = offset + index * 16;
-    const askStart = offset + (index + maxLevels) * 16;
+  while (offset + 12 <= buf.length) {
+    const msgLen = buf.readInt16LE(offset);
+    const responseCode = buf.readUInt8(offset + 2);
+    const segCode = buf.readUInt8(offset + 3);
+    const secId = String(buf.readInt32LE(offset + 4));
+    const numRows = buf.readUInt32LE(offset + 8);
 
-    if (bidStart + 16 > packet.length || askStart + 16 > packet.length) {
+    if (msgLen < 12 || offset + msgLen > buf.length) {
       break;
     }
 
-    levels.push({
-      bidQuantity: packet.readInt32LE(bidStart),
-      askQuantity: packet.readInt32LE(askStart),
-      bidOrders: packet.readInt16LE(bidStart + 12),
-      askOrders: packet.readInt16LE(askStart + 12),
-      bidPrice: packet.readDoubleLE(bidStart + 4),
-      askPrice: packet.readDoubleLE(askStart + 4),
+    if (responseCode !== 41 && responseCode !== 51) {
+      offset += Math.max(msgLen, 1);
+      continue;
+    }
+
+    const isAsk = responseCode === 51;
+    const maxLevels = Math.min(numRows, 200, Math.floor((msgLen - 12) / 16));
+    const levels: MarketDepth20Level[] = [];
+
+    for (let index = 0; index < maxLevels; index += 1) {
+      const base = offset + 12 + index * 16;
+      if (base + 16 > buf.length) {
+        break;
+      }
+
+      const price = buf.readDoubleLE(base);
+      const qty = buf.readUInt32LE(base + 8);
+      const orders = buf.readUInt32LE(base + 12);
+
+      if (price > 0 && price < 1_000_000) {
+        levels.push({
+          price: Math.round(price * 100) / 100,
+          qty,
+          orders,
+        });
+      }
+    }
+
+    const subMatch = subscriptions?.find((s) => s.securityId === secId);
+    const exchangeSegment =
+      subMatch?.exchangeSegment ??
+      SEGMENT_CODE_MAP[segCode] ??
+      `SEGMENT_${segCode}`;
+
+    const packetSlice = buf.subarray(offset, offset + msgLen);
+
+    results.push({
+      type: isAsk ? "depth-200-ask" : "depth-200-bid",
+      securityId: secId,
+      exchangeSegment,
+      numRows,
+      levels,
+      raw: packetSlice,
     });
+
+    offset += msgLen;
   }
 
-  return levels;
+  return results;
+}
+
+/**
+ * Dispatcher to parse market depth packets for either 20-level or 200-level streams.
+ */
+export function parseMarketDepthPacket(
+  buf: Buffer,
+  mode: "twenty" | "twohundred",
+  subscriptions?: Array<{ securityId: string; exchangeSegment: string }>,
+): MarketDepthEvent[] {
+  if (mode === "twenty") {
+    return parseMarketDepth20Packet(buf, subscriptions);
+  }
+  return parseMarketDepth200Packet(buf, subscriptions);
 }

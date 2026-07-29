@@ -1,5 +1,6 @@
 export * from "./BaseWS";
 export * from "./DhanWS";
+export * from "./MarketDepthWS";
 export * from "./MarketFeedWS";
 export * from "./OrderUpdateWS";
 export * from "./WebSocketManager";

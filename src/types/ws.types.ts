@@ -105,12 +105,52 @@ export interface OrderState {
   raw: Record<string, unknown>;
 }
 
+export interface MarketDepth20Level {
+  price: number;
+  qty: number;
+  orders: number;
+}
+
+export interface MarketDepth20Event {
+  type: "depth-20-bid" | "depth-20-ask";
+  securityId: string;
+  exchangeSegment: string;
+  levels: MarketDepth20Level[];
+  raw: Buffer;
+}
+
+export interface MarketDepth200Event {
+  type: "depth-200-bid" | "depth-200-ask";
+  securityId: string;
+  exchangeSegment: string;
+  numRows: number;
+  levels: MarketDepth20Level[];
+  raw: Buffer;
+}
+
+export type MarketDepthEvent = MarketDepth20Event | MarketDepth200Event;
+export type MarketDepthMode = "twenty" | "twohundred";
+
 export interface MarketFeedWSOptions {
   token?: string;
   clientId: string;
   url?: string;
   reconnectDelayMs?: number;
+  maxReconnectDelayMs?: number;
+  maxReconnectAttempts?: number;
   mode?: MarketFeedMode;
+  webSocketFactory?: (url: string) => WebSocketLike;
+  tokenProvider?: () => Promise<string> | string;
+}
+
+export interface MarketDepthWSOptions {
+  token?: string;
+  clientId: string;
+  url?: string;
+  reconnectDelayMs?: number;
+  maxReconnectDelayMs?: number;
+  maxReconnectAttempts?: number;
+  mode?: MarketDepthMode;
   webSocketFactory?: (url: string) => WebSocketLike;
   tokenProvider?: () => Promise<string> | string;
 }
@@ -120,6 +160,8 @@ export interface OrderUpdateWSOptions {
   clientId: string;
   url?: string;
   reconnectDelayMs?: number;
+  maxReconnectDelayMs?: number;
+  maxReconnectAttempts?: number;
   webSocketFactory?: (url: string) => WebSocketLike;
   tokenProvider?: () => Promise<string> | string;
   userType?: "SELF" | "PARTNER";
@@ -132,9 +174,13 @@ export interface DhanWSOptions {
   clientId: string;
   marketFeedUrl?: string;
   orderUpdateUrl?: string;
+  depthUrl?: string;
   reconnectDelayMs?: number;
+  maxReconnectDelayMs?: number;
+  maxReconnectAttempts?: number;
   marketSocketFactory?: (url: string) => WebSocketLike;
   orderSocketFactory?: (url: string) => WebSocketLike;
+  depthSocketFactory?: (url: string) => WebSocketLike;
   tokenProvider?: () => Promise<string> | string;
   orderUserType?: "SELF" | "PARTNER";
   partnerId?: string;

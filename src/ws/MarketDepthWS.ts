@@ -3,56 +3,47 @@ import WebSocket from "ws";
 import { AuthResolver } from "../auth";
 import type { InstrumentSubscription } from "../types/common.types";
 import type {
-  MarketFeedMode,
-  MarketFeedWSOptions,
-  StoredSubscription,
+  MarketDepthEvent,
+  MarketDepthMode,
+  MarketDepthWSOptions,
   WebSocketLike,
 } from "../types/ws.types";
 import { BaseWS } from "./BaseWS";
-import { parseMarketFeedPacket } from "./parsers/marketFeed";
-import { splitPackets } from "./parsers/packetSplitter";
-import { LTPStore } from "./store/LTPStore";
+import { parseMarketDepthPacket } from "./parsers/marketDepth200";
 
-const REQUEST_CODE_BY_MODE: Record<MarketFeedMode, number> = {
-  ticker: 15,
-  quote: 17,
-  full: 21,
-};
+export class MarketDepthWS extends BaseWS {
+  private readonly subscriptions = new Map<string, InstrumentSubscription>();
+  private readonly mode: MarketDepthMode;
 
-export class MarketFeedWS extends BaseWS {
-  private readonly subscriptions = new Map<string, StoredSubscription>();
-  private readonly ltpStore: LTPStore;
-  private readonly mode: MarketFeedMode;
-
-  constructor(options: MarketFeedWSOptions, ltpStore: LTPStore) {
+  constructor(options: MarketDepthWSOptions) {
     const authResolver = new AuthResolver({
       token: options.token,
       tokenProvider: options.tokenProvider,
       clientId: options.clientId,
     });
 
+    const mode = options.mode ?? "twenty";
+
     super(
       async () =>
         options.url ??
-        buildMarketFeedUrl(
+        buildMarketDepthUrl(
           await authResolver.resolveAccessToken(),
           options.clientId,
+          mode,
         ),
       options.reconnectDelayMs ?? 1000,
       options.webSocketFactory ?? defaultFactory,
       options.maxReconnectDelayMs,
       options.maxReconnectAttempts,
     );
-    this.ltpStore = ltpStore;
-    this.mode = options.mode ?? "full";
+
+    this.mode = mode;
   }
 
   public subscribe(instruments: InstrumentSubscription[]): void {
     for (const instrument of instruments) {
-      this.subscriptions.set(this.subscriptionKey(instrument), {
-        ...instrument,
-        mode: this.mode,
-      });
+      this.subscriptions.set(this.subscriptionKey(instrument), instrument);
     }
 
     if (this.isConnected) {
@@ -63,11 +54,10 @@ export class MarketFeedWS extends BaseWS {
   public unsubscribe(instruments: InstrumentSubscription[]): void {
     for (const instrument of instruments) {
       this.subscriptions.delete(this.subscriptionKey(instrument));
-      this.ltpStore.delete(this.subscriptionKey(instrument));
     }
   }
 
-  public getSubscriptions(): StoredSubscription[] {
+  public getSubscriptions(): InstrumentSubscription[] {
     return Array.from(this.subscriptions.values());
   }
 
@@ -86,28 +76,19 @@ export class MarketFeedWS extends BaseWS {
       return;
     }
 
-    const packets = splitPackets(buffer);
-    for (const packet of packets) {
-      const parsed = parseMarketFeedPacket(packet, this.getSubscriptions());
-      if (!parsed) {
-        continue;
-      }
+    const events: MarketDepthEvent[] = parseMarketDepthPacket(
+      buffer,
+      this.mode,
+      this.getSubscriptions(),
+    );
 
-      if ("ltp" in parsed && typeof parsed.ltp === "number") {
-        this.ltpStore.set(
-          this.subscriptionKey({
-            securityId: parsed.securityId,
-            exchangeSegment: parsed.exchangeSegment,
-          }),
-          parsed.ltp,
-        );
+    for (const event of events) {
+      this.emit("depth", event);
+      if (this.mode === "twenty") {
+        this.emit("depth20", event);
+      } else {
+        this.emit("depth200", event);
       }
-
-      if (parsed.type === "disconnect") {
-        this.emit("disconnect", parsed);
-      }
-
-      this.emit("tick", parsed);
     }
   }
 
@@ -116,20 +97,33 @@ export class MarketFeedWS extends BaseWS {
   }
 
   private sendSubscription(instruments: InstrumentSubscription[]): void {
-    const batchSize = 100;
-
-    for (let index = 0; index < instruments.length; index += batchSize) {
-      const batch = instruments.slice(index, index + batchSize);
-      this.send(
-        JSON.stringify({
-          RequestCode: REQUEST_CODE_BY_MODE[this.mode],
-          InstrumentCount: batch.length,
-          InstrumentList: batch.map((instrument) => ({
-            ExchangeSegment: instrument.exchangeSegment,
-            SecurityId: instrument.securityId,
-          })),
-        }),
-      );
+    if (this.mode === "twenty") {
+      const batchSize = 100;
+      for (let index = 0; index < instruments.length; index += batchSize) {
+        const batch = instruments.slice(index, index + batchSize);
+        this.send(
+          JSON.stringify({
+            RequestCode: 23,
+            InstrumentCount: batch.length,
+            InstrumentList: batch.map((instrument) => ({
+              ExchangeSegment: instrument.exchangeSegment,
+              SecurityId: instrument.securityId,
+            })),
+          }),
+        );
+      }
+    } else {
+      // 200-level depth: 1 instrument per connection
+      const single = instruments[0];
+      if (single) {
+        this.send(
+          JSON.stringify({
+            RequestCode: 23,
+            ExchangeSegment: single.exchangeSegment,
+            SecurityId: single.securityId,
+          }),
+        );
+      }
     }
   }
 
@@ -138,8 +132,17 @@ export class MarketFeedWS extends BaseWS {
   }
 }
 
-function buildMarketFeedUrl(token: string, clientId: string): string {
-  return `wss://api-feed.dhan.co?version=2&token=${encodeURIComponent(
+function buildMarketDepthUrl(
+  token: string,
+  clientId: string,
+  mode: MarketDepthMode,
+): string {
+  const host =
+    mode === "twenty"
+      ? "wss://depth-api-feed.dhan.co/twentydepth"
+      : "wss://full-depth-api.dhan.co/twohundreddepth";
+
+  return `${host}?version=2&token=${encodeURIComponent(
     token,
   )}&clientId=${encodeURIComponent(clientId)}&authType=2`;
 }
@@ -152,22 +155,17 @@ function toBuffer(data: unknown): Buffer | null {
   if (Buffer.isBuffer(data)) {
     return data;
   }
-
   if (typeof data === "string") {
     return Buffer.from(data);
   }
-
   if (Array.isArray(data) && data.every((item) => Buffer.isBuffer(item))) {
     return Buffer.concat(data);
   }
-
   if (data instanceof ArrayBuffer) {
     return Buffer.from(data);
   }
-
   if (ArrayBuffer.isView(data)) {
     return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
   }
-
   return null;
 }

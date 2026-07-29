@@ -112,7 +112,8 @@ export function legSecurityId(
   entry: StrikeEntry,
   optionType: "CE" | "PE",
 ): string | undefined {
-  return legSide(entry, optionType)?.security_id;
+  const id = legSide(entry, optionType)?.security_id;
+  return id != null ? String(id) : undefined;
 }
 
 export function legPremium(

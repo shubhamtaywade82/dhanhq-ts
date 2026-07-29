@@ -9,19 +9,33 @@ export abstract class BaseWS extends EventEmitter {
   protected reconnectAttempts = 0;
   public isConnected = false;
 
+  private readonly maxReconnectDelayMs: number;
+  private readonly maxReconnectAttempts: number;
+
   constructor(
     private readonly urlFactory: () => Promise<string> | string,
     private readonly reconnectDelayMs: number,
     private readonly webSocketFactory: (url: string) => WebSocketLike,
+    maxReconnectDelayMs?: number,
+    maxReconnectAttempts?: number,
   ) {
     super();
+    this.maxReconnectDelayMs = maxReconnectDelayMs ?? 30000;
+    this.maxReconnectAttempts = maxReconnectAttempts ?? Infinity;
   }
 
   public async connect(): Promise<void> {
     this.manuallyClosed = false;
-    const url = await this.urlFactory();
-    this.connection = this.webSocketFactory(url);
-    this.bindConnection(this.connection);
+    try {
+      const url = await this.urlFactory();
+      this.connection = this.webSocketFactory(url);
+      this.bindConnection(this.connection);
+    } catch (error) {
+      this.emit("error", error);
+      if (!this.manuallyClosed) {
+        this.scheduleReconnect();
+      }
+    }
   }
 
   public disconnect(): void {
@@ -62,10 +76,19 @@ export abstract class BaseWS extends EventEmitter {
   }
 
   private scheduleReconnect(): void {
-    const delay = Math.min(
-      5000,
-      this.reconnectDelayMs * Math.max(1, this.reconnectAttempts + 1),
-    );
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      this.emit("reconnect_failed", {
+        attempts: this.reconnectAttempts,
+        maxAttempts: this.maxReconnectAttempts,
+      });
+      return;
+    }
+
+    const exponentialFactor = Math.pow(2, Math.min(this.reconnectAttempts, 5));
+    const baseDelay = this.reconnectDelayMs * exponentialFactor;
+    const jitter = Math.floor(Math.random() * 500);
+    const delay = Math.min(this.maxReconnectDelayMs, baseDelay + jitter);
+
     this.reconnectAttempts += 1;
     this.reconnectTimer = setTimeout(() => {
       void this.connect();
