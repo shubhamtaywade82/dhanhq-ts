@@ -1,3 +1,4 @@
 export * from "./AuthResolver";
 export * from "./DhanAuth";
 export * from "./TokenManager";
+export * from "./TokenResponse";

@@ -8,6 +8,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Authentication** — `TokenResponse` with `isExpired`, `expiresIn`,
+  `needsRefresh` and the account fields (`clientName`, `ucc`,
+  `powerOfAttorney`); `AuthenticationError` carrying the broker's own
+  `errorMessage`; `DhanClient.fromEnv()`; `totpProvider` for supplying a code
+  from a hardware token or MFA service instead of storing a TOTP secret;
+  `DhanAuth.totpSecondsRemaining()`; and `TokenManager` gained `getToken()`,
+  `clear()` and an `onToken` callback. Documented in `docs/AUTHENTICATION.md`.
+
+### Fixed
+
+- **Concurrent token refresh started one login per caller.** `TokenManager`
+  now coalesces in-flight logins. Generating a token can invalidate the
+  previous one, so a burst of traffic could leave the SDK holding a token the
+  broker had already replaced.
+- **Expiry timestamps without a timezone were parsed as local time.** Dhan
+  returns IST, and the ECMAScript spec parses an offset-less date-time as
+  local — on a UTC server that read an expiry 5.5 hours late, so a token
+  looked valid well after the API began rejecting it. Offset-less timestamps
+  are now pinned to IST, and an unparseable expiry fails closed.
+- **Auth failures threw a raw `AxiosError`.** They now raise
+  `AuthenticationError`, consistent with every other path in the SDK, and no
+  longer discard the broker's `errorMessage`.
+
+### Added
+
 - **Global Stocks** (`/v2/globalstocks/*`) — the US equities book as
   `client.globalStocks`, with orders, holdings, trades, USD funds, market
   status and a margin/charges estimator. Fractional quantities and `AMOUNT`

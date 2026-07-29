@@ -5,6 +5,7 @@ import {
   TokenManager,
   type EnableAutoTokenManagementOptions,
 } from "../auth";
+import { AuthenticationError } from "../errors";
 import { GeneratedClient } from "./GeneratedClient";
 import { HttpClient, type HttpClientDependencies } from "./HttpClient";
 import type { DhanClientConfig } from "../types/common.types";
@@ -115,6 +116,42 @@ export class DhanClient {
 
   public getConfig(): DhanClientConfig {
     return this.config;
+  }
+
+  /**
+   * Builds a client from the standard environment variables:
+   * `DHAN_CLIENT_ID`, `DHAN_ACCESS_TOKEN` and optionally `DHAN_BASE_URL`,
+   * `DHAN_PARTNER_ID` and `DHAN_PARTNER_SECRET`.
+   *
+   * Throws rather than constructing a client that would fail on its first
+   * request — a missing credential is a startup problem, not a runtime one.
+   */
+  public static fromEnv(
+    env: NodeJS.ProcessEnv = process.env,
+    overrides: Partial<DhanClientConfig> = {},
+  ): DhanClient {
+    const clientId = env.DHAN_CLIENT_ID;
+    const token = env.DHAN_ACCESS_TOKEN;
+
+    if (!clientId) {
+      throw new AuthenticationError("Configuration", "DHAN_CLIENT_ID is not set");
+    }
+
+    if (!token && !overrides.token && !overrides.tokenProvider) {
+      throw new AuthenticationError(
+        "Configuration",
+        "DHAN_ACCESS_TOKEN is not set — provide it, or pass a tokenProvider override",
+      );
+    }
+
+    return new DhanClient({
+      clientId,
+      token,
+      baseURL: env.DHAN_BASE_URL,
+      partnerId: env.DHAN_PARTNER_ID,
+      partnerSecret: env.DHAN_PARTNER_SECRET,
+      ...overrides,
+    });
   }
 
   public static async fromTokenEndpoint(options: {
