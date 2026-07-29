@@ -12,6 +12,7 @@ import type { DhanClientConfig } from "../types/common.types";
 import {
   Alerts,
   Charts,
+  ConditionalTriggers,
   Edis,
   ForeverOrders,
   Funds,
@@ -37,6 +38,7 @@ export class DhanClient {
   public readonly superOrders: SuperOrders;
   public readonly positions: Positions;
   public readonly alerts: Alerts;
+  public readonly conditionalTriggers: ConditionalTriggers;
   public readonly foreverOrders: ForeverOrders;
   public readonly funds: Funds;
   public readonly charts: Charts;
@@ -72,6 +74,7 @@ export class DhanClient {
     this.superOrders = new SuperOrders(httpClient);
     this.positions = new Positions(httpClient);
     this.alerts = new Alerts(httpClient);
+    this.conditionalTriggers = new ConditionalTriggers(httpClient);
     this.foreverOrders = new ForeverOrders(httpClient);
     this.funds = new Funds(httpClient);
     this.charts = new Charts(httpClient);
