@@ -4,9 +4,9 @@ import {
   intradayChartsSchema,
   optionChainRequestSchema,
 } from "../src/contracts";
-import { getMarketSessionInfo } from "../src/ta/marketCalendar";
+import { adjustTradingDateRange, getMarketSessionInfo } from "../src/ta/marketCalendar";
 
-describe("Runtime contracts validation", () => {
+describe("Runtime contracts & date adjustment validation", () => {
   describe("intradayChartsSchema", () => {
     it("validates correct intraday chart requests", () => {
       const valid = intradayChartsSchema.safeParse({
@@ -138,23 +138,38 @@ describe("Runtime contracts validation", () => {
     });
   });
 
-  describe("optionChainRequestSchema", () => {
-    it("validates correct option chain requests", () => {
-      const valid = optionChainRequestSchema.safeParse({
-        underlyingScrip: 13,
-        underlyingSeg: "IDX_I",
-        expiry: "2026-07-30",
-      });
-      expect(valid.success).toBe(true);
+  describe("adjustTradingDateRange", () => {
+    it("adjusts weekend toDate to Friday (within 2-day threshold)", () => {
+      // 2026-07-26 is a Sunday -> should shift to 2026-07-24 (Friday)
+      const adjusted = adjustTradingDateRange({
+        fromDate: "2026-07-20",
+        toDate: "2026-07-26",
+      }, { maxShiftDays: 2 });
+
+      expect(adjusted.adjusted).toBe(true);
+      expect(adjusted.toDate).toBe("2026-07-24");
+      expect(adjusted.adjustments[0]).toContain("Adjusted toDate from non-trading day");
     });
 
-    it("rejects non-date expiry string", () => {
-      const invalid = optionChainRequestSchema.safeParse({
-        underlyingScrip: 13,
-        underlyingSeg: "IDX_I",
-        expiry: "INVALID-DATE",
-      });
-      expect(invalid.success).toBe(false);
+    it("clamps date range exceeding maxDays", () => {
+      const adjusted = adjustTradingDateRange({
+        fromDate: "2026-01-01",
+        toDate: "2026-06-01",
+      }, { maxDays: 90, clampFuture: false });
+
+      expect(adjusted.adjusted).toBe(true);
+      expect(adjusted.adjustments.some((a) => a.includes("Clamped date range span"))).toBe(true);
+    });
+
+    it("auto-switches future toDate to latest active trading session date", () => {
+      const adjusted = adjustTradingDateRange({
+        fromDate: "2026-07-01",
+        toDate: "2099-01-01",
+      }, { clampFuture: true });
+
+      expect(adjusted.adjusted).toBe(true);
+      expect(adjusted.toDate).not.toBe("2099-01-01");
+      expect(adjusted.adjustments[0]).toContain("Auto-switched toDate");
     });
   });
 

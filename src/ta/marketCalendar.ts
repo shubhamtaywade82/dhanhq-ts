@@ -151,3 +151,120 @@ export function getMarketSessionInfo(now: Date = new Date()): MarketSessionInfo 
     lastCompletedTradingDay,
   };
 }
+
+export interface DateRangeInput {
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface DateAdjustmentOptions {
+  maxDays?: number; // e.g. 90 for intraday, 180 for expired options
+  maxShiftDays?: number; // default 2 days threshold (e.g., Sat->Fri is 1 day, Sun->Fri is 2 days)
+  clampFuture?: boolean; // default true
+  adjustNonTradingDays?: boolean; // default true
+}
+
+export interface AdjustedDateRange {
+  fromDate: string;
+  toDate: string;
+  originalFromDate?: string;
+  originalToDate?: string;
+  adjusted: boolean;
+  adjustments: string[];
+}
+
+/**
+ * Normalizes and adjusts a date range for market APIs:
+ * - Clamps future dates to today's IST date.
+ * - Shifts weekend/holiday `toDate` to the nearest previous trading day (within maxShiftDays threshold, default 2).
+ * - Shifts weekend/holiday `fromDate` to the nearest trading day.
+ * - Clamps `fromDate` if `toDate - fromDate` exceeds maxDays (e.g., 90 days for intraday).
+ */
+export function adjustTradingDateRange(
+  input: DateRangeInput,
+  options: DateAdjustmentOptions = {},
+): AdjustedDateRange {
+  const {
+    maxDays = 90,
+    maxShiftDays = 2,
+    clampFuture = true,
+    adjustNonTradingDays = true,
+  } = options;
+
+  const session = getMarketSessionInfo();
+  const todayIst = session.istDate;
+
+  let toDate = input.toDate ?? todayIst;
+  let fromDate = input.fromDate ?? toDate;
+  const originalFromDate = input.fromDate;
+  const originalToDate = input.toDate;
+  const adjustments: string[] = [];
+
+  // 1. Clamp future/pre-market toDate to last completed trading day
+  const maxAllowedToDate = session.lastCompletedTradingDay;
+  if (clampFuture && toDate > maxAllowedToDate) {
+    adjustments.push(
+      `Auto-switched toDate from ${toDate} to latest active trading session date (${maxAllowedToDate})`,
+    );
+    toDate = maxAllowedToDate;
+  }
+
+  // 2. Adjust non-trading toDate (weekend / holiday) within maxShiftDays threshold
+  if (adjustNonTradingDays && !isTradingDay(toDate)) {
+    let candidate = toDate;
+    let shiftCount = 0;
+    while (!isTradingDay(candidate) && shiftCount < maxShiftDays) {
+      candidate = addDays(candidate, -1);
+      shiftCount += 1;
+    }
+
+    if (isTradingDay(candidate)) {
+      adjustments.push(
+        `Adjusted toDate from non-trading day ${toDate} to last trading day ${candidate} (-${shiftCount} day(s))`,
+      );
+      toDate = candidate;
+    }
+  }
+
+  // 3. Adjust non-trading fromDate within maxShiftDays threshold
+  if (adjustNonTradingDays && !isTradingDay(fromDate)) {
+    let candidate = fromDate;
+    let shiftCount = 0;
+    while (!isTradingDay(candidate) && shiftCount < maxShiftDays) {
+      candidate = addDays(candidate, 1);
+      shiftCount += 1;
+    }
+    if (isTradingDay(candidate) && candidate <= toDate) {
+      adjustments.push(
+        `Adjusted fromDate from non-trading day ${fromDate} to trading day ${candidate} (+${shiftCount} day(s))`,
+      );
+      fromDate = candidate;
+    }
+  }
+
+  // 4. Ensure fromDate <= toDate
+  if (fromDate > toDate) {
+    adjustments.push(`Adjusted fromDate (${fromDate}) to match toDate (${toDate})`);
+    fromDate = toDate;
+  }
+
+  // 5. Enforce maxDays span limit
+  const msDiff = fromDateString(toDate).getTime() - fromDateString(fromDate).getTime();
+  const daySpan = Math.round(msDiff / MS_PER_DAY);
+  if (daySpan > maxDays) {
+    const clampedFrom = addDays(toDate, -maxDays);
+    adjustments.push(
+      `Clamped date range span from ${daySpan} days to max ${maxDays} days (fromDate set to ${clampedFrom})`,
+    );
+    fromDate = clampedFrom;
+  }
+
+  return {
+    fromDate,
+    toDate,
+    originalFromDate,
+    originalToDate,
+    adjusted: adjustments.length > 0,
+    adjustments,
+  };
+}

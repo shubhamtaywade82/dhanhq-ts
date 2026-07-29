@@ -1,6 +1,7 @@
 import { HttpClient } from "../client/HttpClient";
 import { expiredOptionsDataSchema } from "../contracts/expired-options.schema";
 import { ValidationError } from "../errors";
+import { adjustTradingDateRange } from "../ta/marketCalendar";
 
 export interface ExpiredOptionsDataRequest {
   securityId: string | number;
@@ -15,6 +16,7 @@ export interface ExpiredOptionsDataRequest {
   requiredData?: ("open" | "high" | "low" | "close" | "volume" | "oi" | string)[];
   fromDate: string; // YYYY-MM-DD
   toDate: string; // YYYY-MM-DD
+  autoAdjustDates?: boolean;
 }
 
 export interface ExpiredOptionsDataPoint {
@@ -81,14 +83,27 @@ export class ExpiredOptionsData {
   public async fetch(
     request: ExpiredOptionsDataRequest,
   ): Promise<ExpiredOptionsDataResponse> {
-    const validated = expiredOptionsDataSchema.safeParse(request);
+    let reqCopy = { ...request };
+    delete reqCopy.autoAdjustDates;
+
+    // Auto-adjust enabled by default unless explicitly disabled with autoAdjustDates: false
+    if (request.autoAdjustDates !== false) {
+      const adjusted = adjustTradingDateRange(
+        { fromDate: request.fromDate, toDate: request.toDate },
+        { maxDays: 180, clampFuture: true, adjustNonTradingDays: true },
+      );
+      reqCopy.fromDate = adjusted.fromDate;
+      reqCopy.toDate = adjusted.toDate;
+    }
+
+    const validated = expiredOptionsDataSchema.safeParse(reqCopy);
     if (!validated.success) {
       throw new ValidationError(validated.error);
     }
 
     const payload = {
-      instrument: request.instrument ?? request.instrumentType,
-      ...request,
+      instrument: reqCopy.instrument ?? reqCopy.instrumentType,
+      ...reqCopy,
     };
     return this.httpClient.request<
       ExpiredOptionsDataResponse,
