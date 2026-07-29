@@ -1,5 +1,5 @@
 /**
- * Trading-day arithmetic for the Indian equity market.
+ * Trading-day arithmetic and session awareness for the Indian equity market (NSE/BSE).
  *
  * Dates are handled as `YYYY-MM-DD` strings in IST so that a call made from a
  * machine in another timezone still resolves to the right trading session.
@@ -98,4 +98,56 @@ export function tradingDaysAgo(date: string, days: number): string {
   }
 
   return cursor;
+}
+
+export type MarketSessionState = "PRE_MARKET" | "IN_SESSION" | "POST_MARKET" | "CLOSED";
+
+export interface MarketSessionInfo {
+  istDate: string;
+  istTime: string;
+  isTradingDay: boolean;
+  sessionState: MarketSessionState;
+  lastCompletedTradingDay: string;
+}
+
+/**
+ * Calculates current market session status in IST time.
+ */
+export function getMarketSessionInfo(now: Date = new Date()): MarketSessionInfo {
+  const shifted = new Date(now.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
+  const istDate = shifted.toISOString().slice(0, 10);
+  const hours = shifted.getUTCHours();
+  const minutes = shifted.getUTCMinutes();
+  const seconds = shifted.getUTCSeconds();
+
+  const totalMinutes = hours * 60 + minutes;
+  const istTime = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+  const tradingDay = isTradingDay(istDate);
+  let sessionState: MarketSessionState = "CLOSED";
+
+  if (tradingDay) {
+    if (totalMinutes >= 540 && totalMinutes < 555) {
+      sessionState = "PRE_MARKET";
+    } else if (totalMinutes >= 555 && totalMinutes < 930) {
+      sessionState = "IN_SESSION";
+    } else if (totalMinutes >= 930 && totalMinutes < 960) {
+      sessionState = "POST_MARKET";
+    }
+  }
+
+  let lastCompletedTradingDay = istDate;
+  if (!tradingDay || totalMinutes < 555) {
+    lastCompletedTradingDay = previousTradingDay(istDate);
+  } else if (!tradingDay) {
+    lastCompletedTradingDay = lastTradingDay(istDate);
+  }
+
+  return {
+    istDate,
+    istTime,
+    isTradingDay: tradingDay,
+    sessionState,
+    lastCompletedTradingDay,
+  };
 }

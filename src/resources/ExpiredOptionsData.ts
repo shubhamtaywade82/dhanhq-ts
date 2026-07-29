@@ -1,4 +1,6 @@
 import { HttpClient } from "../client/HttpClient";
+import { expiredOptionsDataSchema } from "../contracts/expired-options.schema";
+import { ValidationError } from "../errors";
 
 export interface ExpiredOptionsDataRequest {
   securityId: string | number;
@@ -79,6 +81,11 @@ export class ExpiredOptionsData {
   public async fetch(
     request: ExpiredOptionsDataRequest,
   ): Promise<ExpiredOptionsDataResponse> {
+    const validated = expiredOptionsDataSchema.safeParse(request);
+    if (!validated.success) {
+      throw new ValidationError(validated.error);
+    }
+
     const payload = {
       instrument: request.instrument ?? request.instrumentType,
       ...request,

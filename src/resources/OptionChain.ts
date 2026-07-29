@@ -1,4 +1,9 @@
 import { HttpClient } from "../client/HttpClient";
+import {
+  optionChainExpiryListSchema,
+  optionChainRequestSchema,
+} from "../contracts/option-chain.schema";
+import { ValidationError } from "../errors";
 
 export interface OptionChainRequest {
   underlyingScrip: number;
@@ -58,10 +63,7 @@ export interface StrikeEntry {
   put?: OptionLeg;
 }
 
-/**
- * Option chain normalized into an ordered list of strikes — the shape the
- * skills and option analytics layers consume.
- */
+/** Flattened list of strikes returned by `fetchNormalized()`. */
 export interface NormalizedOptionChain {
   lastPrice?: number;
   strikes: StrikeEntry[];
@@ -80,6 +82,11 @@ export class OptionChain {
   public async fetch(
     request: OptionChainRequest,
   ): Promise<RawOptionChainResponse> {
+    const validated = optionChainRequestSchema.safeParse(request);
+    if (!validated.success) {
+      throw new ValidationError(validated.error);
+    }
+
     return this.httpClient.request<RawOptionChainResponse, OptionChainRequest>({
       method: "POST",
       url: "/optionchain",
@@ -92,6 +99,11 @@ export class OptionChain {
   public async expiryList(
     request: ExpiryListRequest,
   ): Promise<ExpiryListResponse> {
+    const validated = optionChainExpiryListSchema.safeParse(request);
+    if (!validated.success) {
+      throw new ValidationError(validated.error);
+    }
+
     return this.httpClient.request<ExpiryListResponse, ExpiryListRequest>({
       method: "POST",
       url: "/optionchain/expirylist",
