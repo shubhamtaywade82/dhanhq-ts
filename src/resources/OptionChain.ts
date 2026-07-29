@@ -32,7 +32,7 @@ export interface OptionLeg {
   top_ask_quantity?: number;
   top_bid_price?: number;
   top_bid_quantity?: number;
-  security_id?: string;
+  security_id?: string | number;
   [key: string]: unknown;
 }
 
