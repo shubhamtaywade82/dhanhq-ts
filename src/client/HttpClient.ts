@@ -122,6 +122,7 @@ export class HttpClient {
       params: options.params,
       headers: {
         "access-token": token,
+        "client-id": this.clientId,
         ...options.headers,
       },
     };
