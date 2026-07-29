@@ -34,14 +34,11 @@ async function main() {
   //  Build subscription list across all segments
   // -----------------------------------------------------------------------
   const subs: InstrumentDef[] = [
-    // Indices
     { exchangeSegment: "IDX_I", securityId: "13", label: "NIFTY 50" },
     { exchangeSegment: "IDX_I", securityId: "25", label: "BANK NIFTY" },
     { exchangeSegment: "IDX_I", securityId: "27", label: "FIN NIFTY" },
     { exchangeSegment: "IDX_I", securityId: "51", label: "SENSEX" },
     { exchangeSegment: "IDX_I", securityId: "442", label: "MIDCP NIFTY" },
-
-    // Equities
     { exchangeSegment: "NSE_EQ", securityId: "2885", label: "RELIANCE" },
     { exchangeSegment: "NSE_EQ", securityId: "1333", label: "HDFCBANK" },
     { exchangeSegment: "NSE_EQ", securityId: "11536", label: "TATAMOTORS" },
@@ -63,7 +60,7 @@ async function main() {
         subs.push({ exchangeSegment: "NSE_FNO", securityId: contracts[0].securityId, label: `${und} FUT ${contracts[0].expiryDate}` });
       }
     }
-  } catch { /* ignore */ }
+  } catch (e: any) { console.error("  futures lookup error:", e.message); }
 
   // NIFTY Options — current week from chain
   try {
@@ -85,7 +82,7 @@ async function main() {
         }
       }
     }
-  } catch { /* ignore */ }
+  } catch (e: any) { console.error("  option chain error:", e.message); }
 
   // MCX Gold futures
   try {
@@ -95,7 +92,7 @@ async function main() {
       .filter((i) => i.underlyingSymbol === "GOLD" && i.instrument === "FUTCOM" && i.expiryDate && new Date(i.expiryDate) >= now)
       .sort((a, b) => new Date(a.expiryDate!).getTime() - new Date(b.expiryDate!).getTime());
     if (gold.length > 0) subs.push({ exchangeSegment: "MCX_COMM", securityId: gold[0].securityId, label: `GOLD FUT ${gold[0].expiryDate}` });
-  } catch { /* ignore */ }
+  } catch (e: any) { console.error("  mcx lookup error:", e.message); }
 
   // -----------------------------------------------------------------------
   //  Print plan
@@ -111,16 +108,28 @@ async function main() {
   }
 
   // -----------------------------------------------------------------------
-  //  WebSocket — subscribe BEFORE connect so subs queue up and auto-send
+  //  MONKEY-PATCH: log what the market WS actually sends
   // -----------------------------------------------------------------------
-  console.log(`\nConnecting WebSocket...`);
+  const origSend = (client.ws.market as any).send.bind(client.ws.market);
+  (client.ws.market as any).send = function(payload: any) {
+    console.log("  [WS-SEND]", typeof payload === "string" ? payload.slice(0, 300) : "(binary)");
+    origSend(payload);
+  };
+
+  // -----------------------------------------------------------------------
+  //  Subscribe BEFORE connect so subs queue up
+  // -----------------------------------------------------------------------
   client.ws.market.subscribe(subs.map((s) => ({ exchangeSegment: s.exchangeSegment, securityId: s.securityId })));
+  console.log(`\n${subs.length} subscriptions queued`);
+
   await client.ws.connect();
+  console.log("  connect() resolved");
+
   await new Promise<void>((resolve, reject) => {
     const t = setTimeout(() => reject(new Error("open timeout")), 15_000);
-    client.ws.market.once("open", () => { clearTimeout(t); resolve(); });
+    client.ws.market.once("open", () => { clearTimeout(t); console.log("  [WS-MARKET] open event"); resolve(); });
   });
-  console.log(`Connected — ${subs.length} subscriptions active\n`);
+  console.log(`Connected\n`);
 
   // -----------------------------------------------------------------------
   //  Tick handler
@@ -146,8 +155,10 @@ async function main() {
 
     console.log(`[${elapsed}s] #${tickCount.toString().padEnd(3)} ${type} ${seg.padEnd(10)} ${sid.padEnd(8)} ${label.padEnd(35)}${extra}`);
   });
-  client.ws.market.on("error", () => {});
-  client.ws.market.on("disconnect", () => {});
+
+  client.ws.market.on("error", (e: any) => console.log("  [WS-ERROR]", typeof e === "object" ? e.message ?? JSON.stringify(e) : e));
+  client.ws.market.on("close", () => console.log("  [WS-CLOSE]"));
+  client.ws.market.on("disconnect", (e: any) => console.log("  [WS-DISCONNECT]", JSON.stringify(e)));
 
   // -----------------------------------------------------------------------
   //  Collect for 60s
