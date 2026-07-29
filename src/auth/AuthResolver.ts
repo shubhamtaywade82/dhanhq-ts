@@ -1,4 +1,4 @@
-import { DhanError } from "../errors";
+import { AuthenticationError } from "../errors";
 import type { DhanClientConfig } from "../types/common.types";
 
 export class AuthResolver {
@@ -8,18 +8,21 @@ export class AuthResolver {
     if (this.config.tokenProvider) {
       const token = await this.config.tokenProvider();
       if (!token || token.trim().length === 0) {
-        throw new DhanError("tokenProvider returned an empty token", {
-          code: "AUTHENTICATION_ERROR",
-        });
+        throw new AuthenticationError(
+          "ResolveAccessToken",
+          "tokenProvider returned an empty token",
+        );
       }
 
       return token;
     }
 
     if (!this.config.token || this.config.token.trim().length === 0) {
-      throw new DhanError("Missing access token", {
-        code: "AUTHENTICATION_ERROR",
-      });
+      throw new AuthenticationError(
+        "ResolveAccessToken",
+        "no access token configured — set `token`, `tokenProvider`, or call " +
+          "`client.auth.enableAutoTokenManagement(...)`",
+      );
     }
 
     return this.config.token;

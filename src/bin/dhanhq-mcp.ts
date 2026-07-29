@@ -14,23 +14,18 @@ import { DhanClient } from "../client/DhanClient";
 import { McpServer } from "../mcp/Server";
 
 async function main(): Promise<void> {
-  const clientId = process.env.DHAN_CLIENT_ID;
-  const token = process.env.DHAN_ACCESS_TOKEN;
+  let client: DhanClient;
 
-  if (!clientId || !token) {
+  try {
+    client = DhanClient.fromEnv();
+  } catch (error) {
     // stderr, not stdout — stdout is the JSON-RPC channel.
     process.stderr.write(
-      "dhanhq-mcp: DHAN_CLIENT_ID and DHAN_ACCESS_TOKEN must be set\n",
+      `dhanhq-mcp: ${error instanceof Error ? error.message : String(error)}\n`,
     );
     process.exit(1);
     return;
   }
-
-  const client = new DhanClient({
-    clientId,
-    token,
-    baseURL: process.env.DHAN_BASE_URL,
-  });
 
   const server = new McpServer({
     client,
