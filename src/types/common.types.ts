@@ -13,6 +13,8 @@ export interface DhanClientConfig {
   wsOrderUserType?: "SELF" | "PARTNER";
   partnerId?: string;
   partnerSecret?: string;
+  /** How long a parsed scrip-master segment stays cached. Defaults to 1 hour. */
+  instrumentCacheTtlMs?: number;
 }
 
 export interface CorrelatedRequest {

@@ -1,26 +1,78 @@
 # Architecture
 
-The SDK has two layers:
+The SDK stacks four layers, each depending only on the ones below it.
 
-1. Generated layer
-- `src/generated` is produced from `openapi.json`
-- it mirrors the full REST API surface
-- it should never be edited manually
+```text
+        mcp/  ·  bin/
+             ↑
+           agent/                    policy, tool catalogue, registry
+             ↑
+          skills/                    composable strategies
+             ↑
+   ta/ · analytics/ · risk/ · ai/    computation over market data
+             ↑
+  resources/ · contracts/ · ws/      typed API surface
+             ↑
+        generated/ · client/         transport
+```
 
-2. Custom layer
-- `src/resources` exposes the ergonomic SDK API
-- `src/contracts` validates trading-critical requests
-- `src/client/HttpClient.ts` centralizes rate limiting and safe retry behavior
-- `src/ws` contains real-time market and order update infrastructure
+Nothing below the agent layer knows about permissions or MCP, so the risk
+pipeline, indicators and skills are all usable directly from application code.
+
+## Transport layer
+
+- `src/generated` is produced from `openapi.json` and should never be edited by
+  hand — regenerate with `npm run generate`.
+- `src/client/HttpClient.ts` centralizes auth resolution, rate limiting, error
+  normalization and safe-retry behavior. Order placement is never auto-retried.
+
+## Resource layer
+
+- `src/resources` exposes the ergonomic SDK API, one class per endpoint group.
+- `src/contracts` validates trading-critical requests before transport.
+- `src/ws` carries the binary market feed and order update infrastructure.
+- `src/constants.ts` holds the enumerations shared across every layer.
+
+`Instruments` is the one resource with real state: the scrip master arrives as
+CSV and a single segment can run to hundreds of thousands of rows, so parsed
+segments are cached in memory (one hour by default) and concurrent callers for
+a cold segment share one download.
+
+## Computation layer
+
+- `src/ta` — indicators, candle handling, the NSE trading calendar, and a
+  multi-timeframe bias engine. Indicator functions are pure and return arrays
+  aligned to their input, with `null` in the leading positions.
+- `src/analytics` — Black-Scholes pricing, Greeks, implied volatility, max
+  pain, put-call ratios and OI concentration.
+- `src/risk` — the pre-trade check pipeline plus position sizing, stop
+  placement and trailing stop management.
+- `src/ai` — prompt construction for LLM assistants. These render state into
+  text; they never call the API themselves.
+
+## Strategy and agent layers
+
+- `src/skills` — a skill is a named sequence of steps over a shared context.
+  Structure skills stop at an `intent`: they resolve strikes and premiums but
+  never place orders.
+- `src/agent` — `Policy` (scopes and the live-trading gate), the tool
+  catalogue, and `AgentToolRegistry`, which is the single place permission is
+  enforced.
+- `src/mcp` and `src/bin` — a JSON-RPC 2.0 stdio server exposing the registry,
+  account resources and prompt templates.
 
 ## Runtime target
 
 - Primary target: Node-based automation trading
 - Secondary target: browser-safe read-only consumers where transport limits allow
 
+The MCP server is Node-only — it reads stdin and writes stdout.
+
 ## Public package surface
 
 - `DhanClient` for normal SDK use
 - `Generated` namespace for low-level direct access
-- `client.ws.market` for binary market feed
+- `Constants` namespace for exchange and order enumerations
+- `client.ws.market` for the binary market feed
 - `client.ws.orders` for live order updates
+- `AgentToolRegistry` / `McpServer` for agent integrations

@@ -1,0 +1,256 @@
+import { MARKET_HOURS, ProductType } from "../constants";
+import { RiskViolationError } from "../errors";
+import type { RiskCheck, RiskContext, RiskFunds, RiskPosition } from "./types";
+
+/** Blocks instruments the exchange has flagged as not tradable. */
+export const tradingPermissionCheck: RiskCheck = {
+  name: "trading_permission",
+  run({ instrument }) {
+    if (!instrument) {
+      return;
+    }
+
+    if (instrument.buySellIndicator !== "A") {
+      throw new RiskViolationError(
+        "trading_permission",
+        `Trading disabled for instrument ${instrument.securityId}`,
+      );
+    }
+  },
+};
+
+/** Blocks ASM/GSM surveillance-restricted instruments. */
+export const asmGsmCheck: RiskCheck = {
+  name: "asm_gsm",
+  run({ instrument }) {
+    if (instrument?.asmGsmFlag !== "Y") {
+      return;
+    }
+
+    throw new RiskViolationError(
+      "asm_gsm",
+      `ASM/GSM restricted instrument (${instrument.asmGsmCategory ?? "unknown category"})`,
+    );
+  },
+};
+
+/** Rejects BO/CO orders on instruments that do not support them. */
+export const productSupportCheck: RiskCheck = {
+  name: "product_support",
+  run({ args, instrument }) {
+    const productType = args.productType;
+    if (!productType || !instrument) {
+      return;
+    }
+
+    if (productType === ProductType.BO && instrument.bracketFlag !== "Y") {
+      throw new RiskViolationError(
+        "product_support",
+        "Bracket orders not supported for this instrument",
+      );
+    }
+
+    if (productType === ProductType.CO && instrument.coverFlag !== "Y") {
+      throw new RiskViolationError(
+        "product_support",
+        "Cover orders not supported for this instrument",
+      );
+    }
+  },
+};
+
+/** Restricts order types to the configured allowlist. */
+export const orderTypeCheck: RiskCheck = {
+  name: "order_type",
+  run({ args, limits }) {
+    const orderType = args.orderType;
+    if (!orderType || limits.allowedOrderTypes.includes(orderType)) {
+      return;
+    }
+
+    throw new RiskViolationError(
+      "order_type",
+      `Order type ${orderType} not allowed (permitted: ${limits.allowedOrderTypes.join(", ")})`,
+    );
+  },
+};
+
+/** Enforces per-order quantity and notional ceilings. */
+export const quantityCheck: RiskCheck = {
+  name: "quantity",
+  run({ args, limits }) {
+    const quantity = Number(args.quantity ?? 0);
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      throw new RiskViolationError("quantity", "Quantity must be greater than 0");
+    }
+
+    if (quantity > limits.maxQuantity) {
+      throw new RiskViolationError(
+        "quantity",
+        `Quantity ${quantity} exceeds limit of ${limits.maxQuantity}`,
+      );
+    }
+
+    // A MARKET order has no price to check against, so notional is only
+    // enforced where a price was supplied.
+    if (args.price === undefined) {
+      return;
+    }
+
+    const notional = quantity * Number(args.price);
+    if (notional > limits.maxNotional) {
+      throw new RiskViolationError(
+        "quantity",
+        `Notional ${notional} exceeds limit of ${limits.maxNotional}`,
+      );
+    }
+  },
+};
+
+/** Blocks orders outside 09:15–15:30 IST. */
+export const marketHoursCheck: RiskCheck = {
+  name: "market_hours",
+  run({ now = new Date() }) {
+    const ist = new Date(
+      now.getTime() + MARKET_HOURS.timezoneOffsetMinutes * 60 * 1000,
+    );
+    const minutes = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+    const open = MARKET_HOURS.openHour * 60 + MARKET_HOURS.openMinute;
+    const close = MARKET_HOURS.closeHour * 60 + MARKET_HOURS.closeMinute;
+    const day = ist.getUTCDay();
+
+    if (day === 0 || day === 6 || minutes < open || minutes > close) {
+      throw new RiskViolationError("market_hours", "Market is closed");
+    }
+  },
+};
+
+/** Caps the number of concurrently open positions. */
+export const positionLimitsCheck: RiskCheck = {
+  name: "position_limits",
+  async run({ provider, limits }) {
+    if (!provider) {
+      return;
+    }
+
+    const positions = await provider.positions();
+    const openCount = positions.filter(
+      (position) => Number(position.netQty ?? 0) !== 0,
+    ).length;
+
+    if (openCount >= limits.maxOpenPositions) {
+      throw new RiskViolationError(
+        "position_limits",
+        `Maximum ${limits.maxOpenPositions} open positions exceeded (${openCount} open)`,
+      );
+    }
+  },
+};
+
+/** Caps how much of the available balance a single symbol may represent. */
+export const concentrationCheck: RiskCheck = {
+  name: "concentration",
+  async run({ args, provider, limits }) {
+    const symbol = args.securityId;
+    if (!provider || !symbol) {
+      return;
+    }
+
+    const available = availableBalance(await provider.funds());
+    if (available <= 0) {
+      return;
+    }
+
+    const positions = await provider.positions();
+    const exposure = positions
+      .filter((position) => matchesSymbol(position, String(symbol)))
+      .reduce(
+        (total, position) =>
+          total +
+          Math.abs(Number(position.netQty ?? 0)) * Number(position.costPrice ?? 0),
+        0,
+      );
+
+    const concentration = (exposure / available) * 100;
+    if (concentration > limits.maxConcentrationPct) {
+      throw new RiskViolationError(
+        "concentration",
+        `Concentration ${concentration.toFixed(1)}% exceeds ${limits.maxConcentrationPct}% limit for ${symbol}`,
+      );
+    }
+  },
+};
+
+/** Stops new orders once aggregate unrealized loss crosses the daily limit. */
+export const maxLossCheck: RiskCheck = {
+  name: "max_loss",
+  async run({ provider, limits }) {
+    if (!provider) {
+      return;
+    }
+
+    const positions = await provider.positions();
+    const unrealized = positions.reduce(
+      (total, position) => total + Number(position.unrealizedProfit ?? 0),
+      0,
+    );
+
+    if (unrealized < -limits.dailyMaxLoss) {
+      throw new RiskViolationError(
+        "max_loss",
+        `Daily loss limit of ${limits.dailyMaxLoss} exceeded (current: ${unrealized.toFixed(0)})`,
+      );
+    }
+  },
+};
+
+/**
+ * Options-only rules: index underlyings, a stop loss and target on every
+ * order, and a target further from entry than the stop.
+ */
+export const optionsCheck: RiskCheck = {
+  name: "options",
+  run({ args, instrument, limits }) {
+    if (limits.optionsIndexOnly && instrument?.instrumentType !== "INDEX") {
+      throw new RiskViolationError(
+        "options",
+        "Options are only allowed on index underlyings",
+      );
+    }
+
+    if (!limits.requireOptionsStops) {
+      return;
+    }
+
+    if (args.stopLoss === undefined) {
+      throw new RiskViolationError("options", "Stop loss required");
+    }
+
+    if (args.target === undefined) {
+      throw new RiskViolationError("options", "Target required");
+    }
+
+    if (Number(args.target) <= Number(args.stopLoss)) {
+      throw new RiskViolationError(
+        "options",
+        "Invalid risk-reward: target must exceed stop loss",
+      );
+    }
+  },
+};
+
+function matchesSymbol(position: RiskPosition, symbol: string): boolean {
+  return (
+    String(position.tradingSymbol ?? "") === symbol ||
+    String(position.securityId ?? "") === symbol
+  );
+}
+
+/**
+ * `GET /v2/fundlimit` returns `availabelBalance` — the misspelling is in the
+ * upstream API, so both spellings are accepted.
+ */
+export function availableBalance(funds: RiskFunds): number {
+  return Number(funds.availabelBalance ?? funds.availableBalance ?? 0);
+}
