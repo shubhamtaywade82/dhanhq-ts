@@ -30,6 +30,7 @@ tools and an MCP server.
 - `src/skills` = composable strategies over a shared context
 - `src/agent` = policy, tool catalogue, registry, order preview
 - `src/mcp` + `src/bin` = JSON-RPC 2.0 stdio server and its executable
+- `src/auth` = token acquisition, TOTP, expiry handling, auto-renewal
 - `src/ai` = prompt helpers for LLM assistants
 - `src/execution` = order fill tracking and tick-driven exit signals
 
@@ -57,5 +58,6 @@ skills → agent → mcp`. Nothing below the agent layer knows about policy or M
 - See `docs/TRADING_RULES.md`
 - See `docs/WS_PROTOCOL.md`
 - See `docs/AGENT_TOOLS.md`
+- See `docs/AUTHENTICATION.md`
 - See `docs/BROWSER.md`
 - See `docs/RELEASING.md`

@@ -538,16 +538,43 @@ src/
 
 ---
 
-## Advanced Auth
+## Authentication
 
-The SDK supports:
+Five ways to supply a token, covered in full in
+[`docs/AUTHENTICATION.md`](docs/AUTHENTICATION.md):
 
-- static `token`
-- dynamic `tokenProvider`
-- `onTokenExpired` hook
-- TOTP generation helpers
-- web-token renewal helpers
-- order-update WebSocket auth for `SELF` and `PARTNER`
+```ts
+// 1. Static token
+new DhanClient({ clientId, token });
+
+// 2. Provider callback, re-resolved on every request
+new DhanClient({ clientId, tokenProvider: () => vault.read("dhan/token") });
+
+// 3. Automatic: generate from PIN + TOTP, renew before expiry
+client.auth.enableAutoTokenManagement({ clientId, pin, totpSecret });
+
+// 4. From DHAN_CLIENT_ID / DHAN_ACCESS_TOKEN, failing fast if unset
+DhanClient.fromEnv();
+
+// 5. From a token endpoint of your own
+await DhanClient.fromTokenEndpoint({ endpointBaseUrl, bearerToken });
+```
+
+Plus TOTP generation, direct `generateAccessToken` / `renewWebToken`, and
+`SELF` / `PARTNER` auth for the order-update WebSocket.
+
+Two behaviours worth knowing:
+
+- **Concurrent callers share one login.** Generating a token can invalidate
+  the previous one, so parallel logins risk leaving the SDK holding a token
+  the broker already replaced.
+- **Offset-less expiry timestamps are read as IST.** JavaScript parses them as
+  *local* time, which on a UTC server reads an IST expiry 5.5 hours late — the
+  token would look valid well after the API began rejecting it.
+
+Auth failures raise `AuthenticationError` carrying the broker's own message
+("Invalid PIN" and "TOTP expired" need different fixes, and the status code
+does not distinguish them).
 
 See `docs/` and `AGENTS.md` for repo-level architecture and trading constraints.
 
