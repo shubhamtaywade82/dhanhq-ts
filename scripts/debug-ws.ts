@@ -11,7 +11,6 @@ const base = `${parsed.protocol}//${parsed.host}`;
   const client = await DhanClient.fromTokenEndpoint({ endpointBaseUrl: base, bearerToken: process.env.DHAN_TOKEN_ACCESS_TOKEN!.trim()! });
   console.log("Auth OK");
 
-  // EXACT SAME REST calls as live-feed
   console.log("Resolving NSE_FNO...");
   const allFno = await client.instruments.bySegment("NSE_FNO");
   const now = new Date();
@@ -25,6 +24,7 @@ const base = `${parsed.protocol}//${parsed.host}`;
       futures.push({ seg: "NSE_FNO", sid: contracts[0].securityId, label: `${und} FUT ${contracts[0].expiryDate}` });
     }
   }
+  console.log(`  Futures: ${JSON.stringify(futures)}`);
 
   console.log("Resolving option chain...");
   const exp = await client.optionChain.expiryList({ underlyingScrip: 13, underlyingSeg: "IDX_I" });
@@ -40,11 +40,20 @@ const base = `${parsed.protocol}//${parsed.host}`;
       }
       for (const idx of [Math.max(atm - 2, 0), atm, Math.min(atm + 2, chain.strikes.length - 1)]) {
         const s = chain.strikes[idx];
-        if (s.call?.security_id) options.push({ seg: "NSE_FNO", sid: s.call.security_id, label: `NIFTY ${s.strike} CE ${expiryList[0]}` });
-        if (s.put?.security_id) options.push({ seg: "NSE_FNO", sid: s.put.security_id, label: `NIFTY ${s.strike} PE ${expiryList[0]}` });
+        if (s.call?.security_id) {
+          const sid = s.call.security_id;
+          console.log(`  [DEBUG] option call security_id type=${typeof sid} value=${JSON.stringify(sid)}`);
+          options.push({ seg: "NSE_FNO", sid: String(sid), label: `NIFTY ${s.strike} CE ${expiryList[0]}` });
+        }
+        if (s.put?.security_id) {
+          const sid = s.put.security_id;
+          console.log(`  [DEBUG] option put security_id type=${typeof sid} value=${JSON.stringify(sid)}`);
+          options.push({ seg: "NSE_FNO", sid: String(sid), label: `NIFTY ${s.strike} PE ${expiryList[0]}` });
+        }
       }
     }
   }
+  if (options.length === 0) console.log("  No options resolved");
 
   console.log("Resolving MCX...");
   const allMcx = await client.instruments.bySegment("MCX_COMM");
@@ -53,6 +62,7 @@ const base = `${parsed.protocol}//${parsed.host}`;
     .sort((a, b) => new Date(a.expiryDate!).getTime() - new Date(b.expiryDate!).getTime());
   const mcx: { seg: string; sid: string; label: string }[] = [];
   if (gold.length > 0) mcx.push({ seg: "MCX_COMM", sid: gold[0].securityId, label: `GOLD FUT ${gold[0].expiryDate}` });
+  console.log(`  MCX: ${JSON.stringify(mcx)}`);
 
   // Build full subscription list (same as live-feed)
   const allSubs = [
@@ -72,24 +82,15 @@ const base = `${parsed.protocol}//${parsed.host}`;
     ...mcx.map(m => ({ exchangeSegment: m.seg, securityId: m.sid })),
   ];
 
-  console.log(`\nSubscribing to ${allSubs.length} instruments (resolved from REST):`);
-  for (const s of allSubs) console.log(`  ${s.exchangeSegment.padEnd(10)} ${s.securityId.padEnd(8)}`);
-
-  // Intercept the WS send to see what's being transmitted
-  const origMarketConnect = client.ws.market.connect.bind(client.ws.market);
-  client.ws.market.connect = async function() {
-    // Wrap webSocketFactory to intercept send
-    const origFactory = (client.ws.market as any).config?.webSocketFactory;
-    await origMarketConnect();
-    const ws = (client.ws.market as any).connection;
-    if (ws) {
-      const origWsSend = ws.send.bind(ws);
-      ws.send = function(data: any) {
-        console.log("  [WS-SEND]", typeof data === "string" ? data.slice(0, 200) : `(${data.length} bytes)`);
-        return origWsSend(data);
-      };
+  // Verify all securityIds are strings
+  for (const s of allSubs) {
+    if (typeof s.securityId !== "string") {
+      console.error(`SECURITY ID NOT STRING: ${JSON.stringify(s)} type=${typeof s.securityId}`);
     }
-  };
+  }
+
+  console.log(`\nSubscribing to ${allSubs.length} instruments:`);
+  for (const s of allSubs) console.log(`  ${s.exchangeSegment.padEnd(10)} ${String(s.securityId).padEnd(8)}`);
 
   client.ws.market.subscribe(allSubs);
 
