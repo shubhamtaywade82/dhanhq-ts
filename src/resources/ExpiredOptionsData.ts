@@ -1,14 +1,16 @@
 import { HttpClient } from "../client/HttpClient";
 
 export interface ExpiredOptionsDataRequest {
-  securityId: string;
+  securityId: string | number;
   exchangeSegment: string;
-  instrumentType: "INDEX" | "STOCK";
-  expiryFlag: "WEEKLY" | "MONTHLY" | "QUARTERLY";
+  instrument?: "INDEX" | "OPTIDX" | "OPTSTK" | "EQUITY" | string;
+  instrumentType?: "INDEX" | "STOCK" | string;
+  expiryFlag: "WEEK" | "MONTH" | "WEEKLY" | "MONTHLY" | string;
   expiryCode: number;
   strike: string; // e.g., "ATM", "ATM+1", "ATM-2"
-  drvOptionType: "CALL" | "PUT";
-  requiredData: ("open" | "high" | "low" | "close" | "volume" | "oi")[];
+  drvOptionType: "CALL" | "PUT" | string;
+  interval?: "1" | "5" | "15" | "25" | "60" | string;
+  requiredData?: ("open" | "high" | "low" | "close" | "volume" | "oi" | string)[];
   fromDate: string; // YYYY-MM-DD
   toDate: string; // YYYY-MM-DD
 }
@@ -77,13 +79,17 @@ export class ExpiredOptionsData {
   public async fetch(
     request: ExpiredOptionsDataRequest,
   ): Promise<ExpiredOptionsDataResponse> {
+    const payload = {
+      instrument: request.instrument ?? request.instrumentType,
+      ...request,
+    };
     return this.httpClient.request<
       ExpiredOptionsDataResponse,
-      ExpiredOptionsDataRequest
+      typeof payload
     >({
       method: "POST",
       url: "/charts/rollingoption",
-      data: request,
+      data: payload,
       safeToRetry: true,
     });
   }
