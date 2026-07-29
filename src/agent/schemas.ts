@@ -155,6 +155,36 @@ export const intradaySchema: JsonSchema = {
     fromDate: { type: "string" },
     toDate: { type: "string" },
     oi: { type: "boolean" },
+    autoAdjustDates: { type: "boolean" },
+  },
+  additionalProperties: false,
+};
+
+export const expiredOptionsSchema: JsonSchema = {
+  type: "object",
+  required: [
+    "securityId",
+    "exchangeSegment",
+    "expiryFlag",
+    "expiryCode",
+    "strike",
+    "drvOptionType",
+    "fromDate",
+    "toDate",
+  ],
+  properties: {
+    securityId: { type: ["string", "integer"] },
+    exchangeSegment: enumOf(["NSE_FNO", "BSE_FNO", "MCX_COMM", "IDX_I", "NSE_EQ"]),
+    instrument: enumOf(["INDEX", "OPTIDX", "OPTSTK", "EQUITY"]),
+    instrumentType: enumOf(["INDEX", "STOCK"]),
+    expiryFlag: enumOf(["WEEK", "MONTH", "WEEKLY", "MONTHLY"]),
+    expiryCode: { type: "integer", minimum: 1, maximum: 10 },
+    strike: { type: "string", description: "e.g. ATM, ATM+1, ATM-2" },
+    drvOptionType: enumOf(["CALL", "PUT"]),
+    interval: enumOf(["1", "5", "15", "25", "60"]),
+    fromDate: { type: "string", description: "YYYY-MM-DD" },
+    toDate: { type: "string", description: "YYYY-MM-DD" },
+    autoAdjustDates: { type: "boolean" },
   },
   additionalProperties: false,
 };

@@ -135,6 +135,46 @@ const chain = await client.optionChain.fetchNormalized({
   underlyingSeg: "IDX_I",
   expiry: "2026-02-26",
 });
+
+// Expired options data (historical backtesting for expired options)
+const expiredData = await client.expiredOptionsData.fetch({
+  securityId: 13,
+  exchangeSegment: "NSE_FNO",
+  instrument: "INDEX",
+  expiryFlag: "WEEK",
+  expiryCode: 1,
+  strike: "ATM",
+  drvOptionType: "CALL",
+  interval: "15",
+  fromDate: "2026-07-01",
+  toDate: "2026-07-28",
+});
+```
+
+---
+
+### 5b. Runtime Contracts & Automatic Date Normalization
+
+All market data, charts, option chain, and expired options requests pass through runtime Zod contracts (`src/contracts/`) before firing HTTP requests.
+
+- **Automatic Date Normalization (`autoAdjustDates: true` by default)**:
+  - Dates landing on **weekends or holidays** (e.g. Saturday/Sunday) are automatically shifted **-1 to -2 days** to the nearest active trading session (Friday).
+  - Dates in the **future (`toDate > today IST`)** or requested before session start (pre-market/Sunday) automatically adjust to the **latest completed trading day**.
+  - Date ranges exceeding API limits (e.g. >90 days for intraday charts, >180 days for expired options) are automatically clamped.
+  - To disable auto-adjustment and enforce strict error throwing, pass `{ autoAdjustDates: false }`.
+
+```ts
+import { adjustTradingDateRange, getMarketSessionInfo } from "@shubhamtaywade82/dhanhq-ts";
+
+// Check market session state in IST
+const session = getMarketSessionInfo();
+console.log(session.sessionState); // "IN_SESSION" | "PRE_MARKET" | "POST_MARKET" | "CLOSED"
+
+// Manually normalize date ranges if needed
+const normalized = adjustTradingDateRange({
+  fromDate: "2026-07-01",
+  toDate: "2026-07-26", // Sunday -> auto-shifts to 2026-07-24 (Friday)
+});
 ```
 
 ---

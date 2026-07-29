@@ -8,6 +8,7 @@ import { previewOrder } from "./OrderPreview";
 import {
   cancelSchema,
   emptySchema,
+  expiredOptionsSchema,
   expiryListSchema,
   feedSchema,
   globalEstimateToolSchema,
@@ -209,6 +210,15 @@ function marketTools({ client }: CatalogueDependencies): Tool[] {
       inputSchema: intradaySchema,
       outputSchema: { type: "object" },
       handler: (args) => client.charts.intraday(args as never),
+    }),
+    tool({
+      name: "dhan_expired_options",
+      description: "Fetch historical candles for expired options contracts",
+      scope: "market:read",
+      risk: "read_only",
+      inputSchema: expiredOptionsSchema,
+      outputSchema: { type: "object" },
+      handler: (args) => client.expiredOptionsData.fetch(args as never),
     }),
   ];
 }

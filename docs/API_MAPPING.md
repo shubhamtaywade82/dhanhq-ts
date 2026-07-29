@@ -83,7 +83,7 @@ Complete mapping of all DhanHQ API v2 endpoints (from [docs.dhanhq.co](https://d
 | `POST /charts/historical` | Daily Candle History | `client.charts.historical(req)` | `client.generated.dataApiS.postChartsHistorical()` |
 | `POST /optionchain` | Option Chain Data | `client.optionChain.fetch(req)` | `client.generated.dataApiS.postOptionchain()` |
 | `POST /optionchain/expirylist` | Option Chain Expiry Dates | `client.optionChain.fetchExpiryList()` | `client.generated.dataApiS.postOptionchainExpirylist()` |
-| `POST /expiredoptions` | Expired Options Data | `client.expiredOptions.fetch(req)` | `client.generated.dataApiS.postExpiredoptions()` |
+| `POST /charts/rollingoption` | Expired Options Data | `client.expiredOptionsData.fetch(req)` | `client.generated.dataApiS.postChartsRollingoption()` |
 | `GET /instruments/csv` | Compact Scrip Master CSV | `client.instruments.search()` | Internal HTTP fetch |
 
 ---
