@@ -6,6 +6,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Global Stocks** (`/v2/globalstocks/*`) — the US equities book as
+  `client.globalStocks`, with orders, holdings, trades, USD funds, market
+  status and a margin/charges estimator. Fractional quantities and `AMOUNT`
+  (notional) orders are supported, with a zod contract enforcing the
+  quantity-vs-amount rule and bracket levels on the correct side of entry.
+  `costSummary()` combines charges and margin into one affordability decision.
+  Kept in its own namespace so USD and INR positions never blend.
+- **Execution helpers** (`src/execution`) — `OrderTracker` resolves a placed
+  order to its fill from order-update events rather than polling, keyed by
+  correlation id or order id; `PositionMonitor` turns market ticks into exit
+  signals for stop loss, target and an ATR trailing stop. Both are
+  decision-only and never place orders.
+- **Trader control tools** — `dhan_kill_switch`, `dhan_kill_switch_status`,
+  `dhan_set_pnl_exit`, `dhan_stop_pnl_exit`, `dhan_pnl_exit_status`. These are
+  the only users of the `risk:write` scope, which is deliberately separate
+  from `orders:write`.
+- **Global Stocks tools** — nine `dhan_global_*` tools. The registry now
+  exposes 46 tools in total.
+- `docs/BROWSER.md` covering why browser use fails (credential exposure and
+  the absence of CORS headers on `api.dhan.co`), the backend-proxy pattern
+  that works, and which modules are genuinely browser-safe.
+- Examples: `ws-execution.ts` (fill tracking and tick-driven exits),
+  `risk-controls.ts` (pipeline, P&L exit, kill switch) and `global-stocks.ts`.
+- 36 further tests; 177 total.
+
+### Changed
+
+- The published `exports` map, `README` and docs reflect the new surface.
+
+
 ## [0.2.0] — 2026-07-29
 
 First release published to npm, as `@shubhamtaywade82/dhanhq-ts`.

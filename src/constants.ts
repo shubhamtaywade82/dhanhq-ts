@@ -258,6 +258,13 @@ export const GlobalStocks = {
     /** Notional / dollar-value orders — quantity is replaced by `amount`. */
     AMOUNT: "AMOUNT",
   },
+  /** Leg names accepted when modifying a Global Stocks super order. */
+  LegName: {
+    ENTRY_LEG: "ENTRY_LEG",
+    STOP_LOSS_LEG: "STOP_LOSS_LEG",
+    TARGET_LEG: "TARGET_LEG",
+    NA: "NA",
+  },
   MarketStatus: {
     OPEN: "open",
     CLOSED: "closed",
@@ -359,3 +366,19 @@ export const SEGMENT_MAP: Record<string, string> = {
   "NSE:I": ExchangeSegment.IDX_I,
   "BSE:I": ExchangeSegment.IDX_I,
 };
+
+export const GLOBAL_LEG_NAMES = [
+  GlobalStocks.LegName.ENTRY_LEG,
+  GlobalStocks.LegName.STOP_LOSS_LEG,
+  GlobalStocks.LegName.TARGET_LEG,
+  GlobalStocks.LegName.NA,
+] as const;
+
+/** Global Stocks order types that require a limit price. */
+export const GLOBAL_PRICED_ORDER_TYPES = [GlobalStocks.OrderType.LIMIT] as const;
+
+/** Global Stocks order types that require a trigger price. */
+export const GLOBAL_TRIGGERED_ORDER_TYPES = [
+  GlobalStocks.OrderType.STOP_LOSS,
+  GlobalStocks.OrderType.STOP_LOSS_MARKET,
+] as const;

@@ -9,7 +9,8 @@ The SDK stacks four layers, each depending only on the ones below it.
              ↑
           skills/                    composable strategies
              ↑
-   ta/ · analytics/ · risk/ · ai/    computation over market data
+  ta/ · analytics/ · risk/          computation over market data
+  execution/ · ai/                  fill tracking, exit signals, prompts
              ↑
   resources/ · contracts/ · ws/      typed API surface
              ↑
@@ -49,6 +50,10 @@ a cold segment share one download.
   placement and trailing stop management.
 - `src/ai` — prompt construction for LLM assistants. These render state into
   text; they never call the API themselves.
+- `src/execution` — `OrderTracker` resolves a placed order to its fill from
+  order-update events rather than polling, and `PositionMonitor` turns market
+  ticks into exit signals. Both are decision-only: neither places an order, so
+  the same instance drives a live exit, a paper log, or an alert.
 
 ## Strategy and agent layers
 

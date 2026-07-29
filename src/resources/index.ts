@@ -3,6 +3,7 @@ export * from "./Charts";
 export * from "./Edis";
 export * from "./ForeverOrders";
 export * from "./Funds";
+export * from "./GlobalStocks";
 export * from "./Instruments";
 export * from "./IpSetup";
 export * from "./MarketFeed";
