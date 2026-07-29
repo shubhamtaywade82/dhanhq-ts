@@ -2,6 +2,8 @@ export * from "./BaseWS";
 export * from "./DhanWS";
 export * from "./MarketFeedWS";
 export * from "./OrderUpdateWS";
+export * from "./WebSocketManager";
+export * from "./parsers/marketDepth200";
 export * from "./parsers/marketFeed";
 export * from "./parsers/packetSplitter";
 export * from "./store/LTPStore";
