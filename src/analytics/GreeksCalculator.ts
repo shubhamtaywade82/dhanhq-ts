@@ -1,4 +1,4 @@
-import type { MarketFeedEvent } from "../types/ws.types";
+import type { MarketTickerEvent, MarketQuoteEvent, MarketFullEvent, MarketFeedEvent } from "../types/ws.types";
 import type { Greeks, OptionKind } from "../analytics/blackScholes";
 import { greeks as calculateGreeks, yearsToExpiry } from "../analytics/blackScholes";
 
@@ -22,13 +22,14 @@ export interface GreeksInput {
 
 /**
  * Real-time Greeks calculation result attached to a market tick.
+ * Only ticker, quote, and full events have LTP data needed for Greeks.
  */
-export interface TickWithGreeks extends MarketFeedEvent {
+export type TickWithGreeks = (MarketTickerEvent | MarketQuoteEvent | MarketFullEvent) & {
   greeks?: Greeks;
   impliedVolatility?: number;
   theoreticalPrice?: number;
   underlyingSpot?: number;
-}
+};
 
 /**
  * Configuration for the Greeks Calculator.
@@ -76,8 +77,8 @@ export interface GreeksCalculatorConfig {
  * ```
  */
 export class GreeksCalculator {
-  private readonly defaultRiskFreeRate: number;
-  private readonly defaultImpliedVolatility: number;
+  private defaultRiskFreeRate: number;
+  private defaultImpliedVolatility: number;
   private readonly enableTheoreticalPrice: boolean;
 
   constructor(config: GreeksCalculatorConfig = {}) {
@@ -150,7 +151,7 @@ export class GreeksCalculator {
    * ```
    */
   public processTick(
-    tick: MarketFeedEvent,
+    tick: MarketTickerEvent | MarketQuoteEvent | MarketFullEvent,
     optionDetails: {
       strike: number;
       expiryDate: Date | string;

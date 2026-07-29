@@ -1,5 +1,5 @@
 import type { InstrumentSubscription } from "../types/common.types";
-import type { DhanWSOptions } from "../types/ws.types";
+import type { DhanWSOptions, MarketTickerEvent, MarketQuoteEvent, MarketFullEvent } from "../types/ws.types";
 import { DhanWS } from "./DhanWS";
 import type { MarketFeedEvent } from "../types/ws.types";
 import { GreeksCalculator, type TickWithGreeks } from "../analytics/GreeksCalculator";
@@ -104,9 +104,12 @@ export class WebSocketManager {
 
     this.dhanWS = new DhanWS(config);
 
-    // Wire up tick handler
+    // Wire up tick handler - only process ticks with LTP data for Greeks
     this.dhanWS.market.on("tick", (tick: MarketFeedEvent) => {
-      this.handleTick(tick);
+      // Only pass ticker, quote, and full events to handleTick
+      if (tick.type === "ticker" || tick.type === "quote" || tick.type === "full") {
+        this.handleTick(tick);
+      }
     });
 
     // Wire up disconnect handler for auto-reconnect
@@ -237,7 +240,7 @@ export class WebSocketManager {
     return batches;
   }
 
-  private handleTick(tick: MarketFeedEvent): void {
+  private handleTick(tick: MarketTickerEvent | MarketQuoteEvent | MarketFullEvent): void {
     let enrichedTick: TickWithGreeks = tick;
 
     // Calculate Greeks if enabled and this is an option

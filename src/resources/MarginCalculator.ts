@@ -1,4 +1,6 @@
 import type { MultiScripMarginCalcRequest, MultiScripMarginCalcResponse, ScriptItem } from "../generated";
+import type { KnowYourMarginResponse as MarginCalculationResponse } from "../generated";
+import { ScriptItem as ScriptItemEnum } from "../generated/models/ScriptItem";
 
 import { HttpClient } from "../client/HttpClient";
 
@@ -104,22 +106,18 @@ export class MarginCalculator {
 
     return this.calculateMulti([
       {
-        exchangeSegment: "NSE_FNO",
-        productType,
-        optionType: "CALL",
-        instrumentType: "OPTIDX",
+        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
+        productType: productType as ScriptItemEnum.productType,
         securityId: longStrikeSecurityId,
-        transactionType: "BUY",
+        transactionType: ScriptItemEnum.transactionType.BUY,
         quantity,
         price: longPrice,
       },
       {
-        exchangeSegment: "NSE_FNO",
-        productType,
-        optionType: "CALL",
-        instrumentType: "OPTIDX",
+        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
+        productType: productType as ScriptItemEnum.productType,
         securityId: shortStrikeSecurityId,
-        transactionType: "SELL",
+        transactionType: ScriptItemEnum.transactionType.SELL,
         quantity,
         price: shortPrice,
       },
@@ -159,22 +157,18 @@ export class MarginCalculator {
 
     return this.calculateMulti([
       {
-        exchangeSegment: "NSE_FNO",
-        productType,
-        optionType: "PUT",
-        instrumentType: "OPTIDX",
+        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
+        productType: productType as ScriptItemEnum.productType,
         securityId: longStrikeSecurityId,
-        transactionType: "BUY",
+        transactionType: ScriptItemEnum.transactionType.BUY,
         quantity,
         price: longPrice,
       },
       {
-        exchangeSegment: "NSE_FNO",
-        productType,
-        optionType: "PUT",
-        instrumentType: "OPTIDX",
+        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
+        productType: productType as ScriptItemEnum.productType,
         securityId: shortStrikeSecurityId,
-        transactionType: "SELL",
+        transactionType: ScriptItemEnum.transactionType.SELL,
         quantity,
         price: shortPrice,
       },
@@ -227,42 +221,34 @@ export class MarginCalculator {
 
     return this.calculateMulti([
       {
-        exchangeSegment: "NSE_FNO",
-        productType,
-        optionType: "PUT",
-        instrumentType: "OPTIDX",
+        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
+        productType: productType as ScriptItemEnum.productType,
         securityId: longPutSecurityId,
-        transactionType: "BUY",
+        transactionType: ScriptItemEnum.transactionType.BUY,
         quantity,
         price: prices.longPut,
       },
       {
-        exchangeSegment: "NSE_FNO",
-        productType,
-        optionType: "PUT",
-        instrumentType: "OPTIDX",
+        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
+        productType: productType as ScriptItemEnum.productType,
         securityId: shortPutSecurityId,
-        transactionType: "SELL",
+        transactionType: ScriptItemEnum.transactionType.SELL,
         quantity,
         price: prices.shortPut,
       },
       {
-        exchangeSegment: "NSE_FNO",
-        productType,
-        optionType: "CALL",
-        instrumentType: "OPTIDX",
+        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
+        productType: productType as ScriptItemEnum.productType,
         securityId: shortCallSecurityId,
-        transactionType: "SELL",
+        transactionType: ScriptItemEnum.transactionType.SELL,
         quantity,
         price: prices.shortCall,
       },
       {
-        exchangeSegment: "NSE_FNO",
-        productType,
-        optionType: "CALL",
-        instrumentType: "OPTIDX",
+        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
+        productType: productType as ScriptItemEnum.productType,
         securityId: longCallSecurityId,
-        transactionType: "BUY",
+        transactionType: ScriptItemEnum.transactionType.BUY,
         quantity,
         price: prices.longCall,
       },

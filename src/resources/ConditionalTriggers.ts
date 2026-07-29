@@ -5,6 +5,7 @@ import type {
   AlertOrderResponse,
   GetAlertResponse,
 } from "../generated";
+import { AlertCondition as AlertConditionEnum } from "../generated/models/AlertCondition";
 
 import { HttpClient } from "../client/HttpClient";
 
@@ -152,23 +153,23 @@ export class ConditionalTriggers {
 
     if (options.triggerAbove !== undefined) {
       return {
-        comparisonType: "PRICE_WITH_VALUE",
-        exchangeSegment,
+        comparisonType: AlertConditionEnum.comparisonType.PRICE_WITH_VALUE,
+        exchangeSegment: exchangeSegment as AlertConditionEnum.exchangeSegment,
         securityId,
-        operator: "GREATER_THAN",
+        operator: AlertConditionEnum.operator.GREATER_THAN,
         comparingValue: options.triggerAbove,
-        frequency,
+        frequency: AlertConditionEnum.frequency.ONCE,
       };
     }
 
     if (options.triggerBelow !== undefined) {
       return {
-        comparisonType: "PRICE_WITH_VALUE",
-        exchangeSegment,
+        comparisonType: AlertConditionEnum.comparisonType.PRICE_WITH_VALUE,
+        exchangeSegment: exchangeSegment as AlertConditionEnum.exchangeSegment,
         securityId,
-        operator: "LESS_THAN",
+        operator: AlertConditionEnum.operator.LESS_THAN,
         comparingValue: options.triggerBelow,
-        frequency,
+        frequency: AlertConditionEnum.frequency.ONCE,
       };
     }
 
@@ -206,27 +207,27 @@ export class ConditionalTriggers {
 
     if (options.crossingAbove !== undefined) {
       return {
-        comparisonType: "TECHNICAL_WITH_VALUE",
-        exchangeSegment,
+        comparisonType: AlertConditionEnum.comparisonType.TECHNICAL_WITH_VALUE,
+        exchangeSegment: exchangeSegment as AlertConditionEnum.exchangeSegment,
         securityId,
         indicatorName,
-        timeFrame,
-        operator: "CROSSING_UP",
+        timeFrame: timeFrame as AlertConditionEnum.timeFrame,
+        operator: AlertConditionEnum.operator.CROSSING_UP,
         comparingValue: options.crossingAbove,
-        frequency,
+        frequency: AlertConditionEnum.frequency.ONCE,
       };
     }
 
     if (options.crossingBelow !== undefined) {
       return {
-        comparisonType: "TECHNICAL_WITH_VALUE",
-        exchangeSegment,
+        comparisonType: AlertConditionEnum.comparisonType.TECHNICAL_WITH_VALUE,
+        exchangeSegment: exchangeSegment as AlertConditionEnum.exchangeSegment,
         securityId,
         indicatorName,
-        timeFrame,
-        operator: "CROSSING_DOWN",
+        timeFrame: timeFrame as AlertConditionEnum.timeFrame,
+        operator: AlertConditionEnum.operator.CROSSING_DOWN,
         comparingValue: options.crossingBelow,
-        frequency,
+        frequency: AlertConditionEnum.frequency.ONCE,
       };
     }
 
