@@ -1,6 +1,6 @@
 {
   "name": "@shubhamtaywade82/dhanhq-ts",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "TypeScript SDK for the DhanHQ v2 API \u2014 REST, WebSocket, technical analysis, option analytics, risk pipeline, composable trading skills, agent tools and an MCP server.",
   "keywords": [
     "dhan",
