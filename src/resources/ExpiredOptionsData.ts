@@ -82,7 +82,7 @@ export class ExpiredOptionsData {
       ExpiredOptionsDataRequest
     >({
       method: "POST",
-      url: "/expired-options-data",
+      url: "/charts/rollingoption",
       data: request,
       safeToRetry: true,
     });
