@@ -1,1 +1,33 @@
-(src/resources/ConditionalTriggers.ts)
+```
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+build/
+
+# Compiled JavaScript
+*.js.map
+*.cjs.map
+*.mjs.map
+
+# Environment variables
+.env*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Temp files
+*.tmp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+```

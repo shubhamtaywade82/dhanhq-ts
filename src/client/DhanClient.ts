@@ -20,6 +20,7 @@ import {
   GlobalStocks,
   Instruments,
   IpSetup,
+  MarginCalculator,
   MarketFeed,
   OptionChain,
   Orders,
@@ -54,6 +55,7 @@ export class DhanClient {
   public readonly instruments: Instruments;
   /** The US equities book — a separate namespace so USD and INR never mix. */
   public readonly globalStocks: GlobalStocks;
+  public readonly marginCalculator: MarginCalculator;
   public readonly ws: DhanWS;
   public readonly auth: {
     generateAccessToken: typeof DhanAuth.generateAccessToken;
@@ -92,6 +94,7 @@ export class DhanClient {
       cacheTtlMs: config.instrumentCacheTtlMs,
     });
     this.globalStocks = new GlobalStocks(httpClient);
+    this.marginCalculator = new MarginCalculator(httpClient);
     this.ws = new DhanWS({
       token: config.token,
       tokenProvider: config.tokenProvider,

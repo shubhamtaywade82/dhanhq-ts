@@ -8,6 +8,7 @@ export * from "./Funds";
 export * from "./GlobalStocks";
 export * from "./Instruments";
 export * from "./IpSetup";
+export * from "./MarginCalculator";
 export * from "./MarketFeed";
 export * from "./OptionChain";
 export * from "./Orders";
