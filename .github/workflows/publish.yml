@@ -3,6 +3,9 @@ name: Publish
 on:
   release:
     types: [published]
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       tag:
@@ -16,8 +19,7 @@ jobs:
 
     permissions:
       contents: read
-      # Required for npm provenance, which package.json opts into. Without this
-      # the publish fails rather than silently publishing unattested.
+      # Required for npm provenance, which package.json opts into.
       id-token: write
 
     steps:
@@ -31,9 +33,17 @@ jobs:
 
       - run: npm ci --ignore-scripts
 
-      # `prepublishOnly` reruns clean + typecheck + test + build, so a release
+      - name: Run Typecheck and Test Suite
+        run: |
+          npm run typecheck
+          npm test -- --runInBand
+
+      - name: Build Package
+        run: npm run build
+
+      # `prepublishOnly` reruns clean + typecheck + test + build, ensuring a release
       # cannot ship a build that does not pass its own suite.
-      - name: Publish to npm
-        run: npm publish --tag ${{ inputs.tag || 'latest' }}
+      - name: Publish to npm with Provenance
+        run: npm publish --access public --tag ${{ inputs.tag || 'latest' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
