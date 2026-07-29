@@ -1,24 +1,71 @@
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+dist/
+build/
+target/
+
+# Dependencies
 node_modules/
+venv/
+.venv/
+.env
+.env.local
+.env.*
 
-# Build output
-dist/**/*
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
 coverage/
+htmlcov/
+.coverage
 
-# TypeScript
-*.tsbuildinfo
+# Python specific
+*.pyc
+__pycache__/
+.mypy_cache/
+.pytest_cache/
 
-# Logs
+# Node specific
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
 
-# Environment files
+# Distribution / packaging
+*.tar.gz
+*.zip
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Environment variables
 .env
+.env.local
 .env.*
 !.env.example
 
-# OS/editor noise
+# Temporary files
+*.tmp
+*.temp
+*~
 .DS_Store
 Thumbs.db
 examples
