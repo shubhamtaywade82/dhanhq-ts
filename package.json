@@ -1,6 +1,6 @@
 {
   "name": "@dhanhq/client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js",
+      "require": "./dist/mcp/index.cjs"
     }
   },
   "repository": {
@@ -27,7 +32,10 @@
     "dev": "tsup --watch",
     "test": "jest",
     "smoke": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/smoke-test.ts",
-    "generate": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/generate-sdk.ts"
+    "generate": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/generate-sdk.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "mcp": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/bin/dhanhq-mcp.ts",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "axios": "^1.13.6",
@@ -49,5 +57,22 @@
     "ts-node": "^10.9.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
+  },
+  "description": "TypeScript SDK for the DhanHQ v2 API \u2014 REST, WebSocket, technical analysis, option analytics, risk pipeline, composable trading skills, agent tools and an MCP server.",
+  "keywords": [
+    "dhan",
+    "dhanhq",
+    "trading",
+    "nse",
+    "bse",
+    "options",
+    "technical-analysis",
+    "mcp",
+    "agent",
+    "broker-api"
+  ],
+  "license": "MIT",
+  "bin": {
+    "dhanhq-mcp": "dist/bin/dhanhq-mcp.cjs"
   }
 }

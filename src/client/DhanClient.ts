@@ -14,9 +14,13 @@ import {
   Edis,
   ForeverOrders,
   Funds,
+  Instruments,
   IpSetup,
+  MarketFeed,
+  OptionChain,
   Orders,
   Positions,
+  Profile,
   Statements,
   SuperOrders,
   TraderControls,
@@ -38,6 +42,10 @@ export class DhanClient {
   public readonly statements: Statements;
   public readonly traderControls: TraderControls;
   public readonly ipSetup: IpSetup;
+  public readonly profile: Profile;
+  public readonly marketFeed: MarketFeed;
+  public readonly optionChain: OptionChain;
+  public readonly instruments: Instruments;
   public readonly ws: DhanWS;
   public readonly auth: {
     generateAccessToken: typeof DhanAuth.generateAccessToken;
@@ -67,6 +75,12 @@ export class DhanClient {
     this.statements = new Statements(httpClient);
     this.traderControls = new TraderControls(httpClient);
     this.ipSetup = new IpSetup(httpClient);
+    this.profile = new Profile(httpClient);
+    this.marketFeed = new MarketFeed(httpClient);
+    this.optionChain = new OptionChain(httpClient);
+    this.instruments = new Instruments(httpClient, {
+      cacheTtlMs: config.instrumentCacheTtlMs,
+    });
     this.ws = new DhanWS({
       token: config.token,
       tokenProvider: config.tokenProvider,

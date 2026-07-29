@@ -1,141 +1,14 @@
-import { AxiosInstance } from 'axios';
-import { EventEmitter } from 'events';
+import { D as DhanClientConfig, G as GetAlertResponse, A as AlertModifyRequest, a as AlertOrderResponse, b as AlertOrderRequest, O as OptionChartRequest, c as OptionChartResponse, I as IntradayChartsRequest, C as ChartsResponse, H as HistoricalChartsRequest, E as EdisFormRequest, d as EdisFormResponse, e as EdisBulkFormRequest, f as EdisQtyStatusResponse, g as GttModifyRequest, h as GttOrderStatusResponse, i as GttOrderResponse, j as GTTOrderModel, K as KnowYourMarginReq, k as KnowYourMarginResponse, M as MultiScripMarginCalcRequest, l as MultiScripMarginCalcResponse, F as FundLimitResponse, U as UserIPRequest, m as UserIPResponse, n as GetIPDetailsResponse, P as PositionConversionRequest, o as PositionResponse, p as HoldingResponse, B as BoLedgerResponse, q as ExitPnlResponse, r as PnlBasedExitRequest, s as PnlExitResponse, t as KillSwitchResponse, u as AlertCondition, v as AlertOrder, w as ChartData, x as OptionChartPayload, S as ScriptItem, y as StoredSubscription, z as MarketFeedEvent, J as DhanClient, L as SkillRegistry, N as Pipeline, T as Tool, Q as Instrument, R as Skill, V as SkillContext, W as NormalizedOptionChain, X as SkillStep, Y as SkillDefinition, Z as nearestStrike, _ as JsonSchema, $ as SkillParam, a0 as Charts, a1 as RiskCheck, a2 as RiskFunds } from './index-BeZmf5oS.mjs';
+export { a3 as ALL_SCOPES, a4 as AgentScope, a5 as AgentToolRegistry, a6 as Alerts, a7 as BASE_CHECKS, a8 as BaseWS, a9 as CancelOrderRequest, aa as CancelSuperOrderRequest, ab as Capabilities, ac as CorrelatedRequest, ad as DAILY_CHECKS, ae as DEFAULT_RISK_LIMITS, af as DEFAULT_TOOL_CALL_TIMEOUT_MS, ag as DepthLevel, ah as DhanAuth, ai as DhanAuthDependencies, aj as DhanClientDependencies, ak as DhanWS, al as DhanWSOptions, am as Edis, an as EnableAutoTokenManagementOptions, ao as ErrorCode, ap as ExchangeSegment, aq as ExpiryListRequest, ar as ExpiryListResponse, as as ForeverOrders, at as FullQuote, au as Funds, av as GenerateAccessTokenRequest, aw as GeneratedClient, ax as HttpClient, ay as HttpClientDependencies, az as InstrumentSearchOptions, aA as InstrumentSubscription, aB as Instruments, aC as InstrumentsConfig, aD as InvalidParamsError, aE as IpSetup, aF as LTPStore, aG as LedgerRequest, aH as LtpQuote, aI as MarketDepthLevel, aJ as MarketDisconnectEvent, aK as MarketFeed, aL as MarketFeedInstruments, aM as MarketFeedMode, aN as MarketFeedResponse, aO as MarketFeedWS, aP as MarketFeedWSOptions, aQ as MarketFullEvent, aR as MarketOiEvent, aS as MarketPacketHeader, aT as MarketPrevCloseEvent, aU as MarketQuoteEvent, aV as MarketTickerEvent, aW as McpServer, aX as McpServerOptions, aY as ModifyOrderRequest, aZ as ModifySuperOrderRequest, a_ as OPTION_CHECKS, a$ as OhlcQuote, b0 as OptionChain, b1 as OptionChainRequest, b2 as OptionGreeks, b3 as OptionLeg, b4 as OrderOperationResult, b5 as OrderResponse, b6 as OrderState, b7 as OrderStore, b8 as OrderType, b9 as OrderUpdateEvent, ba as OrderUpdateWS, bb as OrderUpdateWSOptions, bc as Orders, bd as PROMPTS, be as PipelineConfig, bf as PipelineRunOptions, bg as PlaceOrderRequest, bh as PlaceSuperOrderRequest, bi as Policy, bj as PolicyOptions, bk as Positions, bl as ProductType, bm as Profile, bn as ProfileResponse, bo as PromptDefinition, bp as READ_SCOPES, bq as RESOURCES, br as RateLimiter, bs as RateLimiterConfig, bt as RawOptionChainResponse, bu as ReadScope, bv as RenewWebTokenRequest, bw as RequestOptions, bx as ResolvedChain, by as ResourceDefinition, bz as RiskContext, bA as RiskDataProvider, bB as RiskInstrumentKind, bC as RiskLimits, bD as RiskOrderArgs, bE as RiskPosition, bF as RiskReport, bG as SUPPORTED_PROTOCOL_VERSIONS, bH as SkillListing, bI as SkillParamType, bJ as Statements, bK as StrikeEntry, bL as SuperOrderLeg, bM as SuperOrderProductType, bN as SuperOrderResponse, bO as SuperOrderType, bP as SuperOrders, bQ as TickEvent, bR as TokenManager, bS as TokenResponse, bT as ToolDescriptor, bU as ToolExample, bV as ToolRegistryOptions, bW as ToolRisk, bX as TradeHistoryRequest, bY as TradeResponse, bZ as TraderControls, b_ as TransactionType, b$ as UnknownMethodError, c0 as Validity, c1 as WRITE_SCOPES, c2 as WebSocketLike, c3 as WriteScope, c4 as describeTool, c5 as findStrike, c6 as isWriteTool, c7 as legPremium, c8 as legSecurityId, c9 as legSide, ca as normalizeOptionChain, cb as parseCsv, cc as resolveChain, cd as resolveEquityChain, ce as resolveIndexChain, cf as riskProviderFor, cg as riskTypeFor } from './index-BeZmf5oS.mjs';
 import { z, ZodError } from 'zod';
-
-interface DhanClientConfig {
-    token?: string;
-    clientId: string;
-    tokenProvider?: () => Promise<string> | string;
-    onTokenExpired?: (error: unknown) => Promise<void> | void;
-    baseURL?: string;
-    timeoutMs?: number;
-    rateLimitMinTimeMs?: number;
-    wsUrl?: string;
-    marketFeedUrl?: string;
-    orderUpdateUrl?: string;
-    wsReconnectDelayMs?: number;
-    wsOrderUserType?: "SELF" | "PARTNER";
-    partnerId?: string;
-    partnerSecret?: string;
-}
-interface CorrelatedRequest {
-    correlationId?: string;
-}
-interface OrderOperationResult<T> {
-    correlationId: string;
-    data: T;
-}
-interface InstrumentSubscription {
-    securityId: string;
-    exchangeSegment: string;
-}
-interface TickEvent extends InstrumentSubscription {
-    ltp?: number;
-    timestamp?: number;
-    raw: unknown;
-}
+import 'axios';
+import 'events';
 
 declare class AuthResolver {
     private readonly config;
     constructor(config: DhanClientConfig);
     resolveAccessToken(): Promise<string>;
     handleTokenExpired(error: unknown): Promise<void>;
-}
-
-interface GenerateAccessTokenRequest {
-    clientId: string;
-    pin: string;
-    totp: string;
-}
-interface RenewWebTokenRequest {
-    token: string;
-    clientId: string;
-    baseURL?: string;
-}
-interface TokenResponse {
-    accessToken?: string;
-    expiryTime?: string;
-    dhanClientId?: string;
-    access_token?: string;
-    expiry_time?: string;
-    [key: string]: unknown;
-}
-interface DhanAuthDependencies {
-    axiosInstance?: AxiosInstance;
-}
-declare class DhanAuth {
-    static generateTotp(secret: string, options?: {
-        timestamp?: number;
-        digits?: number;
-        period?: number;
-    }): string;
-    static generateAccessToken(request: GenerateAccessTokenRequest, dependencies?: DhanAuthDependencies): Promise<TokenResponse>;
-    static renewWebToken(request: RenewWebTokenRequest, dependencies?: DhanAuthDependencies): Promise<TokenResponse>;
-}
-
-interface EnableAutoTokenManagementOptions {
-    clientId: string;
-    pin: string;
-    totpSecret: string;
-    renewBeforeMs?: number;
-}
-declare class TokenManager {
-    private readonly config;
-    private readonly options;
-    private token?;
-    private expiryAt?;
-    private readonly renewBeforeMs;
-    constructor(config: DhanClientConfig, options: EnableAutoTokenManagementOptions);
-    ensureValidToken(): Promise<string>;
-    generate(): Promise<string>;
-    refresh(): Promise<string>;
-    private apply;
-    private needsRefresh;
-}
-
-declare class GeneratedClient {
-    constructor(config: DhanClientConfig);
-}
-
-interface RateLimiterConfig {
-    minTime?: number;
-}
-declare class RateLimiter {
-    private readonly readLimiter;
-    private readonly writeLimiter;
-    constructor(config?: RateLimiterConfig);
-    scheduleRead<T>(task: () => Promise<T>): Promise<T>;
-    scheduleWrite<T>(task: () => Promise<T>): Promise<T>;
-}
-
-type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
-interface RequestOptions<TBody = unknown> {
-    method: HttpMethod;
-    url: string;
-    data?: TBody;
-    params?: Record<string, unknown>;
-    headers?: Record<string, string>;
-    safeToRetry?: boolean;
-}
-interface HttpClientDependencies {
-    axiosInstance?: AxiosInstance;
-    rateLimiter?: RateLimiter;
-}
-declare class HttpClient {
-    private readonly axiosInstance;
-    private readonly rateLimiter;
-    private readonly authResolver;
-    private readonly clientId;
-    constructor(config: DhanClientConfig, dependencies?: HttpClientDependencies);
-    request<TResponse, TBody = unknown>(options: RequestOptions<TBody>): Promise<TResponse>;
-    getClientId(): string;
-    getAccessToken(): Promise<string>;
-    private execute;
-    private toAxiosConfig;
-    private shouldRetry;
-    private isAuthenticationFailure;
-    private normalizeError;
-    private extractErrorPayload;
 }
 
 type ApiRequestOptions = {
@@ -204,1576 +77,6 @@ type OpenAPIConfig = {
     ENCODE_PATH?: ((path: string) => string) | undefined;
 };
 declare const OpenAPI: OpenAPIConfig;
-
-/**
- * Alert condition details
- */
-type AlertCondition = {
-    /**
-     * Type of comparison
-     */
-    comparisonType?: AlertCondition.comparisonType;
-    /**
-     * The exchange where the condition is checked
-     */
-    exchangeSegment?: AlertCondition.exchangeSegment;
-    /**
-     * Condition security
-     */
-    securityId: string;
-    /**
-     * Name of the indicator
-     */
-    indicatorName?: AlertCondition.indicatorName;
-    /**
-     * Time frame for technical indicators
-     */
-    timeFrame?: AlertCondition.timeFrame;
-    /**
-     * Comparison operator
-     */
-    operator?: AlertCondition.operator;
-    /**
-     * Target value for comparison
-     */
-    comparingValue?: number;
-    /**
-     * The technical indicator to compare against when using TechnicalWithIndicator conditions.
-     * This represents the right-hand side (RHS) indicator in a technical comparison
-     * For e.g. SMA_20 crossing above SMA_50
-     */
-    comparingIndicatorName?: AlertCondition.comparingIndicatorName;
-    /**
-     * Expiry date of alert
-     */
-    expDate?: string;
-    /**
-     * Evaluation frequency
-     */
-    frequency?: AlertCondition.frequency;
-    /**
-     * User-provided note
-     * For eg. Price crossing SMA
-     */
-    userNote?: string;
-};
-declare namespace AlertCondition {
-    /**
-     * Type of comparison
-     */
-    enum comparisonType {
-        TECHNICAL_WITH_VALUE = "TECHNICAL_WITH_VALUE",
-        TECHNICAL_WITH_INDICATOR = "TECHNICAL_WITH_INDICATOR",
-        TECHNICAL_WITH_CLOSE = "TECHNICAL_WITH_CLOSE",
-        PRICE_WITH_VALUE = "PRICE_WITH_VALUE"
-    }
-    /**
-     * The exchange where the condition is checked
-     */
-    enum exchangeSegment {
-        NSE_EQ = "NSE_EQ",
-        BSE_EQ = "BSE_EQ",
-        IDX_I = "IDX_I"
-    }
-    /**
-     * Name of the indicator
-     */
-    enum indicatorName {
-        SMA_5 = "SMA_5",
-        SMA_10 = "SMA_10",
-        SMA_20 = "SMA_20",
-        SMA_50 = "SMA_50",
-        SMA_100 = "SMA_100",
-        SMA_200 = "SMA_200",
-        EMA_5 = "EMA_5",
-        EMA_10 = "EMA_10",
-        EMA_20 = "EMA_20",
-        EMA_50 = "EMA_50",
-        EMA_100 = "EMA_100",
-        EMA_200 = "EMA_200",
-        BB_UPPER = "BB_UPPER",
-        BB_LOWER = "BB_LOWER",
-        RSI_14 = "RSI_14",
-        ATR_14 = "ATR_14",
-        STOCHASTIC = "STOCHASTIC",
-        STOCHRSI_14 = "STOCHRSI_14",
-        MACD_26 = "MACD_26",
-        MACD_12 = "MACD_12",
-        MACD_HIST = "MACD_HIST"
-    }
-    /**
-     * Time frame for technical indicators
-     */
-    enum timeFrame {
-        DAY = "DAY",
-        ONE_MIN = "ONE_MIN",
-        FIVE_MIN = "FIVE_MIN",
-        FIFTEEN_MIN = "FIFTEEN_MIN"
-    }
-    /**
-     * Comparison operator
-     */
-    enum operator {
-        CROSSING_UP = "CROSSING_UP",
-        CROSSING_DOWN = "CROSSING_DOWN",
-        CROSSING_ANY_SIDE = "CROSSING_ANY_SIDE",
-        GREATER_THAN = "GREATER_THAN",
-        LESS_THAN = "LESS_THAN",
-        GREATER_THAN_EQUAL = "GREATER_THAN_EQUAL",
-        LESS_THAN_EQUAL = "LESS_THAN_EQUAL",
-        EQUAL = "EQUAL",
-        NOT_EQUAL = "NOT_EQUAL"
-    }
-    /**
-     * The technical indicator to compare against when using TechnicalWithIndicator conditions.
-     * This represents the right-hand side (RHS) indicator in a technical comparison
-     * For e.g. SMA_20 crossing above SMA_50
-     */
-    enum comparingIndicatorName {
-        SMA_5 = "SMA_5",
-        SMA_10 = "SMA_10",
-        SMA_20 = "SMA_20",
-        SMA_50 = "SMA_50",
-        SMA_100 = "SMA_100",
-        SMA_200 = "SMA_200",
-        EMA_5 = "EMA_5",
-        EMA_10 = "EMA_10",
-        EMA_20 = "EMA_20",
-        EMA_50 = "EMA_50",
-        EMA_100 = "EMA_100",
-        EMA_200 = "EMA_200",
-        BB_UPPER = "BB_UPPER",
-        BB_LOWER = "BB_LOWER",
-        RSI_14 = "RSI_14",
-        ATR_14 = "ATR_14",
-        STOCHASTIC = "STOCHASTIC",
-        STOCHRSI_14 = "STOCHRSI_14",
-        MACD_26 = "MACD_26",
-        MACD_12 = "MACD_12",
-        MACD_HIST = "MACD_HIST"
-    }
-    /**
-     * Evaluation frequency
-     */
-    enum frequency {
-        ONCE = "ONCE"
-    }
-}
-
-/**
- * List of orders to execute when alert is triggered
- */
-type AlertOrder = {
-    /**
-     * Type of transaction
-     */
-    transactionType: AlertOrder.transactionType;
-    /**
-     * The exchange where the transaction takes place
-     */
-    exchangeSegment: AlertOrder.exchangeSegment;
-    /**
-     * Product type
-     */
-    productType: AlertOrder.productType;
-    /**
-     * Type of order
-     */
-    orderType: AlertOrder.orderType;
-    /**
-     * Unique identifier for the security
-     */
-    securityId: string;
-    /**
-     * Quantity of securities to trade
-     */
-    quantity: number;
-    /**
-     * Order validity
-     */
-    validity: AlertOrder.validity;
-    /**
-     * Price per unit
-     * For eg. "250.5"
-     */
-    price?: string;
-    /**
-     * Disclosed quantity
-     * For eg. "100"
-     */
-    discQuantity?: string;
-    /**
-     * Trigger price for stop-loss or trigger orders
-     * For eg. "2500.0"
-     */
-    triggerPrice?: string;
-};
-declare namespace AlertOrder {
-    /**
-     * Type of transaction
-     */
-    enum transactionType {
-        BUY = "BUY",
-        SELL = "SELL"
-    }
-    /**
-     * The exchange where the transaction takes place
-     */
-    enum exchangeSegment {
-        NSE_EQ = "NSE_EQ",
-        NSE_FNO = "NSE_FNO",
-        NSE_COMM = "NSE_COMM",
-        BSE_EQ = "BSE_EQ",
-        BSE_FNO = "BSE_FNO",
-        MCX_COMM = "MCX_COMM"
-    }
-    /**
-     * Product type
-     */
-    enum productType {
-        CNC = "CNC",
-        INTRADAY = "INTRADAY",
-        MARGIN = "MARGIN",
-        MTF = "MTF",
-        CO = "CO",
-        BO = "BO"
-    }
-    /**
-     * Type of order
-     */
-    enum orderType {
-        LIMIT = "LIMIT",
-        MARKET = "MARKET",
-        STOP_LOSS = "STOP_LOSS",
-        STOP_LOSS_MARKET = "STOP_LOSS_MARKET"
-    }
-    /**
-     * Order validity
-     */
-    enum validity {
-        DAY = "DAY",
-        IOC = "IOC"
-    }
-}
-
-type AlertModifyRequest = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId: string;
-    /**
-     * Unique ID generated by Dhan
-     * For eg. "12345"
-     */
-    alertId: string;
-    condition: AlertCondition;
-    /**
-     * List of orders to execute when alert is triggered
-     */
-    orders?: Array<AlertOrder>;
-};
-
-type AlertOrderRequest = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId: string;
-    condition: AlertCondition;
-    /**
-     * List of orders to execute when alert is triggered
-     */
-    orders: Array<AlertOrder>;
-};
-
-type AlertOrderResponse = {
-    /**
-     * Alert ID generated by Dhan
-     */
-    alertId?: string;
-    /**
-     * | **Status**   | **Description**                   |
-     * |--------------|-----------------------------------|
-     * | ACTIVE       | Alert is currently active         |
-     * | TRIGGERED    | Alert condition has been met      |
-     * | EXPIRED      | Alert expired without triggering  |
-     * | CANCELLED    | Alert was manually cancelled      |
-     */
-    alertStatus?: string;
-};
-
-type BoLedgerResponse = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId?: string;
-    /**
-     * narration
-     */
-    narration?: string;
-    /**
-     * voucher date
-     */
-    voucherdate?: string;
-    /**
-     * exchange name
-     */
-    exchange?: string;
-    /**
-     * voucher decscription
-     */
-    voucherdesc?: string;
-    /**
-     * voucher number
-     */
-    vouchernumber?: string;
-    /**
-     * debited amount
-     */
-    debit?: string;
-    /**
-     * credited amount
-     */
-    credit?: string;
-    /**
-     * runnable balance
-     */
-    runbal?: string;
-};
-
-/**
- * Chart data for Put options, null if option_type is CE
- */
-type OptionChartPayload = {
-    /**
-     * List of implied volatility values (IV)
-     */
-    iv?: Array<number>;
-    /**
-     * List of open interest values (OI)
-     */
-    oi?: Array<number>;
-    /**
-     * List of strike prices
-     */
-    strike?: Array<number>;
-    /**
-     * List of spot prices
-     */
-    spot?: Array<number>;
-    /**
-     * List of open prices
-     */
-    open?: Array<number>;
-    /**
-     * List of high prices
-     */
-    high?: Array<number>;
-    /**
-     * List of low prices
-     */
-    low?: Array<number>;
-    /**
-     * List of close prices
-     */
-    close?: Array<number>;
-    /**
-     * List of traded volumes
-     */
-    volume?: Array<number>;
-    /**
-     * List of timestamps in unix
-     */
-    timestamp?: Array<number>;
-};
-
-/**
- * Chart data for call (ce) and put (pe) options
- */
-type ChartData = {
-    ce?: OptionChartPayload;
-    pe?: OptionChartPayload;
-};
-
-type ChartsResponse = {
-    /**
-     * Array of values representing OHLC open value
-     */
-    open?: Array<number>;
-    /**
-     * Array of values representing OHLC high value
-     */
-    high?: Array<number>;
-    /**
-     * Array of values representing OHLC low value
-     */
-    low?: Array<number>;
-    /**
-     * Array of values representing OHLC close value
-     */
-    close?: Array<number>;
-    /**
-     * Array of values representing volume
-     */
-    volume?: Array<number>;
-    /**
-     * Array of values representing date times in seconds since January 01, 1980
-     */
-    timestamp?: Array<number>;
-    /**
-     * Array of values representing open interest
-     */
-    open_interest?: Array<number>;
-};
-
-type EdisBulkFormRequest = {
-    isin: Array<string>;
-    exchange: EdisBulkFormRequest.exchange;
-    segment: EdisBulkFormRequest.segment;
-};
-declare namespace EdisBulkFormRequest {
-    enum exchange {
-        NSE = "NSE",
-        BSE = "BSE",
-        MCX = "MCX",
-        ALL = "ALL"
-    }
-    enum segment {
-        EQ = "EQ",
-        COMM = "COMM",
-        FNO = "FNO"
-    }
-}
-
-type EdisFormRequest = {
-    isin: string;
-    qty: number;
-    exchange: EdisFormRequest.exchange;
-    segment: EdisFormRequest.segment;
-    bulk: boolean;
-};
-declare namespace EdisFormRequest {
-    enum exchange {
-        NSE = "NSE",
-        BSE = "BSE",
-        MCX = "MCX",
-        ALL = "ALL"
-    }
-    enum segment {
-        EQ = "EQ",
-        COMM = "COMM",
-        FNO = "FNO"
-    }
-}
-
-type EdisFormResponse = {
-    dhanClientId?: string;
-    edisFormHtml?: string;
-};
-
-type EdisQtyStatusResponse = {
-    clientId?: string;
-    isin?: string;
-    totalQty?: string;
-    aprvdQty?: string;
-    status?: string;
-    remarks?: string;
-};
-
-type ExitPnlResponse = {
-    /**
-     * Current status of the PNL exit operation
-     */
-    pnlExitStatus?: string;
-    /**
-     * User-defined target profit amount for the PNL exit
-     */
-    profit?: number;
-    /**
-     * User-defined target loss amount for the PNL exit
-     */
-    loss?: number;
-    /**
-     * Indicates if the kill switch is enabled for this PNL exit
-     */
-    enableKillSwitch?: boolean;
-    /**
-     * | **Enum Values** | **Description** |
-     * |-----------------|----------------|
-     * | INTRADAY         | Intraday for Equity, Futures & Options |
-     * | DELIVERY         | Delivery for equity deliveries |
-     */
-    productType?: Array<string>;
-};
-
-type FundLimitResponse = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId?: string;
-    /**
-     * Available balance to trade
-     */
-    availabelBalance?: number;
-    /**
-     * Start of the day amount
-     */
-    sodLimit?: number;
-    /**
-     * Amount received against collateral
-     */
-    collateralAmount?: number;
-    /**
-     * Amount available against selling deliveries
-     */
-    receiveableAmount?: number;
-    /**
-     * Amount utilised in the day
-     */
-    utilizedAmount?: number;
-    /**
-     * Amount blocked against payout request
-     */
-    blockedPayoutAmount?: number;
-    /**
-     * Amount available to withdraw to bank
-     */
-    withdrawableBalance?: number;
-};
-
-type GetAlertResponse = {
-    /**
-     * Alert ID generated by Dhan
-     */
-    alertId: string;
-    /**
-     * | **Status**   | **Description**                   |
-     * |--------------|-----------------------------------|
-     * | ACTIVE       | Alert is currently active         |
-     * | TRIGGERED    | Alert condition has been met      |
-     * | EXPIRED      | Alert expired without triggering  |
-     * | CANCELLED    | Alert was manually cancelled      |
-     */
-    alertStatus?: string;
-    /**
-     * Alert Created Time
-     */
-    createdTime: string;
-    /**
-     * Alert Triggered Time
-     */
-    triggeredTime: string;
-    /**
-     * Last Time
-     */
-    lastPrice: number;
-    condition: AlertCondition;
-    /**
-     * List of orders to execute when alert is triggered
-     */
-    orders: Array<AlertOrder>;
-};
-
-type GetIPDetailsResponse = {
-    /**
-     * Date when secondary IP can be modified again (format: yyyy-MM-dd)
-     */
-    modifyDatePrimary?: string;
-    /**
-     * Date when primary IP can be modified again (format: yyyy-MM-dd)
-     */
-    modifyDateSecondary?: string;
-    /**
-     * Primary IP address associated with the user
-     */
-    primaryIP?: string;
-    /**
-     * Secondary IP address associated with the user
-     */
-    secondaryIP?: string;
-};
-
-type GttModifyRequest = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId?: string;
-    /**
-     * Order specific identification generated by Dhan
-     */
-    orderId?: string;
-    /**
-     * | **Enum Values**  | **Description**             |
-     * |------------------|-----------------------------|
-     * | SINGLE           | For GTT Order types       |
-     * | OCO              | For OCO Order types      |
-     */
-    orderFlag?: GttModifyRequest.orderFlag;
-    /**
-     * | **Enum Values**  | **Description**             |
-     * |------------------|-----------------------------|
-     * | LIMIT            | For Limit Order types       |
-     * | MARKET           | For market Order types      |
-     */
-    orderType?: GttModifyRequest.orderType;
-    /**
-     * | **Enum Values**  | **Description**             |
-     * |----------------------|-----------------------------------------------|
-     * | TARGET_LEG           | For Target Leg                                |
-     * | STOP_LOSS_LEG        | For SL leg, in case of OCO OrderType          |
-     */
-    legName?: GttModifyRequest.legName;
-    /**
-     * Number of shares for the order
-     */
-    quantity?: number;
-    /**
-     * Price at which order is placed
-     */
-    price?: number;
-    /**
-     * Number of shares visible (Keep more than 30% of quantity)
-     */
-    disclosedQuantity?: number;
-    /**
-     * Price at which the order is triggered, in case of SL-M & SL-L
-     */
-    triggerPrice?: number;
-    /**
-     * Valid for 1Year/Expiry
-     */
-    validity?: string;
-};
-declare namespace GttModifyRequest {
-    /**
-     * | **Enum Values**  | **Description**             |
-     * |------------------|-----------------------------|
-     * | SINGLE           | For GTT Order types       |
-     * | OCO              | For OCO Order types      |
-     */
-    enum orderFlag {
-        SINGLE = "SINGLE",
-        OCO = "OCO"
-    }
-    /**
-     * | **Enum Values**  | **Description**             |
-     * |------------------|-----------------------------|
-     * | LIMIT            | For Limit Order types       |
-     * | MARKET           | For market Order types      |
-     */
-    enum orderType {
-        LIMIT = "LIMIT",
-        MARKET = "MARKET"
-    }
-    /**
-     * | **Enum Values**  | **Description**             |
-     * |----------------------|-----------------------------------------------|
-     * | TARGET_LEG           | For Target Leg                                |
-     * | STOP_LOSS_LEG        | For SL leg, in case of OCO OrderType          |
-     */
-    enum legName {
-        TARGET_LEG = "TARGET_LEG",
-        STOP_LOSS_LEG = "STOP_LOSS_LEG"
-    }
-}
-
-type GTTOrderModel = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId?: string;
-    /**
-     * The user/partner generated id for tracking back
-     */
-    correlationId?: string;
-    /**
-     * | **Enum Values**  | **Description**             |
-     * |------------------|-----------------------------|
-     * | SINGLE           | For GTT Order types       |
-     * | OCO              | For OCO Order types      |
-     */
-    orderFlag?: GTTOrderModel.orderFlag;
-    /**
-     * Signifies the type of transaction whether it's BUY or SELL
-     */
-    transactionType: GTTOrderModel.transactionType;
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     *
-     */
-    exchangeSegment?: GTTOrderModel.exchangeSegment;
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | MTF             | Margin Traded Fund                             |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     *
-     */
-    productType?: GTTOrderModel.productType;
-    /**
-     * | **Enum Values**  | **Description**             |
-     * |------------------|-----------------------------|
-     * | LIMIT            | For Limit Order types       |
-     * | MARKET           | For market Order types      |
-     */
-    orderType?: GTTOrderModel.orderType;
-    /**
-     * Valid for 1Year/Expiry
-     */
-    validity?: string;
-    /**
-     * Exchange standard identification for each scrip
-     */
-    securityId?: string;
-    /**
-     * Number of shares for the order
-     */
-    quantity?: number;
-    /**
-     * Number of shares visible (Keep more than 30% of quantity)
-     */
-    disclosedQuantity?: number;
-    /**
-     * Price at which order is placed
-     */
-    price?: number;
-    /**
-     * Price at which the order is triggered
-     */
-    triggerPrice?: number;
-    /**
-     * Target price for OCO order
-     */
-    price1?: number;
-    /**
-     * Target trigger price For OCO order
-     */
-    triggerPrice1?: number;
-    /**
-     * Target Quantity for OCO order
-     */
-    quantity1?: number;
-};
-declare namespace GTTOrderModel {
-    /**
-     * | **Enum Values**  | **Description**             |
-     * |------------------|-----------------------------|
-     * | SINGLE           | For GTT Order types       |
-     * | OCO              | For OCO Order types      |
-     */
-    enum orderFlag {
-        SINGLE = "SINGLE",
-        OCO = "OCO"
-    }
-    /**
-     * Signifies the type of transaction whether it's BUY or SELL
-     */
-    enum transactionType {
-        BUY = "BUY",
-        SELL = "SELL"
-    }
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     *
-     */
-    enum exchangeSegment {
-        NSE_EQ = "NSE_EQ",
-        NSE_FNO = "NSE_FNO",
-        BSE_EQ = "BSE_EQ",
-        BSE_FNO = "BSE_FNO"
-    }
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | MTF             | Margin Traded Fund                             |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     *
-     */
-    enum productType {
-        CNC = "CNC",
-        MTF = "MTF",
-        MARGIN = "MARGIN"
-    }
-    /**
-     * | **Enum Values**  | **Description**             |
-     * |------------------|-----------------------------|
-     * | LIMIT            | For Limit Order types       |
-     * | MARKET           | For market Order types      |
-     */
-    enum orderType {
-        LIMIT = "LIMIT",
-        MARKET = "MARKET"
-    }
-}
-
-type GttOrderResponse = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId?: string;
-    /**
-     * Order specific identification generated by Dhan
-     */
-    orderId?: string;
-    /**
-     * | **Enum Values** | **Description**                             |
-     * |-----------------|---------------------------------------------|
-     * | PENDING         | Reached at exchange end, awaiting execution |
-     * | REJECTED        | Rejected at exchange/broker’s end           |
-     * | CANCELLED       | Cancelled by user                           |
-     * | EXPIRED         | Validity of order is expired                |
-     */
-    orderStatus?: GttOrderResponse.orderStatus;
-    /**
-     * Signifies the type of transaction whether it's BUY or SELL
-     */
-    transactionType?: GttOrderResponse.transactionType;
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | MCX_COMM     | MCX          | Commodity         |
-     */
-    exchangeSegment?: GttOrderResponse.exchangeSegment;
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | INTRADAY        | Intraday for Equity, Futures & Options         |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     *
-     */
-    productType?: GttOrderResponse.productType;
-    /**
-     * | **Enum Values**  | **Description**                  |
-     * |------------------|----------------------------------|
-     * | SINGLE           | For Single Forever Order types   |
-     * | OCO              | For OCO Forever Order types      |
-     *
-     */
-    orderType?: GttOrderResponse.orderType;
-    /**
-     * Exchange standard  trading symbol
-     */
-    tradingSymbol?: string;
-    /**
-     * Exchange standard identification for each scrip
-     */
-    securityId?: string;
-    /**
-     * Number of shares for the order
-     */
-    quantity?: number;
-    /**
-     * Price at which order is placed
-     */
-    price?: number;
-    /**
-     * Price at which the order is triggered
-     */
-    triggerPrice?: number;
-    /**
-     * Order leg of Forever Order where modification is to be done
-     */
-    legName?: GttOrderResponse.legName;
-    /**
-     * Time at which the record is created
-     */
-    createTime?: string;
-    /**
-     * Time at which the record is updated
-     */
-    updateTime?: string;
-    /**
-     * Time at which order reached at exchange end
-     */
-    exchangeTime?: string;
-    /**
-     * Contract Expiry Date for F&O
-     */
-    drvExpiryDate?: string;
-    /**
-     * Type of Option
-     */
-    drvOptionType?: GttOrderResponse.drvOptionType;
-    /**
-     * Strike Price for Options
-     */
-    drvStrikePrice?: number;
-};
-declare namespace GttOrderResponse {
-    /**
-     * | **Enum Values** | **Description**                             |
-     * |-----------------|---------------------------------------------|
-     * | PENDING         | Reached at exchange end, awaiting execution |
-     * | REJECTED        | Rejected at exchange/broker’s end           |
-     * | CANCELLED       | Cancelled by user                           |
-     * | EXPIRED         | Validity of order is expired                |
-     */
-    enum orderStatus {
-        PENDING = "PENDING",
-        REJECTED = "REJECTED",
-        CANCELLED = "CANCELLED",
-        EXPIRED = "EXPIRED"
-    }
-    /**
-     * Signifies the type of transaction whether it's BUY or SELL
-     */
-    enum transactionType {
-        BUY = "BUY",
-        SELL = "SELL"
-    }
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | MCX_COMM     | MCX          | Commodity         |
-     */
-    enum exchangeSegment {
-        NSE_EQ = "NSE_EQ",
-        NSE_FNO = "NSE_FNO",
-        BSE_EQ = "BSE_EQ",
-        BSE_FNO = "BSE_FNO",
-        MCX_COMM = "MCX_COMM"
-    }
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | INTRADAY        | Intraday for Equity, Futures & Options         |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     *
-     */
-    enum productType {
-        CNC = "CNC",
-        INTRADAY = "INTRADAY",
-        MARGIN = "MARGIN"
-    }
-    /**
-     * | **Enum Values**  | **Description**                  |
-     * |------------------|----------------------------------|
-     * | SINGLE           | For Single Forever Order types   |
-     * | OCO              | For OCO Forever Order types      |
-     *
-     */
-    enum orderType {
-        SINGLE = "SINGLE",
-        OCO = "OCO"
-    }
-    /**
-     * Order leg of Forever Order where modification is to be done
-     */
-    enum legName {
-        TARGET_LEG = "TARGET_LEG",
-        STOP_LOSS_LEG = "STOP_LOSS_LEG"
-    }
-    /**
-     * Type of Option
-     */
-    enum drvOptionType {
-        CALL = "CALL",
-        PUT = "PUT",
-        NA = "NA"
-    }
-}
-
-type GttOrderStatusResponse = {
-    /**
-     * Order specific identification generated by Dhan
-     */
-    orderId?: string;
-    /**
-     * | **Enum Values** | **Description**                             |
-     * |-----------------|---------------------------------------------|
-     * | PENDING         | Reached at exchange end, awaiting execution |
-     * | REJECTED        | Rejected at exchange/broker’s end           |
-     * | CANCELLED       | Cancelled by user                           |
-     * | EXPIRED         | Validity of order is expired                |
-     */
-    orderStatus?: GttOrderStatusResponse.orderStatus;
-};
-declare namespace GttOrderStatusResponse {
-    /**
-     * | **Enum Values** | **Description**                             |
-     * |-----------------|---------------------------------------------|
-     * | PENDING         | Reached at exchange end, awaiting execution |
-     * | REJECTED        | Rejected at exchange/broker’s end           |
-     * | CANCELLED       | Cancelled by user                           |
-     * | EXPIRED         | Validity of order is expired                |
-     */
-    enum orderStatus {
-        PENDING = "PENDING",
-        REJECTED = "REJECTED",
-        CANCELLED = "CANCELLED",
-        EXPIRED = "EXPIRED"
-    }
-}
-
-type HistoricalChartsRequest = {
-    /**
-     * Exchange standard identification for each scrip
-     */
-    securityId?: string;
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     * | IDX_I        | INDEX        | Indices           |
-     */
-    exchangeSegment?: HistoricalChartsRequest.exchangeSegment;
-    /**
-     * Represents the security instrument type, refer charts annexure for possible values.
-     */
-    instrument?: HistoricalChartsRequest.instrument;
-    /**
-     * Represents the expiry code value, refer charts annexure for possible values.
-     */
-    expiryCode?: number;
-    /**
-     * Open Interest Data
-     */
-    oi?: boolean;
-    /**
-     * Chart data request start date in format YYYY-MM-DD
-     */
-    fromDate?: string;
-    /**
-     * Chart data request end date in format YYYY-MM-DD
-     */
-    toDate?: string;
-};
-declare namespace HistoricalChartsRequest {
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     * | IDX_I        | INDEX        | Indices           |
-     */
-    enum exchangeSegment {
-        NSE_EQ = "NSE_EQ",
-        NSE_FNO = "NSE_FNO",
-        BSE_EQ = "BSE_EQ",
-        BSE_FNO = "BSE_FNO",
-        MCX_COMM = "MCX_COMM",
-        IDX_I = "IDX_I"
-    }
-    /**
-     * Represents the security instrument type, refer charts annexure for possible values.
-     */
-    enum instrument {
-        INDEX = "INDEX",
-        FUTIDX = "FUTIDX",
-        OPTIDX = "OPTIDX",
-        EQUITY = "EQUITY",
-        FUTSTK = "FUTSTK",
-        OPTSTK = "OPTSTK",
-        FUTCOM = "FUTCOM",
-        OPTFUT = "OPTFUT"
-    }
-}
-
-type HoldingResponse = {
-    /**
-     * Enum values is either NSE or BSE
-     */
-    exchange?: HoldingResponse.exchange;
-    /**
-     * Exchange standard  trading symbol
-     */
-    tradingSymbol?: string;
-    /**
-     * Exchange standard identification for each scrip
-     */
-    securityId?: string;
-    /**
-     * International Securities Identification Number
-     */
-    isin?: string;
-    /**
-     * Total number of shares in holding for given stock
-     */
-    totalQty?: number;
-    /**
-     * Quantities present in depository
-     */
-    dpQty?: number;
-    /**
-     * Quantities not delivered to depository
-     */
-    t1Qty?: number;
-    /**
-     * MTF  Quantities not delivered to depository
-     */
-    mtf_t1_qty?: number;
-    /**
-     * MTF Quantities delivered to depository
-     */
-    mtf_qty?: number;
-    /**
-     * Quantities available for transactions
-     */
-    availableQty?: number;
-    /**
-     * Quantities placed as collateral with broker
-     */
-    collateralQty?: number;
-    /**
-     * Average Buy Price of total quantities
-     */
-    avgCostPrice?: number;
-    /**
-     * Last Traded Price for the scrip
-     */
-    lastTradedPrice?: number;
-};
-declare namespace HoldingResponse {
-    /**
-     * Enum values is either NSE or BSE
-     */
-    enum exchange {
-        NSE = "NSE",
-        BSE = "BSE",
-        MCX = "MCX",
-        ALL = "ALL"
-    }
-}
-
-type IntradayChartsRequest = {
-    /**
-     * Exchange standard identification for each scrip
-     */
-    securityId?: string;
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     * | IDX_I        | INDEX        | Indices           |
-     */
-    exchangeSegment?: IntradayChartsRequest.exchangeSegment;
-    /**
-     * Represents the security instrument type, refer charts annexure for possible values.
-     */
-    instrument?: IntradayChartsRequest.instrument;
-    /**
-     * Represents time interval in minute, refer charts annexure for possible values.
-     */
-    interval?: IntradayChartsRequest.interval;
-    /**
-     * Open Interest Data
-     */
-    oi?: boolean;
-    /**
-     * date format : yyyy-MM-dd
-     */
-    fromDate?: string;
-    /**
-     * date format : yyyy-MM-dd
-     */
-    toDate?: string;
-};
-declare namespace IntradayChartsRequest {
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     * | IDX_I        | INDEX        | Indices           |
-     */
-    enum exchangeSegment {
-        NSE_EQ = "NSE_EQ",
-        NSE_FNO = "NSE_FNO",
-        BSE_EQ = "BSE_EQ",
-        BSE_FNO = "BSE_FNO",
-        MCX_COMM = "MCX_COMM",
-        IDX_I = "IDX_I"
-    }
-    /**
-     * Represents the security instrument type, refer charts annexure for possible values.
-     */
-    enum instrument {
-        INDEX = "INDEX",
-        FUTIDX = "FUTIDX",
-        OPTIDX = "OPTIDX",
-        EQUITY = "EQUITY",
-        FUTSTK = "FUTSTK",
-        OPTSTK = "OPTSTK",
-        FUTCOM = "FUTCOM",
-        OPTFUT = "OPTFUT"
-    }
-    /**
-     * Represents time interval in minute, refer charts annexure for possible values.
-     */
-    enum interval {
-        _1 = "1",
-        _5 = "5",
-        _15 = "15",
-        _25 = "25",
-        _60 = "60"
-    }
-}
-
-type KillSwitchResponse = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId?: string;
-    /**
-     * | **Enum Values**   | **Description**        |
-     * |-------------------|------------------------|
-     * | ACTIVATE          | KillSwitch Activated   |
-     * | DEACTIVATE        | KillSwitch Deactivated |
-     */
-    killSwitchStatus?: string;
-};
-
-type KnowYourMarginReq = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId?: string;
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     *
-     */
-    exchangeSegment: KnowYourMarginReq.exchangeSegment;
-    /**
-     * Signifies the type of transaction whether it's BUY or SELL
-     */
-    transactionType: KnowYourMarginReq.transactionType;
-    /**
-     * Number of shares for the order
-     */
-    quantity?: number;
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | INTRADAY        | Intraday for Equity, Futures & Options         |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     * | CO              | Cover Order; entry and stop loss               |
-     * | BO              | Bracket Order; entry, stop loss & target price |
-     * **CO & BO product types will be valid only for Intraday**
-     */
-    productType?: KnowYourMarginReq.productType;
-    /**
-     * Exchange standard identification for each scrip
-     */
-    securityId?: string;
-    /**
-     * Price at which the order is requested to execute
-     */
-    price?: number;
-    /**
-     * Price at which the order is requested to trigger
-     */
-    triggerPrice?: number;
-};
-declare namespace KnowYourMarginReq {
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     *
-     */
-    enum exchangeSegment {
-        NSE_EQ = "NSE_EQ",
-        NSE_FNO = "NSE_FNO",
-        BSE_EQ = "BSE_EQ",
-        BSE_FNO = "BSE_FNO",
-        MCX_COMM = "MCX_COMM"
-    }
-    /**
-     * Signifies the type of transaction whether it's BUY or SELL
-     */
-    enum transactionType {
-        BUY = "BUY",
-        SELL = "SELL"
-    }
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | INTRADAY        | Intraday for Equity, Futures & Options         |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     * | CO              | Cover Order; entry and stop loss               |
-     * | BO              | Bracket Order; entry, stop loss & target price |
-     * **CO & BO product types will be valid only for Intraday**
-     */
-    enum productType {
-        CNC = "CNC",
-        INTRADAY = "INTRADAY",
-        MARGIN = "MARGIN",
-        MTF = "MTF",
-        CO = "CO",
-        BO = "BO"
-    }
-}
-
-type KnowYourMarginResponse = {
-    /**
-     * Total available margin to trade
-     */
-    totalMargin?: number;
-    /**
-     * Available span margin
-     */
-    spanMargin?: number;
-    /**
-     * Available exposure margin
-     */
-    exposureMargin?: number;
-    /**
-     * Available balance to trade
-     */
-    availableBalance?: number;
-    /**
-     * Variable margin
-     */
-    variableMargin?: number;
-    /**
-     * Insufficient balance
-     */
-    insufficientBalance?: number;
-    /**
-     * Applicable brokerage
-     */
-    brokerage?: number;
-    /**
-     * Applicable leverage
-     */
-    leverage?: string;
-};
-
-type ScriptItem = {
-    exchangeSegment?: ScriptItem.exchangeSegment;
-    transactionType?: ScriptItem.transactionType;
-    quantity?: number;
-    productType?: ScriptItem.productType;
-    securityId?: string;
-    price?: number;
-    triggerPrice?: number;
-};
-declare namespace ScriptItem {
-    enum exchangeSegment {
-        NSE_EQ = "NSE_EQ",
-        NSE_FNO = "NSE_FNO",
-        NSE_COMM = "NSE_COMM",
-        BSE_EQ = "BSE_EQ",
-        BSE_FNO = "BSE_FNO",
-        MCX_COMM = "MCX_COMM"
-    }
-    enum transactionType {
-        BUY = "BUY",
-        SELL = "SELL"
-    }
-    enum productType {
-        CNC = "CNC",
-        INTRADAY = "INTRADAY",
-        MARGIN = "MARGIN",
-        MTF = "MTF",
-        CO = "CO",
-        BO = "BO"
-    }
-}
-
-type MultiScripMarginCalcRequest = {
-    includePosition?: boolean;
-    includeOrder?: boolean;
-    dhanClientId?: string;
-    scripList?: Array<ScriptItem>;
-};
-
-type MultiScripMarginCalcResponse = {
-    clientId?: string;
-    totalMargin?: number;
-    spanMargin?: number;
-    exposure?: number;
-    equityMargin?: number;
-    foMargin?: number;
-    commodity?: number;
-    currency?: number;
-};
-
-type OptionChartRequest = {
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     * | IDX_I        | INDEX        | Indices           |
-     */
-    exchangeSegment?: OptionChartRequest.exchangeSegment;
-    /**
-     * Represents time interval in minute, refer charts annexure for possible values.
-     */
-    interval?: OptionChartRequest.interval;
-    /**
-     * Underlying security Id
-     */
-    securityId?: number;
-    /**
-     * Represents the security instrument type, refer charts annexure for possible values.
-     */
-    instrument?: OptionChartRequest.instrument;
-    /**
-     * Expiry flag indicating type of expiry
-     */
-    expiryFlag?: OptionChartRequest.expiryFlag;
-    /**
-     * Expiry code value
-     */
-    expiryCode?: OptionChartRequest.expiryCode;
-    /**
-     * | **Strike** | **Description**                        |
-     * |------------|----------------------------------------|
-     * | ATM        | At The Money (default)                 |
-     * | ATM±3~3    | ±3 to ±3 strikes (all instruments)     |
-     * | ATM±10~10   | ±10 to ±10 (only for index near expiry) |
-     */
-    strike?: string;
-    /**
-     * Option Type
-     */
-    drvOptionType?: OptionChartRequest.drvOptionType;
-    /**
-     * Requested data type
-     */
-    requiredData?: OptionChartRequest.requiredData;
-    /**
-     * Chart data request start date in format YYYY-MM-DD
-     */
-    fromDate?: string;
-    /**
-     * Chart data request end date in format YYYY-MM-DD
-     */
-    toDate?: string;
-};
-declare namespace OptionChartRequest {
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     * | IDX_I        | INDEX        | Indices           |
-     */
-    enum exchangeSegment {
-        NSE_EQ = "NSE_EQ",
-        NSE_FNO = "NSE_FNO",
-        BSE_EQ = "BSE_EQ",
-        BSE_FNO = "BSE_FNO",
-        MCX_COMM = "MCX_COMM",
-        IDX_I = "IDX_I"
-    }
-    /**
-     * Represents time interval in minute, refer charts annexure for possible values.
-     */
-    enum interval {
-        _1 = "1",
-        _5 = "5",
-        _15 = "15",
-        _25 = "25",
-        _60 = "60"
-    }
-    /**
-     * Represents the security instrument type, refer charts annexure for possible values.
-     */
-    enum instrument {
-        INDEX = "INDEX",
-        FUTIDX = "FUTIDX",
-        OPTIDX = "OPTIDX",
-        EQUITY = "EQUITY",
-        FUTSTK = "FUTSTK",
-        OPTSTK = "OPTSTK",
-        FUTCOM = "FUTCOM",
-        OPTFUT = "OPTFUT"
-    }
-    /**
-     * Expiry flag indicating type of expiry
-     */
-    enum expiryFlag {
-        MONTH = "MONTH",
-        WEEK = "WEEK"
-    }
-    /**
-     * Expiry code value
-     */
-    enum expiryCode {
-        '_1' = 1,
-        '_2' = 2,
-        '_3' = 3
-    }
-    /**
-     * Option Type
-     */
-    enum drvOptionType {
-        CALL = "CALL",
-        PUT = "PUT"
-    }
-    /**
-     * Requested data type
-     */
-    enum requiredData {
-        OPEN = "open",
-        HIGH = "high",
-        LOW = "low",
-        CLOSE = "close",
-        IV = "iv",
-        VOLUME = "volume",
-        STRIKE = "strike",
-        OI = "oi",
-        SPOT = "spot"
-    }
-}
-
-type OptionChartResponse = {
-    data?: ChartData;
-};
 
 type OrderModifyRequest = {
     /**
@@ -2028,7 +331,7 @@ declare namespace OrderRequest {
     }
 }
 
-type OrderResponse$1 = {
+type OrderResponse = {
     /**
      * User specific identification generated by Dhan
      */
@@ -2056,11 +359,11 @@ type OrderResponse$1 = {
      * | TRADED          | Executed                                    |
      * | EXPIRED         | Validity of order is expired                |
      */
-    orderStatus?: OrderResponse$1.orderStatus;
+    orderStatus?: OrderResponse.orderStatus;
     /**
      * Signifies the type of transaction whether it's BUY or SELL
      */
-    transactionType?: OrderResponse$1.transactionType;
+    transactionType?: OrderResponse.transactionType;
     /**
      * | **Enums**    | **Exchange** | **Segment**       |
      * |--------------|--------------|-------------------|
@@ -2071,7 +374,7 @@ type OrderResponse$1 = {
      * | MCX_COMM     | MCX          | Commodity         |
      *
      */
-    exchangeSegment?: OrderResponse$1.exchangeSegment;
+    exchangeSegment?: OrderResponse.exchangeSegment;
     /**
      * | **Enum Values** | **Description**                                |
      * |-----------------|------------------------------------------------|
@@ -2083,7 +386,7 @@ type OrderResponse$1 = {
      * | MTF             | Margin Traded Fund                             |
      * **CO & BO product types will be valid only for Intraday**
      */
-    productType?: OrderResponse$1.productType;
+    productType?: OrderResponse.productType;
     /**
      * | **Enum Values**  | **Description**             |
      * |------------------|-----------------------------|
@@ -2092,14 +395,14 @@ type OrderResponse$1 = {
      * | STOP_LOSS        | For Stop Loss Limit orders  |
      * | STOP_LOSS_MARKET | For Stop Loss Market orders |
      */
-    orderType?: OrderResponse$1.orderType;
+    orderType?: OrderResponse.orderType;
     /**
      * | **Enum Values** | **Description**       |
      * |-----------------|-----------------------|
      * | DAY             | Valid till end of day |
      * | IOC             | Immediate or Cancel   |
      */
-    validity?: OrderResponse$1.validity;
+    validity?: OrderResponse.validity;
     /**
      * Exchange standard  trading symbol
      */
@@ -2139,7 +442,7 @@ type OrderResponse$1 = {
     /**
      * Order leg where modification is to be done
      */
-    legName?: OrderResponse$1.legName;
+    legName?: OrderResponse.legName;
     /**
      * Time at which the record is created
      */
@@ -2159,7 +462,7 @@ type OrderResponse$1 = {
     /**
      * For Options, type CALL or PUT
      */
-    drvOptionType?: OrderResponse$1.drvOptionType;
+    drvOptionType?: OrderResponse.drvOptionType;
     /**
      * For Options, Strike Price
      */
@@ -2189,7 +492,7 @@ type OrderResponse$1 = {
      */
     filledQty?: number;
 };
-declare namespace OrderResponse$1 {
+declare namespace OrderResponse {
     /**
      * | **Enum Values** | **Description**                             |
      * |-----------------|---------------------------------------------|
@@ -2340,343 +643,6 @@ declare namespace OrderStatusResponse {
     }
 }
 
-type PnlBasedExitRequest = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId?: string;
-    /**
-     * User-defined target profit amount for the PNL exit
-     */
-    profitValue?: number;
-    /**
-     * User-defined target loss amount for the PNL exit
-     */
-    lossValue?: number;
-    /**
-     * Indicates if the kill switch is enabled for this PNL exit
-     */
-    enableKillSwitch?: boolean;
-    /**
-     * | **Enum Values** | **Description** |
-     * |-----------------|----------------|
-     * | INTRADAY         | Intraday for Equity, Futures & Options |
-     * | DELIVERY         | Delivery for equity deliveries |
-     */
-    productType?: Array<string>;
-};
-
-type PnlExitResponse = {
-    message?: string;
-    /**
-     * | **Enum Values** | **Description** |
-     * |-----------------|----------------|
-     * | ACTIVE         | P&L based exit configured successfully |
-     * | INACTIVE       | No active P&L based exit configured for the current trading day |
-     */
-    pnlExitStatus?: string;
-};
-
-type PositionConversionRequest = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId?: string;
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | INTRADAY        | Intraday for Equity, Futures & Options         |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     */
-    fromProductType?: PositionConversionRequest.fromProductType;
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     *
-     */
-    exchangeSegment?: PositionConversionRequest.exchangeSegment;
-    /**
-     * | **Enum Values** | **Description**                                     |
-     * |-----------------|-----------------------------------------------------|
-     * | LONG            | When net bought quantity is more than sold quantity |
-     * | SHORT           | When net sold quantity is more than bought quantity |
-     * | CLOSED          | When no open position standing                      |
-     */
-    positionType?: PositionConversionRequest.positionType;
-    /**
-     * Exchange standard identification for each scrip
-     */
-    securityId?: string;
-    /**
-     * Number of shares for the conversion
-     */
-    convertQty?: number;
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | INTRADAY        | Intraday for Equity, Futures & Options         |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     */
-    toProductType?: PositionConversionRequest.toProductType;
-};
-declare namespace PositionConversionRequest {
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | INTRADAY        | Intraday for Equity, Futures & Options         |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     */
-    enum fromProductType {
-        CNC = "CNC",
-        INTRADAY = "INTRADAY",
-        MARGIN = "MARGIN",
-        MTF = "MTF",
-        CO = "CO",
-        BO = "BO"
-    }
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     *
-     */
-    enum exchangeSegment {
-        NSE_EQ = "NSE_EQ",
-        NSE_FNO = "NSE_FNO",
-        BSE_EQ = "BSE_EQ",
-        BSE_FNO = "BSE_FNO",
-        MCX_COMM = "MCX_COMM"
-    }
-    /**
-     * | **Enum Values** | **Description**                                     |
-     * |-----------------|-----------------------------------------------------|
-     * | LONG            | When net bought quantity is more than sold quantity |
-     * | SHORT           | When net sold quantity is more than bought quantity |
-     * | CLOSED          | When no open position standing                      |
-     */
-    enum positionType {
-        LONG = "LONG",
-        SHORT = "SHORT",
-        CLOSED = "CLOSED"
-    }
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | INTRADAY        | Intraday for Equity, Futures & Options         |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     */
-    enum toProductType {
-        CNC = "CNC",
-        INTRADAY = "INTRADAY",
-        MARGIN = "MARGIN",
-        MTF = "MTF",
-        CO = "CO",
-        BO = "BO"
-    }
-}
-
-type PositionResponse = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId?: string;
-    /**
-     * Exchange standard  trading symbol
-     */
-    tradingSymbol?: string;
-    /**
-     * Exchange standard identification for each scrip
-     */
-    securityId?: string;
-    /**
-     * | **Enum Values** | **Description**                                     |
-     * |-----------------|-----------------------------------------------------|
-     * | LONG            | When net bought quantity is more than sold quantity |
-     * | SHORT           | When net sold quantity is more than bought quantity |
-     * | CLOSED          | When no open position standing                      |
-     */
-    positionType?: PositionResponse.positionType;
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     *
-     */
-    exchangeSegment?: PositionResponse.exchangeSegment;
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | INTRADAY        | Intraday for Equity, Futures & Options         |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     * | CO              | Cover Order; entry and stop loss               |
-     * | BO              | Bracket Order; entry, stop loss & target price |
-     * | MTF             | Margin Traded Fund                             |
-     * **CO & BO product types will be valid only for Intraday**
-     */
-    productType?: PositionResponse.productType;
-    /**
-     * Average buy price
-     */
-    buyAvg?: number;
-    /**
-     * Cost price
-     */
-    costPrice?: number;
-    /**
-     * Total quantity bought
-     */
-    buyQty?: number;
-    /**
-     *  Average sell price
-     */
-    sellAvg?: number;
-    /**
-     * Total quantities sold
-     */
-    sellQty?: number;
-    /**
-     * buyQty minus sellQty equals netQty
-     */
-    netQty?: number;
-    /**
-     * Profit or loss booked
-     */
-    realizedProfit?: number;
-    /**
-     * Profit or loss standing for open position
-     */
-    unrealizedProfit?: number;
-    /**
-     * RBI mandated reference rate for forex
-     */
-    rbiReferenceRate?: number;
-    /**
-     * Multiplying factor for currency F&O
-     */
-    multiplier?: number;
-    /**
-     * Carry forward F&O long quantities
-     */
-    carryForwardBuyQty?: number;
-    /**
-     * Carry forward F&O short quantities
-     */
-    carryForwardSellQty?: number;
-    /**
-     * Carry forward F&O long value
-     */
-    carryForwardBuyValue?: number;
-    /**
-     * Carry forward F&O short value
-     */
-    carryForwardSellValue?: number;
-    /**
-     * Quantities bought today
-     */
-    dayBuyQty?: number;
-    /**
-     * Quantities sold today
-     */
-    daySellQty?: number;
-    /**
-     * Value of quantities bought today
-     */
-    dayBuyValue?: number;
-    /**
-     * Value of quantities sold today
-     */
-    daySellValue?: number;
-    /**
-     * For F&O, expiry date of contract
-     */
-    drvExpiryDate?: string;
-    /**
-     * For Options, type CALL or PUT
-     */
-    drvOptionType?: PositionResponse.drvOptionType;
-    /**
-     * For Options, Strike Price
-     */
-    drvStrikePrice?: number;
-    crossCurrency?: boolean;
-};
-declare namespace PositionResponse {
-    /**
-     * | **Enum Values** | **Description**                                     |
-     * |-----------------|-----------------------------------------------------|
-     * | LONG            | When net bought quantity is more than sold quantity |
-     * | SHORT           | When net sold quantity is more than bought quantity |
-     * | CLOSED          | When no open position standing                      |
-     */
-    enum positionType {
-        LONG = "LONG",
-        SHORT = "SHORT",
-        CLOSED = "CLOSED"
-    }
-    /**
-     * | **Enums**    | **Exchange** | **Segment**       |
-     * |--------------|--------------|-------------------|
-     * | NSE_EQ       | NSE          | Equity Cash       |
-     * | NSE_FNO      | NSE          | Futures & Options |
-     * | BSE_EQ       | BSE          | Equity Cash       |
-     * | BSE_FNO      | BSE          | Futures & Options |
-     * | MCX_COMM     | MCX          | Commodity         |
-     *
-     */
-    enum exchangeSegment {
-        NSE_EQ = "NSE_EQ",
-        NSE_FNO = "NSE_FNO",
-        BSE_EQ = "BSE_EQ",
-        BSE_FNO = "BSE_FNO",
-        MCX_COMM = "MCX_COMM"
-    }
-    /**
-     * | **Enum Values** | **Description**                                |
-     * |-----------------|------------------------------------------------|
-     * | CNC             | Cash & Carry for equity deliveries             |
-     * | INTRADAY        | Intraday for Equity, Futures & Options         |
-     * | MARGIN          | Carry Forward in Futures & Options             |
-     * | CO              | Cover Order; entry and stop loss               |
-     * | BO              | Bracket Order; entry, stop loss & target price |
-     * | MTF             | Margin Traded Fund                             |
-     * **CO & BO product types will be valid only for Intraday**
-     */
-    enum productType {
-        CNC = "CNC",
-        INTRADAY = "INTRADAY",
-        MARGIN = "MARGIN",
-        MTF = "MTF",
-        CO = "CO",
-        BO = "BO"
-    }
-    /**
-     * For Options, type CALL or PUT
-     */
-    enum drvOptionType {
-        CALL = "CALL",
-        PUT = "PUT",
-        NA = "NA"
-    }
-}
-
 type SuperModifyRequest = {
     /**
      * User specific identification generated by Dhan
@@ -2742,7 +708,7 @@ declare namespace SuperModifyRequest {
 /**
  * Array of Leg Details
  */
-type SuperOrderLeg$1 = {
+type SuperOrderLeg = {
     /**
      * Order specific identification generated by Dhan
      */
@@ -2750,11 +716,11 @@ type SuperOrderLeg$1 = {
     /**
      * Order leg where modification is to be done
      */
-    legName?: SuperOrderLeg$1.legName;
+    legName?: SuperOrderLeg.legName;
     /**
      * Signifies the type of transaction whether it's BUY or SELL
      */
-    transactionType?: SuperOrderLeg$1.transactionType;
+    transactionType?: SuperOrderLeg.transactionType;
     /**
      * Number of shares yet to be traded for the order
      */
@@ -2772,13 +738,13 @@ type SuperOrderLeg$1 = {
      * | CANCELLED       | Legs manually Cancelled by User             |
      * | EXPIRED         | Validity of order is expired                |
      */
-    orderStatus?: SuperOrderLeg$1.orderStatus;
+    orderStatus?: SuperOrderLeg.orderStatus;
     /**
      * Price Jump by which Stop Loss should be trailed
      */
     trailingJump?: number;
 };
-declare namespace SuperOrderLeg$1 {
+declare namespace SuperOrderLeg {
     /**
      * Order leg where modification is to be done
      */
@@ -2932,7 +898,7 @@ declare namespace SuperOrderRequest {
     }
 }
 
-type SuperOrderResponse$1 = {
+type SuperOrderResponse = {
     /**
      * User specific identification generated by Dhan
      */
@@ -2961,11 +927,11 @@ type SuperOrderResponse$1 = {
      * | CLOSED          | ENTRY_LEG along with its respective child legs are/is successfully traded  |
      * | EXPIRED         | Validity of order is expired                |
      */
-    orderStatus?: SuperOrderResponse$1.orderStatus;
+    orderStatus?: SuperOrderResponse.orderStatus;
     /**
      * The trading side of transaction
      */
-    transactionType?: SuperOrderResponse$1.transactionType;
+    transactionType?: SuperOrderResponse.transactionType;
     /**
      * | **Enums**    | **Exchange** | **Segment**       |
      * |--------------|--------------|-------------------|
@@ -2976,7 +942,7 @@ type SuperOrderResponse$1 = {
      * | MCX_COMM     | MCX          | Commodity         |
      *
      */
-    exchangeSegment?: SuperOrderResponse$1.exchangeSegment;
+    exchangeSegment?: SuperOrderResponse.exchangeSegment;
     /**
      * | **Enum Values** | **Description**                                |
      * |-----------------|------------------------------------------------|
@@ -2986,21 +952,21 @@ type SuperOrderResponse$1 = {
      * | MTF             | Margin Traded Fund                             |
      *
      */
-    productType?: SuperOrderResponse$1.productType;
+    productType?: SuperOrderResponse.productType;
     /**
      * | **Enum Values**  | **Description**             |
      * |------------------|-----------------------------|
      * | LIMIT            | For Limit Order types       |
      * | MARKET           | For market Order types      |
      */
-    orderType?: SuperOrderResponse$1.orderType;
+    orderType?: SuperOrderResponse.orderType;
     /**
      * | **Enum Values** | **Description**       |
      * |-----------------|-----------------------|
      * | DAY             | Valid till end of day |
      * | IOC             | Immediate or Cancel   |
      */
-    validity?: SuperOrderResponse$1.validity;
+    validity?: SuperOrderResponse.validity;
     /**
      * Refer Trading Symbol in Tables
      */
@@ -3032,7 +998,7 @@ type SuperOrderResponse$1 = {
     /**
      * Leg identification
      */
-    legName?: SuperOrderResponse$1.legName;
+    legName?: SuperOrderResponse.legName;
     /**
      * Time at which the record is created
      */
@@ -3056,7 +1022,7 @@ type SuperOrderResponse$1 = {
     /**
      * Array of Leg Details
      */
-    legDetails?: Array<SuperOrderLeg$1>;
+    legDetails?: Array<SuperOrderLeg>;
     /**
      * Average price at which order is traded
      */
@@ -3066,7 +1032,7 @@ type SuperOrderResponse$1 = {
      */
     filledQty?: number;
 };
-declare namespace SuperOrderResponse$1 {
+declare namespace SuperOrderResponse {
     /**
      * | **Enum Values** | **Description**                                                |
      * |-----------------|-------------------------------------------------------------------         |
@@ -3351,7 +1317,7 @@ declare namespace TradeHistoryResponseModel {
     }
 }
 
-type TradeResponse$1 = {
+type TradeResponse = {
     /**
      * User specific identification generated by Dhan
      */
@@ -3371,7 +1337,7 @@ type TradeResponse$1 = {
     /**
      * Signifies the type of transaction whether it's BUY or SELL
      */
-    transactionType?: TradeResponse$1.transactionType;
+    transactionType?: TradeResponse.transactionType;
     /**
      * | **Enums**    | **Exchange** | **Segment**       |
      * |--------------|--------------|-------------------|
@@ -3382,7 +1348,7 @@ type TradeResponse$1 = {
      * | MCX_COMM     | MCX          | Commodity         |
      *
      */
-    exchangeSegment?: TradeResponse$1.exchangeSegment;
+    exchangeSegment?: TradeResponse.exchangeSegment;
     /**
      * | **Enum Values** | **Description**                                |
      * |-----------------|------------------------------------------------|
@@ -3394,7 +1360,7 @@ type TradeResponse$1 = {
      * | MTF             | Margin Traded Fund                             |
      * **CO & BO product types will be valid only for Intraday**
      */
-    productType?: TradeResponse$1.productType;
+    productType?: TradeResponse.productType;
     /**
      * | **Enum Values**  | **Description**             |
      * |------------------|-----------------------------|
@@ -3403,7 +1369,7 @@ type TradeResponse$1 = {
      * | STOP_LOSS        | For Stop Loss Limit orders  |
      * | STOP_LOSS_MARKET | For Stop Loss Market orders |
      */
-    orderType?: TradeResponse$1.orderType;
+    orderType?: TradeResponse.orderType;
     /**
      * Exchange standard  trading symbol
      */
@@ -3443,13 +1409,13 @@ type TradeResponse$1 = {
     /**
      * For Options, type CALL or PUT
      */
-    drvOptionType?: TradeResponse$1.drvOptionType;
+    drvOptionType?: TradeResponse.drvOptionType;
     /**
      * For Options, Strike Price
      */
     drvStrikePrice?: number;
 };
-declare namespace TradeResponse$1 {
+declare namespace TradeResponse {
     /**
      * Signifies the type of transaction whether it's BUY or SELL
      */
@@ -3516,35 +1482,6 @@ declare namespace TradeResponse$1 {
         NA = "NA"
     }
 }
-
-type UserIPRequest = {
-    /**
-     * User specific identification generated by Dhan
-     */
-    dhanClientId?: string;
-    /**
-     * User specific IP
-     */
-    ip: string;
-    /**
-     * | **Enum Values** | **Description** |
-     * |-----------------|-----------------------------|
-     * | PRIMARY         | Primary IP          |
-     * | SECONDARY       | Secondary IP        |
-     */
-    ipFlag: string;
-};
-
-type UserIPResponse = {
-    message?: string;
-    /**
-     * | **Enum Values** | **Description** |
-     * |-----------------|----------------|
-     * | SUCCESS         | Operation was successful |
-     * | ERROR           | Operation failed |
-     */
-    status?: string;
-};
 
 declare class ConditionalTriggersService {
     /**
@@ -3774,7 +1711,7 @@ declare class OrdersService {
      * @returns OrderResponse Successful operation
      * @throws ApiError
      */
-    static getorderbyorderid(accessToken: string, orderId: string): CancelablePromise<OrderResponse$1>;
+    static getorderbyorderid(accessToken: string, orderId: string): CancelablePromise<OrderResponse>;
     /**
      * modify pending order
      * The api allows you modify pending order in orderbook. The fields that can be modified are price, quantity, order type & validity.
@@ -3801,7 +1738,7 @@ declare class OrdersService {
      * @returns OrderResponse Successful operation
      * @throws ApiError
      */
-    static getorders(accessToken: string): CancelablePromise<Array<OrderResponse$1>>;
+    static getorders(accessToken: string): CancelablePromise<Array<OrderResponse>>;
     /**
      * place an order
      * The order request API allows you to place new order.
@@ -3827,7 +1764,7 @@ declare class OrdersService {
      * @returns TradeResponse Successful operation
      * @throws ApiError
      */
-    static getalltrades(accessToken: string): CancelablePromise<Array<TradeResponse$1>>;
+    static getalltrades(accessToken: string): CancelablePromise<Array<TradeResponse>>;
     /**
      * get trade by order id
      * The api allows user to retrieve trade details using an order id. Often during partial trades or Bracket/ Cover Orders, traders get confused in reading trade from tradebook. The response of this API will include all the trades generated for a particular order id.
@@ -3836,7 +1773,7 @@ declare class OrdersService {
      * @returns TradeResponse Successful operation
      * @throws ApiError
      */
-    static gettradebyorderid(accessToken: string, orderId: string): CancelablePromise<Array<TradeResponse$1>>;
+    static gettradebyorderid(accessToken: string, orderId: string): CancelablePromise<Array<TradeResponse>>;
     /**
      * get trade history
      * The api allows user to retrieve the trade history Often during partial trades or Bracket/ Cover Orders, traders get confused in reading trade from tradebook. The response of the api will include all the trades generated for a particular order id.
@@ -3856,7 +1793,7 @@ declare class OrdersService {
      * @returns OrderResponse Successful operation
      * @throws ApiError
      */
-    static getorderbycorrelationid(accessToken: string, correlationId: string): CancelablePromise<OrderResponse$1>;
+    static getorderbycorrelationid(accessToken: string, correlationId: string): CancelablePromise<OrderResponse>;
 }
 
 declare class PositionsPortfolioService {
@@ -3928,7 +1865,7 @@ declare class SuperOrderService {
      * @returns SuperOrderResponse Successful operation
      * @throws ApiError
      */
-    static getsuperorders(accessToken: string): CancelablePromise<Array<SuperOrderResponse$1>>;
+    static getsuperorders(accessToken: string): CancelablePromise<Array<SuperOrderResponse>>;
     /**
      * place super order
      * The order API allows you to place a new order.
@@ -4004,38 +1941,38 @@ declare class TraderSControlService {
 }
 
 declare const index_AlertCondition: typeof AlertCondition;
-type index_AlertModifyRequest = AlertModifyRequest;
+declare const index_AlertModifyRequest: typeof AlertModifyRequest;
 declare const index_AlertOrder: typeof AlertOrder;
-type index_AlertOrderRequest = AlertOrderRequest;
-type index_AlertOrderResponse = AlertOrderResponse;
+declare const index_AlertOrderRequest: typeof AlertOrderRequest;
+declare const index_AlertOrderResponse: typeof AlertOrderResponse;
 type index_ApiError = ApiError;
 declare const index_ApiError: typeof ApiError;
-type index_BoLedgerResponse = BoLedgerResponse;
+declare const index_BoLedgerResponse: typeof BoLedgerResponse;
 type index_CancelError = CancelError;
 declare const index_CancelError: typeof CancelError;
 type index_CancelablePromise<T> = CancelablePromise<T>;
 declare const index_CancelablePromise: typeof CancelablePromise;
-type index_ChartData = ChartData;
-type index_ChartsResponse = ChartsResponse;
+declare const index_ChartData: typeof ChartData;
+declare const index_ChartsResponse: typeof ChartsResponse;
 type index_ConditionalTriggersService = ConditionalTriggersService;
 declare const index_ConditionalTriggersService: typeof ConditionalTriggersService;
 type index_DataApiSService = DataApiSService;
 declare const index_DataApiSService: typeof DataApiSService;
 declare const index_EdisBulkFormRequest: typeof EdisBulkFormRequest;
 declare const index_EdisFormRequest: typeof EdisFormRequest;
-type index_EdisFormResponse = EdisFormResponse;
-type index_EdisQtyStatusResponse = EdisQtyStatusResponse;
+declare const index_EdisFormResponse: typeof EdisFormResponse;
+declare const index_EdisQtyStatusResponse: typeof EdisQtyStatusResponse;
 type index_EdisService = EdisService;
 declare const index_EdisService: typeof EdisService;
-type index_ExitPnlResponse = ExitPnlResponse;
+declare const index_ExitPnlResponse: typeof ExitPnlResponse;
 type index_ForeverOrderService = ForeverOrderService;
 declare const index_ForeverOrderService: typeof ForeverOrderService;
-type index_FundLimitResponse = FundLimitResponse;
+declare const index_FundLimitResponse: typeof FundLimitResponse;
 type index_FundsMarginService = FundsMarginService;
 declare const index_FundsMarginService: typeof FundsMarginService;
 declare const index_GTTOrderModel: typeof GTTOrderModel;
-type index_GetAlertResponse = GetAlertResponse;
-type index_GetIPDetailsResponse = GetIPDetailsResponse;
+declare const index_GetAlertResponse: typeof GetAlertResponse;
+declare const index_GetIPDetailsResponse: typeof GetIPDetailsResponse;
 declare const index_GttModifyRequest: typeof GttModifyRequest;
 declare const index_GttOrderResponse: typeof GttOrderResponse;
 declare const index_GttOrderStatusResponse: typeof GttOrderStatusResponse;
@@ -4044,23 +1981,24 @@ declare const index_HoldingResponse: typeof HoldingResponse;
 declare const index_IntradayChartsRequest: typeof IntradayChartsRequest;
 type index_IpSetupService = IpSetupService;
 declare const index_IpSetupService: typeof IpSetupService;
-type index_KillSwitchResponse = KillSwitchResponse;
+declare const index_KillSwitchResponse: typeof KillSwitchResponse;
 declare const index_KnowYourMarginReq: typeof KnowYourMarginReq;
-type index_KnowYourMarginResponse = KnowYourMarginResponse;
-type index_MultiScripMarginCalcRequest = MultiScripMarginCalcRequest;
-type index_MultiScripMarginCalcResponse = MultiScripMarginCalcResponse;
+declare const index_KnowYourMarginResponse: typeof KnowYourMarginResponse;
+declare const index_MultiScripMarginCalcRequest: typeof MultiScripMarginCalcRequest;
+declare const index_MultiScripMarginCalcResponse: typeof MultiScripMarginCalcResponse;
 declare const index_OpenAPI: typeof OpenAPI;
 type index_OpenAPIConfig = OpenAPIConfig;
-type index_OptionChartPayload = OptionChartPayload;
+declare const index_OptionChartPayload: typeof OptionChartPayload;
 declare const index_OptionChartRequest: typeof OptionChartRequest;
-type index_OptionChartResponse = OptionChartResponse;
+declare const index_OptionChartResponse: typeof OptionChartResponse;
 declare const index_OrderModifyRequest: typeof OrderModifyRequest;
 declare const index_OrderRequest: typeof OrderRequest;
+declare const index_OrderResponse: typeof OrderResponse;
 declare const index_OrderStatusResponse: typeof OrderStatusResponse;
 type index_OrdersService = OrdersService;
 declare const index_OrdersService: typeof OrdersService;
-type index_PnlBasedExitRequest = PnlBasedExitRequest;
-type index_PnlExitResponse = PnlExitResponse;
+declare const index_PnlBasedExitRequest: typeof PnlBasedExitRequest;
+declare const index_PnlExitResponse: typeof PnlExitResponse;
 declare const index_PositionConversionRequest: typeof PositionConversionRequest;
 declare const index_PositionResponse: typeof PositionResponse;
 type index_PositionsPortfolioService = PositionsPortfolioService;
@@ -4069,448 +2007,1020 @@ declare const index_ScriptItem: typeof ScriptItem;
 type index_StatementsService = StatementsService;
 declare const index_StatementsService: typeof StatementsService;
 declare const index_SuperModifyRequest: typeof SuperModifyRequest;
+declare const index_SuperOrderLeg: typeof SuperOrderLeg;
 declare const index_SuperOrderRequest: typeof SuperOrderRequest;
+declare const index_SuperOrderResponse: typeof SuperOrderResponse;
 type index_SuperOrderService = SuperOrderService;
 declare const index_SuperOrderService: typeof SuperOrderService;
 declare const index_TradeHistoryResponseModel: typeof TradeHistoryResponseModel;
+declare const index_TradeResponse: typeof TradeResponse;
 type index_TraderSControlService = TraderSControlService;
 declare const index_TraderSControlService: typeof TraderSControlService;
-type index_UserIPRequest = UserIPRequest;
-type index_UserIPResponse = UserIPResponse;
+declare const index_UserIPRequest: typeof UserIPRequest;
+declare const index_UserIPResponse: typeof UserIPResponse;
 declare namespace index {
-  export { index_AlertCondition as AlertCondition, type index_AlertModifyRequest as AlertModifyRequest, index_AlertOrder as AlertOrder, type index_AlertOrderRequest as AlertOrderRequest, type index_AlertOrderResponse as AlertOrderResponse, index_ApiError as ApiError, type index_BoLedgerResponse as BoLedgerResponse, index_CancelError as CancelError, index_CancelablePromise as CancelablePromise, type index_ChartData as ChartData, type index_ChartsResponse as ChartsResponse, index_ConditionalTriggersService as ConditionalTriggersService, index_DataApiSService as DataApiSService, index_EdisBulkFormRequest as EdisBulkFormRequest, index_EdisFormRequest as EdisFormRequest, type index_EdisFormResponse as EdisFormResponse, type index_EdisQtyStatusResponse as EdisQtyStatusResponse, index_EdisService as EdisService, type index_ExitPnlResponse as ExitPnlResponse, index_ForeverOrderService as ForeverOrderService, type index_FundLimitResponse as FundLimitResponse, index_FundsMarginService as FundsMarginService, index_GTTOrderModel as GTTOrderModel, type index_GetAlertResponse as GetAlertResponse, type index_GetIPDetailsResponse as GetIPDetailsResponse, index_GttModifyRequest as GttModifyRequest, index_GttOrderResponse as GttOrderResponse, index_GttOrderStatusResponse as GttOrderStatusResponse, index_HistoricalChartsRequest as HistoricalChartsRequest, index_HoldingResponse as HoldingResponse, index_IntradayChartsRequest as IntradayChartsRequest, index_IpSetupService as IpSetupService, type index_KillSwitchResponse as KillSwitchResponse, index_KnowYourMarginReq as KnowYourMarginReq, type index_KnowYourMarginResponse as KnowYourMarginResponse, type index_MultiScripMarginCalcRequest as MultiScripMarginCalcRequest, type index_MultiScripMarginCalcResponse as MultiScripMarginCalcResponse, index_OpenAPI as OpenAPI, type index_OpenAPIConfig as OpenAPIConfig, type index_OptionChartPayload as OptionChartPayload, index_OptionChartRequest as OptionChartRequest, type index_OptionChartResponse as OptionChartResponse, index_OrderModifyRequest as OrderModifyRequest, index_OrderRequest as OrderRequest, OrderResponse$1 as OrderResponse, index_OrderStatusResponse as OrderStatusResponse, index_OrdersService as OrdersService, type index_PnlBasedExitRequest as PnlBasedExitRequest, type index_PnlExitResponse as PnlExitResponse, index_PositionConversionRequest as PositionConversionRequest, index_PositionResponse as PositionResponse, index_PositionsPortfolioService as PositionsPortfolioService, index_ScriptItem as ScriptItem, index_StatementsService as StatementsService, index_SuperModifyRequest as SuperModifyRequest, SuperOrderLeg$1 as SuperOrderLeg, index_SuperOrderRequest as SuperOrderRequest, SuperOrderResponse$1 as SuperOrderResponse, index_SuperOrderService as SuperOrderService, index_TradeHistoryResponseModel as TradeHistoryResponseModel, TradeResponse$1 as TradeResponse, index_TraderSControlService as TraderSControlService, type index_UserIPRequest as UserIPRequest, type index_UserIPResponse as UserIPResponse };
-}
-
-declare class Alerts {
-    private readonly httpClient;
-    constructor(httpClient: HttpClient);
-    list(): Promise<GetAlertResponse[]>;
-    getById(alertId: string): Promise<GetAlertResponse>;
-    place(request: AlertOrderRequest): Promise<AlertOrderResponse>;
-    modify(alertId: string, request: AlertModifyRequest): Promise<AlertOrderResponse>;
-    delete(alertId: string): Promise<AlertOrderResponse>;
-}
-
-declare class Charts {
-    private readonly httpClient;
-    constructor(httpClient: HttpClient);
-    option(request: OptionChartRequest): Promise<OptionChartResponse>;
-    intraday(request: IntradayChartsRequest): Promise<ChartsResponse>;
-    historical(request: HistoricalChartsRequest): Promise<ChartsResponse>;
-}
-
-declare class Edis {
-    private readonly httpClient;
-    constructor(httpClient: HttpClient);
-    form(request: EdisFormRequest): Promise<EdisFormResponse>;
-    bulkForm(request: EdisBulkFormRequest): Promise<EdisFormResponse>;
-    requestTpin(): Promise<unknown>;
-    getQuantityStatus(isin: string): Promise<EdisQtyStatusResponse>;
-}
-
-declare class ForeverOrders {
-    private readonly httpClient;
-    constructor(httpClient: HttpClient);
-    list(): Promise<GttOrderResponse[]>;
-    place(request: GTTOrderModel): Promise<GttOrderStatusResponse>;
-    modify(orderId: string, request: GttModifyRequest): Promise<GttOrderStatusResponse>;
-    cancel(orderId: string): Promise<GttOrderStatusResponse>;
-}
-
-declare class Funds {
-    private readonly httpClient;
-    constructor(httpClient: HttpClient);
-    getLimit(): Promise<FundLimitResponse>;
-    calculateMargin(request: KnowYourMarginReq): Promise<KnowYourMarginResponse>;
-    calculateMultiMargin(request: MultiScripMarginCalcRequest): Promise<MultiScripMarginCalcResponse>;
-}
-
-declare class IpSetup {
-    private readonly httpClient;
-    constructor(httpClient: HttpClient);
-    get(): Promise<GetIPDetailsResponse>;
-    set(request: UserIPRequest): Promise<UserIPResponse>;
-    modify(request: UserIPRequest): Promise<UserIPResponse>;
-}
-
-type TransactionType = "BUY" | "SELL";
-type ExchangeSegment = "NSE_EQ" | "NSE_FNO" | "NSE_COMM" | "BSE_EQ" | "BSE_FNO" | "MCX_COMM";
-type ProductType = "CNC" | "INTRADAY" | "MARGIN" | "MTF" | "BO" | "CO";
-type OrderType = "MARKET" | "LIMIT" | "STOP_LOSS" | "STOP_LOSS_MARKET";
-type Validity = "DAY" | "IOC";
-interface PlaceOrderRequest extends CorrelatedRequest {
-    dhanClientId?: string;
-    transactionType: TransactionType;
-    exchangeSegment: ExchangeSegment;
-    productType: ProductType;
-    orderType: OrderType;
-    validity?: Validity;
-    quantity: number;
-    disclosedQuantity?: number;
-    price?: number;
-    triggerPrice?: number;
-    afterMarketOrder?: boolean;
-    amoTime?: string;
-    securityId: string;
-    boProfitValue?: number;
-    boStopLossValue?: number;
-}
-interface ModifyOrderRequest {
-    orderId: string;
-    orderType?: OrderType;
-    validity?: Validity;
-    quantity?: number;
-    disclosedQuantity?: number;
-    price?: number;
-    triggerPrice?: number;
-}
-interface CancelOrderRequest {
-    orderId: string;
-}
-interface TradeHistoryRequest {
-    fromDate: string;
-    toDate: string;
-    pageNumber?: string;
-}
-interface OrderResponse {
-    orderId: string;
-    orderStatus?: string;
-    correlationId?: string;
-    [key: string]: unknown;
-}
-interface TradeResponse {
-    [key: string]: unknown;
-}
-
-declare class Orders {
-    private readonly httpClient;
-    constructor(httpClient: HttpClient);
-    place(request: PlaceOrderRequest): Promise<OrderOperationResult<OrderResponse>>;
-    list(): Promise<OrderResponse[]>;
-    getById(orderId: string): Promise<OrderResponse>;
-    getByCorrelationId(correlationId: string): Promise<OrderResponse>;
-    getTrades(orderId: string): Promise<TradeResponse[]>;
-    listTrades(): Promise<TradeResponse[]>;
-    getTradeHistory(request: TradeHistoryRequest): Promise<TradeResponse[]>;
-    placeSlice(request: PlaceOrderRequest): Promise<Array<OrderResponse>>;
-    modify(request: ModifyOrderRequest): Promise<OrderResponse>;
-    cancel(orderId: string): Promise<OrderResponse>;
-    private parsePlaceRequest;
-}
-
-declare class Positions {
-    private readonly httpClient;
-    constructor(httpClient: HttpClient);
-    list(): Promise<PositionResponse[]>;
-    listHoldings(): Promise<HoldingResponse[]>;
-    convert(request: PositionConversionRequest): Promise<unknown>;
-    exitAll(): Promise<UserIPResponse>;
-}
-
-interface LedgerRequest {
-    fromDate?: string;
-    toDate?: string;
-}
-declare class Statements {
-    private readonly httpClient;
-    constructor(httpClient: HttpClient);
-    ledger(request?: LedgerRequest): Promise<BoLedgerResponse>;
-}
-
-type SuperOrderProductType = "CNC" | "INTRADAY" | "MARGIN" | "MTF";
-type SuperOrderType = "MARKET" | "LIMIT";
-type SuperOrderLeg = "ENTRY_LEG" | "STOP_LOSS_LEG" | "TARGET_LEG";
-interface PlaceSuperOrderRequest extends CorrelatedRequest {
-    dhanClientId?: string;
-    transactionType: TransactionType;
-    exchangeSegment: ExchangeSegment;
-    productType: SuperOrderProductType;
-    orderType: SuperOrderType;
-    quantity: number;
-    price?: number;
-    targetPrice?: number;
-    stopLossPrice?: number;
-    trailingJump?: number;
-    securityId: string;
-}
-interface ModifySuperOrderRequest {
-    orderId: string;
-    price?: number;
-    targetPrice?: number;
-    stopLossPrice?: number;
-    quantity?: number;
-}
-interface CancelSuperOrderRequest {
-    orderId: string;
-    orderLeg: SuperOrderLeg;
-}
-interface SuperOrderResponse {
-    orderId: string;
-    orderStatus?: string;
-    correlationId?: string;
-    [key: string]: unknown;
-}
-
-declare class SuperOrders {
-    private readonly httpClient;
-    constructor(httpClient: HttpClient);
-    place(request: PlaceSuperOrderRequest): Promise<OrderOperationResult<SuperOrderResponse>>;
-    list(): Promise<SuperOrderResponse[]>;
-    modify(request: ModifySuperOrderRequest): Promise<SuperOrderResponse>;
-    cancel(request: CancelSuperOrderRequest): Promise<SuperOrderResponse>;
-    private parsePlaceRequest;
-}
-
-declare class TraderControls {
-    private readonly httpClient;
-    constructor(httpClient: HttpClient);
-    getPnlExit(): Promise<ExitPnlResponse>;
-    setPnlExit(request: PnlBasedExitRequest): Promise<PnlExitResponse>;
-    stopPnlExit(): Promise<UserIPResponse>;
-    getKillSwitchStatus(): Promise<KillSwitchResponse>;
-    setKillSwitch(killSwitchStatus: string): Promise<KillSwitchResponse>;
-}
-
-type MarketFeedMode = "ticker" | "quote" | "full";
-interface MarketDepthLevel {
-    bidQuantity: number;
-    askQuantity: number;
-    bidOrders: number;
-    askOrders: number;
-    bidPrice: number;
-    askPrice: number;
-}
-interface MarketPacketHeader {
-    responseCode: number;
-    messageLength: number;
-    exchangeSegmentCode: number;
-    exchangeSegment: string;
-    securityId: string;
-}
-interface MarketTickerEvent extends MarketPacketHeader {
-    type: "ticker";
-    ltp: number;
-    ltt: number;
-    raw: Buffer;
-}
-interface MarketPrevCloseEvent extends MarketPacketHeader {
-    type: "prev-close";
-    previousClose: number;
-    previousOpenInterest: number;
-    raw: Buffer;
-}
-interface MarketQuoteEvent extends MarketPacketHeader {
-    type: "quote";
-    ltp: number;
-    ltq: number;
-    ltt: number;
-    atp: number;
-    volume: number;
-    totalSellQuantity: number;
-    totalBuyQuantity: number;
-    dayOpen: number;
-    dayClose: number;
-    dayHigh: number;
-    dayLow: number;
-    raw: Buffer;
-}
-interface MarketOiEvent extends MarketPacketHeader {
-    type: "oi";
-    openInterest: number;
-    raw: Buffer;
-}
-interface MarketFullEvent extends MarketPacketHeader {
-    type: "full";
-    ltp: number;
-    ltq: number;
-    ltt: number;
-    atp: number;
-    volume: number;
-    totalSellQuantity: number;
-    totalBuyQuantity: number;
-    openInterest: number;
-    highestOpenInterest: number;
-    lowestOpenInterest: number;
-    dayOpen: number;
-    dayClose: number;
-    dayHigh: number;
-    dayLow: number;
-    depth: MarketDepthLevel[];
-    raw: Buffer;
-}
-interface MarketDisconnectEvent extends MarketPacketHeader {
-    type: "disconnect";
-    reasonCode: number;
-    raw: Buffer;
-}
-type MarketFeedEvent = MarketTickerEvent | MarketPrevCloseEvent | MarketQuoteEvent | MarketOiEvent | MarketFullEvent | MarketDisconnectEvent;
-interface OrderUpdateEvent {
-    type: "order_alert";
-    data: Record<string, unknown>;
-    raw: string;
-}
-interface OrderState {
-    orderId?: string;
-    correlationId?: string;
-    status?: string;
-    tradedQty?: number;
-    averageTradedPrice?: number;
-    securityId?: string;
-    raw: Record<string, unknown>;
-}
-interface MarketFeedWSOptions {
-    token?: string;
-    clientId: string;
-    url?: string;
-    reconnectDelayMs?: number;
-    mode?: MarketFeedMode;
-    webSocketFactory?: (url: string) => WebSocketLike;
-    tokenProvider?: () => Promise<string> | string;
-}
-interface OrderUpdateWSOptions {
-    token?: string;
-    clientId: string;
-    url?: string;
-    reconnectDelayMs?: number;
-    webSocketFactory?: (url: string) => WebSocketLike;
-    tokenProvider?: () => Promise<string> | string;
-    userType?: "SELF" | "PARTNER";
-    partnerId?: string;
-    partnerSecret?: string;
-}
-interface DhanWSOptions {
-    token?: string;
-    clientId: string;
-    marketFeedUrl?: string;
-    orderUpdateUrl?: string;
-    reconnectDelayMs?: number;
-    marketSocketFactory?: (url: string) => WebSocketLike;
-    orderSocketFactory?: (url: string) => WebSocketLike;
-    tokenProvider?: () => Promise<string> | string;
-    orderUserType?: "SELF" | "PARTNER";
-    partnerId?: string;
-    partnerSecret?: string;
-}
-interface WebSocketLike {
-    on(event: string, listener: (...args: unknown[]) => void): unknown;
-    send(data: string | Buffer): unknown;
-    close(): unknown;
-}
-interface StoredSubscription extends InstrumentSubscription {
-    mode: MarketFeedMode;
-}
-
-declare abstract class BaseWS extends EventEmitter {
-    private readonly urlFactory;
-    private readonly reconnectDelayMs;
-    private readonly webSocketFactory;
-    private reconnectTimer?;
-    protected connection?: WebSocketLike;
-    protected manuallyClosed: boolean;
-    protected reconnectAttempts: number;
-    isConnected: boolean;
-    constructor(urlFactory: () => Promise<string> | string, reconnectDelayMs: number, webSocketFactory: (url: string) => WebSocketLike);
-    connect(): Promise<void>;
-    disconnect(): void;
-    protected send(payload: string | Buffer): void;
-    private bindConnection;
-    private scheduleReconnect;
-    protected abstract onOpen(): Promise<void> | void;
-    protected abstract onMessage(data: unknown): void;
-    protected abstract onClose(): void;
-}
-
-declare class LTPStore {
-    private readonly values;
-    get(key: string): number | undefined;
-    set(key: string, value: number): void;
-    delete(key: string): void;
-    clear(): void;
-}
-
-declare class MarketFeedWS extends BaseWS {
-    private readonly subscriptions;
-    private readonly ltpStore;
-    private readonly mode;
-    constructor(options: MarketFeedWSOptions, ltpStore: LTPStore);
-    subscribe(instruments: InstrumentSubscription[]): void;
-    unsubscribe(instruments: InstrumentSubscription[]): void;
-    getSubscriptions(): StoredSubscription[];
-    protected onOpen(): void;
-    protected onMessage(data: unknown): void;
-    protected onClose(): void;
-    private sendSubscription;
-    private subscriptionKey;
-}
-
-declare class OrderStore {
-    private readonly byOrderId;
-    private readonly byCorrelationId;
-    upsert(state: OrderState): void;
-    getByOrderId(orderId: string): OrderState | undefined;
-    getByCorrelationId(correlationId: string): OrderState | undefined;
-    clear(): void;
-}
-
-declare class OrderUpdateWS extends BaseWS {
-    private readonly authResolver;
-    private readonly clientId;
-    private readonly orderStore;
-    private readonly userType;
-    private readonly partnerId?;
-    private readonly partnerSecret?;
-    constructor(options: OrderUpdateWSOptions, orderStore: OrderStore);
-    protected onOpen(): Promise<void>;
-    protected onMessage(data: unknown): void;
-    protected onClose(): void;
-}
-
-declare class DhanWS {
-    readonly ltpStore: LTPStore;
-    readonly orderStore: OrderStore;
-    readonly market: MarketFeedWS;
-    readonly orders: OrderUpdateWS;
-    constructor(options: DhanWSOptions);
-    connect(): Promise<void>;
-    disconnect(): void;
-    subscribe(instruments: InstrumentSubscription[]): void;
+  export { index_AlertCondition as AlertCondition, index_AlertModifyRequest as AlertModifyRequest, index_AlertOrder as AlertOrder, index_AlertOrderRequest as AlertOrderRequest, index_AlertOrderResponse as AlertOrderResponse, index_ApiError as ApiError, index_BoLedgerResponse as BoLedgerResponse, index_CancelError as CancelError, index_CancelablePromise as CancelablePromise, index_ChartData as ChartData, index_ChartsResponse as ChartsResponse, index_ConditionalTriggersService as ConditionalTriggersService, index_DataApiSService as DataApiSService, index_EdisBulkFormRequest as EdisBulkFormRequest, index_EdisFormRequest as EdisFormRequest, index_EdisFormResponse as EdisFormResponse, index_EdisQtyStatusResponse as EdisQtyStatusResponse, index_EdisService as EdisService, index_ExitPnlResponse as ExitPnlResponse, index_ForeverOrderService as ForeverOrderService, index_FundLimitResponse as FundLimitResponse, index_FundsMarginService as FundsMarginService, index_GTTOrderModel as GTTOrderModel, index_GetAlertResponse as GetAlertResponse, index_GetIPDetailsResponse as GetIPDetailsResponse, index_GttModifyRequest as GttModifyRequest, index_GttOrderResponse as GttOrderResponse, index_GttOrderStatusResponse as GttOrderStatusResponse, index_HistoricalChartsRequest as HistoricalChartsRequest, index_HoldingResponse as HoldingResponse, index_IntradayChartsRequest as IntradayChartsRequest, index_IpSetupService as IpSetupService, index_KillSwitchResponse as KillSwitchResponse, index_KnowYourMarginReq as KnowYourMarginReq, index_KnowYourMarginResponse as KnowYourMarginResponse, index_MultiScripMarginCalcRequest as MultiScripMarginCalcRequest, index_MultiScripMarginCalcResponse as MultiScripMarginCalcResponse, index_OpenAPI as OpenAPI, type index_OpenAPIConfig as OpenAPIConfig, index_OptionChartPayload as OptionChartPayload, index_OptionChartRequest as OptionChartRequest, index_OptionChartResponse as OptionChartResponse, index_OrderModifyRequest as OrderModifyRequest, index_OrderRequest as OrderRequest, index_OrderResponse as OrderResponse, index_OrderStatusResponse as OrderStatusResponse, index_OrdersService as OrdersService, index_PnlBasedExitRequest as PnlBasedExitRequest, index_PnlExitResponse as PnlExitResponse, index_PositionConversionRequest as PositionConversionRequest, index_PositionResponse as PositionResponse, index_PositionsPortfolioService as PositionsPortfolioService, index_ScriptItem as ScriptItem, index_StatementsService as StatementsService, index_SuperModifyRequest as SuperModifyRequest, index_SuperOrderLeg as SuperOrderLeg, index_SuperOrderRequest as SuperOrderRequest, index_SuperOrderResponse as SuperOrderResponse, index_SuperOrderService as SuperOrderService, index_TradeHistoryResponseModel as TradeHistoryResponseModel, index_TradeResponse as TradeResponse, index_TraderSControlService as TraderSControlService, index_UserIPRequest as UserIPRequest, index_UserIPResponse as UserIPResponse };
 }
 
 declare function parseMarketFeedPacket(packet: Buffer, subscriptions: StoredSubscription[]): MarketFeedEvent | null;
 
 declare function splitPackets(buffer: Buffer): Buffer[];
 
-interface DhanClientDependencies extends HttpClientDependencies {
+/** Version stamped on a tool definition that does not declare its own. */
+declare const DEFAULT_TOOL_VERSION = "1.0.0";
+interface CatalogueDependencies {
+    client: DhanClient;
+    skills: SkillRegistry;
+    pipeline: Pipeline;
 }
-declare class DhanClient {
-    private readonly config;
-    readonly generated: GeneratedClient;
-    readonly orders: Orders;
-    readonly superOrders: SuperOrders;
-    readonly positions: Positions;
-    readonly alerts: Alerts;
-    readonly foreverOrders: ForeverOrders;
-    readonly funds: Funds;
-    readonly charts: Charts;
-    readonly edis: Edis;
-    readonly statements: Statements;
-    readonly traderControls: TraderControls;
-    readonly ipSetup: IpSetup;
-    readonly ws: DhanWS;
-    readonly auth: {
-        generateAccessToken: typeof DhanAuth.generateAccessToken;
-        generateTotp: typeof DhanAuth.generateTotp;
-        renewWebToken: typeof DhanAuth.renewWebToken;
-        enableAutoTokenManagement: (options: EnableAutoTokenManagementOptions) => TokenManager;
+/**
+ * The catalogue of tools exposed to MCP clients and agent runtimes: what
+ * exists, at what scope, at what risk, and which handler carries it out.
+ *
+ * Declarative on purpose — adding an endpoint means adding an entry here and
+ * a schema in `schemas.ts`. Policy enforcement lives in
+ * {@link AgentToolRegistry}, so handlers here carry no scope checks of their
+ * own.
+ */
+declare function buildCatalogue(deps: CatalogueDependencies): Tool[];
+
+interface OrderPreviewResult {
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+    action: "place_order";
+    risk: "live_order_requires_confirmation";
+    requires: string[];
+    summary: string;
+    riskChecks?: Array<{
+        check: string;
+        message: string;
+    }>;
+    order: Record<string, unknown>;
+}
+interface OrderPreviewOptions {
+    pipeline?: Pipeline;
+    instrument?: Instrument;
+}
+/**
+ * Validates and summarizes an order without placing it.
+ *
+ * Runs the same contract the live order path uses, then — when a risk pipeline
+ * is supplied — collects *every* risk violation rather than stopping at the
+ * first, so an agent sees the full picture before asking for confirmation.
+ */
+declare function previewOrder(params: Record<string, unknown>, options?: OrderPreviewOptions): Promise<OrderPreviewResult>;
+
+interface EquityOverlayContext extends SkillContext {
+    symbol: string;
+    expiry: string;
+    quantity: number;
+    equitySecurityId?: string;
+    spotPrice?: number;
+    chain?: NormalizedOptionChain;
+    intent?: Record<string, unknown>;
+}
+/**
+ * Shared scaffolding for structures that pair an equity position with an
+ * option leg. Like the index structures, these stop at an intent.
+ */
+declare abstract class EquityOverlaySkill extends Skill<EquityOverlayContext> {
+    protected abstract buildIntent(context: EquityOverlayContext): EquityOverlayContext;
+    protected steps(): Array<SkillStep<EquityOverlayContext>>;
+    protected requireChain(context: EquityOverlayContext): {
+        chain: NormalizedOptionChain;
+        spot: number;
     };
-    private tokenManager?;
-    constructor(config: DhanClientConfig, dependencies?: DhanClientDependencies);
-    getConfig(): DhanClientConfig;
-    static fromTokenEndpoint(options: {
-        endpointBaseUrl: string;
-        bearerToken: string;
-        axiosInstance?: AxiosInstance;
-    }): Promise<DhanClient>;
+}
+/** Hold the stock, sell an OTM call against it for premium income. */
+declare class CoveredCallSkill extends EquityOverlaySkill {
+    readonly definition: SkillDefinition;
+    protected buildIntent(context: EquityOverlayContext): EquityOverlayContext;
+}
+/** Hold the stock, buy an OTM put as downside insurance. */
+declare class ProtectivePutSkill extends EquityOverlaySkill {
+    readonly definition: SkillDefinition;
+    protected buildIntent(context: EquityOverlayContext): EquityOverlayContext;
+}
+
+interface SummarizerContext extends SkillContext {
+    underlyingSymbol: string;
+    mode: "both" | "technicals" | "option_chain";
+    instrument?: Instrument;
+    technicalSummary?: Record<string, unknown>;
+    optionChainSummary?: Record<string, unknown>;
+    summary?: Record<string, unknown>;
+}
+/**
+ * Read-only market context for a symbol: trend and momentum from daily
+ * candles, plus positioning from the option chain.
+ *
+ * The one builtin that touches no order path at all, hence `read_only`.
+ */
+declare class MarketDataSummarizerSkill extends Skill<SummarizerContext> {
+    readonly definition: SkillDefinition;
+    protected steps(): Array<SkillStep<SummarizerContext>>;
+    /** Indices first, then cash equity, then a broad search. */
+    private resolve;
+    private technicals;
+    private optionChain;
+}
+
+/** One leg of a prepared option structure. */
+interface IntentLeg {
+    action: string;
+    optionType: "CE" | "PE";
+    strike: number;
+    securityId?: string;
+    premium?: number;
+}
+interface OptionSkillContext extends SkillContext {
+    symbol: string;
+    expiry: string;
+    quantity: number;
+    spotPrice?: number;
+    chain?: NormalizedOptionChain;
+    legs?: IntentLeg[];
+    intent?: Record<string, unknown>;
+}
+/**
+ * Shared scaffolding for index option structures.
+ *
+ * Every one of them resolves the index, pulls the chain, picks strikes and
+ * stops at an intent — no orders are placed, which is why they sit at
+ * `trade_adjacent_read` rather than a write risk level.
+ */
+declare abstract class OptionStructureSkill<TContext extends OptionSkillContext = OptionSkillContext> extends Skill<TContext> {
+    protected abstract selectLegs(context: TContext): TContext;
+    protected abstract buildIntent(context: TContext): TContext;
+    protected steps(): Array<SkillStep<TContext>>;
+    protected requireChain(context: TContext): {
+        chain: NormalizedOptionChain;
+        spot: number;
+    };
+    protected leg(entry: ReturnType<typeof nearestStrike>, optionType: "CE" | "PE", action: string): IntentLeg;
+}
+/** Buy the at-the-money call on an index. */
+declare class BuyAtmCallSkill extends OptionStructureSkill {
+    readonly definition: SkillDefinition;
+    protected selectLegs(context: OptionSkillContext): OptionSkillContext;
+    protected buildIntent(context: OptionSkillContext): OptionSkillContext;
+}
+/** Buy the ATM call and put together — a long volatility position. */
+declare class StraddleSkill extends OptionStructureSkill {
+    readonly definition: SkillDefinition;
+    protected selectLegs(context: OptionSkillContext): OptionSkillContext;
+    protected buildIntent(context: OptionSkillContext): OptionSkillContext;
+}
+/** Buy an OTM call and an OTM put a set percentage either side of spot. */
+declare class StrangleSkill extends OptionStructureSkill {
+    readonly definition: SkillDefinition;
+    protected selectLegs(context: OptionSkillContext): OptionSkillContext;
+    protected buildIntent(context: OptionSkillContext): OptionSkillContext;
+}
+/** Sell an OTM call and put, buying wings further out to cap the loss. */
+declare class IronCondorSkill extends OptionStructureSkill {
+    readonly definition: SkillDefinition;
+    protected selectLegs(context: OptionSkillContext): OptionSkillContext;
+    protected buildIntent(context: OptionSkillContext): OptionSkillContext;
+}
+/** Sell an OTM put, buy a further OTM put — bullish, defined risk. */
+declare class BullPutSpreadSkill extends OptionStructureSkill {
+    readonly definition: SkillDefinition;
+    protected selectLegs(context: OptionSkillContext): OptionSkillContext;
+    protected buildIntent(context: OptionSkillContext): OptionSkillContext;
+}
+/** Sell an OTM call, buy a further OTM call — bearish, defined risk. */
+declare class BearCallSpreadSkill extends OptionStructureSkill {
+    readonly definition: SkillDefinition;
+    protected selectLegs(context: OptionSkillContext): OptionSkillContext;
+    protected buildIntent(context: OptionSkillContext): OptionSkillContext;
+}
+
+interface PositionContext extends SkillContext {
+    positions?: Array<Record<string, unknown>>;
+    exited?: boolean;
+}
+/**
+ * Exit every open position at market.
+ *
+ * Destructive and irreversible during market hours, hence `destructive_write`
+ * — it needs `orders:write` *and* the live-trading gate.
+ */
+declare class SquareOffAllSkill extends Skill<PositionContext> {
+    readonly definition: SkillDefinition;
+    protected steps(): Array<SkillStep<PositionContext>>;
+}
+/** Exit one named position, identified by symbol and segment. */
+declare class SquareOffPositionSkill extends Skill<PositionContext> {
+    readonly definition: SkillDefinition;
+    protected steps(): Array<SkillStep<PositionContext>>;
+}
+
+/** Fresh instances of every builtin skill. */
+declare function builtinSkills(): Array<Skill<SkillContext>>;
+/** A registry preloaded with every builtin skill. */
+declare function createSkillRegistry(): SkillRegistry;
+
+/**
+ * Ad-hoc multi-step orchestration for callers who want a skill-shaped pipeline
+ * without declaring a {@link Skill} subclass.
+ *
+ * Steps run in priority order (lower first, declaration order breaking ties)
+ * and thread one context through, same as a skill.
+ */
+interface WorkflowStep<TContext> {
+    name: string;
+    priority: number;
+    run(context: TContext): Promise<TContext> | TContext;
+}
+declare class Workflow<TContext extends Record<string, unknown>> {
+    readonly name: string;
+    private readonly workflowSteps;
+    constructor(name?: string);
+    /** Appends a step. Lower `priority` runs earlier; the default is 10. */
+    step(name: string, run: (context: TContext) => Promise<TContext> | TContext, priority?: number): this;
+    get steps(): ReadonlyArray<WorkflowStep<TContext>>;
+    /** Runs every step in order and returns the final context. */
+    call(context: TContext): Promise<TContext>;
+    /**
+     * Runs every step, stopping at the first failure and reporting which step
+     * failed rather than surfacing a bare error.
+     */
+    run(context: TContext): Promise<{
+        ok: true;
+        context: TContext;
+        completed: string[];
+    } | {
+        ok: false;
+        context: TContext;
+        completed: string[];
+        failedStep: string;
+        error: unknown;
+    }>;
+    private ordered;
+}
+
+/**
+ * JSON Schema fragments describing what each agent tool accepts.
+ *
+ * Pure data — no API calls, no policy, no state. Kept apart from the catalogue
+ * so adding an endpoint means editing a schema here and a handler there,
+ * rather than growing one module that registers, describes and dispatches.
+ */
+declare const emptySchema: JsonSchema;
+declare const searchSchema: JsonSchema;
+declare const feedSchema: JsonSchema;
+declare const orderSchema$1: JsonSchema;
+declare const modifyOrderSchema: JsonSchema;
+declare const cancelSchema: JsonSchema;
+declare const optionChainSchema: JsonSchema;
+declare const expiryListSchema: JsonSchema;
+declare const historicalSchema: JsonSchema;
+declare const intradaySchema: JsonSchema;
+declare const technicalsSchema: JsonSchema;
+declare const marginSchema: JsonSchema;
+/** Turns a skill's parameter declarations into an input schema. */
+declare function skillInputSchema(params: Record<string, SkillParam>): JsonSchema;
+
+declare const schemas_cancelSchema: typeof cancelSchema;
+declare const schemas_emptySchema: typeof emptySchema;
+declare const schemas_expiryListSchema: typeof expiryListSchema;
+declare const schemas_feedSchema: typeof feedSchema;
+declare const schemas_historicalSchema: typeof historicalSchema;
+declare const schemas_intradaySchema: typeof intradaySchema;
+declare const schemas_marginSchema: typeof marginSchema;
+declare const schemas_modifyOrderSchema: typeof modifyOrderSchema;
+declare const schemas_optionChainSchema: typeof optionChainSchema;
+declare const schemas_searchSchema: typeof searchSchema;
+declare const schemas_skillInputSchema: typeof skillInputSchema;
+declare const schemas_technicalsSchema: typeof technicalsSchema;
+declare namespace schemas {
+  export { schemas_cancelSchema as cancelSchema, schemas_emptySchema as emptySchema, schemas_expiryListSchema as expiryListSchema, schemas_feedSchema as feedSchema, schemas_historicalSchema as historicalSchema, schemas_intradaySchema as intradaySchema, schemas_marginSchema as marginSchema, schemas_modifyOrderSchema as modifyOrderSchema, schemas_optionChainSchema as optionChainSchema, orderSchema$1 as orderSchema, schemas_searchSchema as searchSchema, schemas_skillInputSchema as skillInputSchema, schemas_technicalsSchema as technicalsSchema };
+}
+
+/**
+ * Technical indicators.
+ *
+ * Every series function returns an array the same length as its input, with
+ * `null` in the leading positions where there is not yet enough data. Callers
+ * can therefore index indicator output by bar without re-aligning it.
+ */
+interface OhlcBar {
+    open?: number;
+    high: number;
+    low: number;
+    close: number;
+    volume?: number;
+}
+type IndicatorSeries = Array<number | null>;
+/** Simple moving average. */
+declare function sma(data: number[], period?: number): IndicatorSeries;
+/** Weighted moving average — linear weights, heaviest on the newest bar. */
+declare function wma(data: number[], period?: number): IndicatorSeries;
+/**
+ * Exponential moving average. The first value is seeded with the SMA of the
+ * opening window, which is the convention the rest of this module assumes.
+ */
+declare function ema(data: number[], period?: number): IndicatorSeries;
+/** Wilder's relative strength index. */
+declare function rsi(data: number[], period?: number): IndicatorSeries;
+interface MacdResult {
+    macdLine: IndicatorSeries;
+    signalLine: IndicatorSeries;
+    histogram: IndicatorSeries;
+}
+/** Moving average convergence/divergence. */
+declare function macd(data: number[], { fastPeriod, slowPeriod, signalPeriod }?: {
+    fastPeriod?: number | undefined;
+    slowPeriod?: number | undefined;
+    signalPeriod?: number | undefined;
+}): MacdResult;
+interface BollingerBandsResult {
+    upper: IndicatorSeries;
+    middle: IndicatorSeries;
+    lower: IndicatorSeries;
+}
+/** Bollinger bands around an SMA. */
+declare function bollingerBands(data: number[], { period, standardDeviations }?: {
+    period?: number | undefined;
+    standardDeviations?: number | undefined;
+}): BollingerBandsResult;
+/** True range per bar. The first bar falls back to high − low. */
+declare function trueRanges(bars: OhlcBar[]): number[];
+/** Average true range, smoothed the Wilder way. */
+declare function atr(bars: OhlcBar[], period?: number): IndicatorSeries;
+interface AdxResult {
+    adx: IndicatorSeries;
+    plusDi: IndicatorSeries;
+    minusDi: IndicatorSeries;
+}
+/** Average directional index with both directional indicators. */
+declare function adx(bars: OhlcBar[], period?: number): AdxResult;
+interface StochasticResult {
+    k: IndicatorSeries;
+    d: IndicatorSeries;
+}
+/** Stochastic oscillator (%K and its %D moving average). */
+declare function stochastic(bars: OhlcBar[], { period, signalPeriod }?: {
+    period?: number | undefined;
+    signalPeriod?: number | undefined;
+}): StochasticResult;
+interface SupertrendResult {
+    trend: IndicatorSeries;
+    /** `1` while price is above the band, `-1` below, `null` before the seed. */
+    direction: Array<1 | -1 | null>;
+}
+/** Supertrend — ATR bands that flip direction when price closes through them. */
+declare function supertrend(bars: OhlcBar[], { period, multiplier }?: {
+    period?: number | undefined;
+    multiplier?: number | undefined;
+}): SupertrendResult;
+/** Volume-weighted average price, cumulative from the first bar. */
+declare function vwap(bars: OhlcBar[]): IndicatorSeries;
+/** On-balance volume. */
+declare function obv(bars: OhlcBar[]): IndicatorSeries;
+/** Last non-null value of an indicator series. */
+declare function latest(series: IndicatorSeries): number | null;
+
+/** A single OHLCV bar with its timestamp in epoch seconds. */
+interface Candle extends OhlcBar {
+    timestamp: number;
+    open: number;
+    volume: number;
+    openInterest?: number;
+}
+/**
+ * The columnar payload the charts endpoints return: parallel arrays rather
+ * than a list of candle objects.
+ */
+interface ChartSeries {
+    timestamp?: Array<number | string>;
+    open?: Array<number | string>;
+    high?: Array<number | string>;
+    low?: Array<number | string>;
+    close?: Array<number | string>;
+    volume?: Array<number | string>;
+    open_interest?: Array<number | string>;
+    [key: string]: unknown;
+}
+/** Epoch seconds from an epoch number, epoch string or ISO/date string. */
+declare function parseTimestamp(value: number | string): number;
+/**
+ * Converts a columnar chart response into candles. Rows where any OHLC column
+ * is missing are dropped rather than emitted as `NaN`.
+ */
+declare function candlesFromSeries(series: ChartSeries | undefined): Candle[];
+/**
+ * Aggregates 1-minute candles up to a coarser interval by flooring each
+ * timestamp to its bucket. Returns the input untouched for `minutes <= 1`.
+ */
+declare function resample(candles: Candle[], minutes: number): Candle[];
+declare function closes(candles: Candle[]): number[];
+declare function highs(candles: Candle[]): number[];
+declare function lows(candles: Candle[]): number[];
+declare function volumes(candles: Candle[]): number[];
+
+/** Minute intervals the charts API serves, and the keys they map to. */
+declare const TIMEFRAMES: {
+    readonly 1: "m1";
+    readonly 5: "m5";
+    readonly 15: "m15";
+    readonly 25: "m25";
+    readonly 60: "m60";
+};
+type TimeframeKey = (typeof TIMEFRAMES)[keyof typeof TIMEFRAMES];
+interface TechnicalAnalysisOptions {
+    rsiPeriod?: number;
+    atrPeriod?: number;
+    adxPeriod?: number;
+    macdFast?: number;
+    macdSlow?: number;
+    macdSignal?: number;
+    smaPeriod?: number;
+    emaPeriod?: number;
+    bollingerPeriod?: number;
+    /** Pause between per-interval chart requests, in ms. Defaults to 1000. */
+    throttleMs?: number;
+}
+interface ComputeRequest {
+    securityId: string;
+    exchangeSegment: string;
+    instrument: string;
+    fromDate?: string;
+    toDate?: string;
+    /** Trading days of history to pull. Derived from indicator periods if omitted. */
+    daysBack?: number;
+    intervals?: number[];
+    oi?: boolean;
+}
+interface TimeframeIndicators {
+    rsi: number | null;
+    adx: number | null;
+    atr: number | null;
+    sma: number | null;
+    ema: number | null;
+    vwap: number | null;
+    macd: {
+        macd: number | null;
+        signal: number | null;
+        hist: number | null;
+    };
+    bollinger: {
+        upper: number | null;
+        middle: number | null;
+        lower: number | null;
+    };
+    stochastic: {
+        k: number | null;
+        d: number | null;
+    };
+    supertrend: {
+        value: number | null;
+        direction: 1 | -1 | null;
+    };
+    lastClose: number | null;
+    candleCount: number;
+}
+interface TechnicalAnalysisResult {
+    meta: {
+        securityId: string;
+        exchangeSegment: string;
+        instrument: string;
+        fromDate: string;
+        toDate: string;
+    };
+    indicators: Partial<Record<TimeframeKey, TimeframeIndicators>>;
+}
+/**
+ * Multi-timeframe indicator computation over the charts API.
+ *
+ * Pulls intraday candles per interval, then reduces each timeframe to the
+ * latest value of every indicator — the shape {@link analyzeMultiTimeframe}
+ * consumes.
+ */
+declare class TechnicalAnalysis {
+    private readonly charts;
+    private readonly options;
+    constructor(charts: Charts, options?: TechnicalAnalysisOptions);
+    /** Fetches candles per interval and computes indicators for each. */
+    compute(request: ComputeRequest): Promise<TechnicalAnalysisResult>;
+    /**
+     * Computes the same multi-timeframe result from a single base series by
+     * resampling, so one API call can cover every interval.
+     */
+    computeFromCandles(baseCandles: Candle[], intervals?: number[]): Partial<Record<TimeframeKey, TimeframeIndicators>>;
+    /** Every indicator for one timeframe, reduced to its latest value. */
+    computeFor(candles: Candle[]): TimeframeIndicators;
+    /** Bars needed before the slowest configured indicator produces a value. */
+    private requiredBars;
+    private autoDaysNeeded;
+    private normalizeToDate;
+    private normalizeFromDate;
+}
+
+type Momentum = "overbought" | "oversold" | "bullish" | "bearish" | "neutral" | "unknown";
+type TrendStrength = "strong" | "moderate" | "weak" | "unknown";
+type Signal = "bullish" | "bearish" | "neutral" | "unknown";
+type Bias = "bullish" | "bearish" | "neutral";
+type Setup = "buy_on_dip" | "sell_on_rise" | "range_trade";
+interface TimeframeClassification {
+    momentum: Momentum;
+    trend: TrendStrength;
+    macdSignal: Signal;
+    volatility: "expanding" | "flat" | "unknown";
+    bias: Bias;
+}
+interface MultiTimeframeSummary {
+    meta: TechnicalAnalysisResult["meta"] | Record<string, never>;
+    perTimeframe: Partial<Record<TimeframeKey, TimeframeClassification>>;
+    summary: {
+        bias: Bias;
+        setup: Setup;
+        /** Weighted score in `[0, 1]`; 1 is unanimously bullish. */
+        confidence: number;
+        rationale: {
+            rsi: string;
+            macd: string;
+            adx: string;
+            atr: string;
+        };
+        trendStrength: TrendStrength;
+    };
+}
+/**
+ * Blends per-timeframe indicator readings into a single directional bias.
+ *
+ * Each timeframe is classified independently, then scored and weighted by
+ * horizon — a 60-minute reading counts four times a 1-minute one.
+ */
+declare function analyzeMultiTimeframe(data: Pick<TechnicalAnalysisResult, "indicators"> & Partial<Pick<TechnicalAnalysisResult, "meta">>): MultiTimeframeSummary;
+
+/**
+ * Prompt construction for AI trading assistants.
+ *
+ * These render account and market state into text an LLM can reason over —
+ * they never call the API themselves, so a caller decides what data to fetch
+ * and how fresh it needs to be.
+ */
+interface HoldingLike {
+    tradingSymbol?: string;
+    securityId?: string;
+    totalQty?: number;
+    avgCostPrice?: number;
+    [key: string]: unknown;
+}
+interface PositionLike {
+    tradingSymbol?: string;
+    securityId?: string;
+    netQty?: number;
+    buyAvg?: number;
+    costPrice?: number;
+    unrealizedProfit?: number;
+    realizedProfit?: number;
+    productType?: string;
+    [key: string]: unknown;
+}
+interface FundsLike {
+    availabelBalance?: number;
+    availableBalance?: number;
+    utilizedAmount?: number;
+    withdrawableBalance?: number;
+    [key: string]: unknown;
+}
+/** System prompt establishing the assistant's remit and guardrails. */
+declare function systemPrompt(capabilities?: string[]): string;
+/** Human-readable portfolio state: funds, holdings and open positions. */
+declare function portfolioSummary(input: {
+    holdings?: HoldingLike[];
+    positions?: PositionLike[];
+    funds?: FundsLike;
+}): string;
+/**
+ * Risk exposure across positions.
+ *
+ * P&L is summed over every position, but the count is restricted to open
+ * ones — a closed position still contributed realized P&L today.
+ */
+declare function riskReport(input: {
+    positions?: PositionLike[];
+    maxDrawdownPct?: number;
+    dailyLossLimit?: number;
+}): string;
+/** Renders a multi-timeframe bias into prose. */
+declare function marketAnalysis(summary: MultiTimeframeSummary): string;
+/** Confirmation text to show a human before a live order goes out. */
+declare function orderConfirmation(order: Record<string, unknown>): string;
+
+type promptHelpers_FundsLike = FundsLike;
+type promptHelpers_HoldingLike = HoldingLike;
+type promptHelpers_PositionLike = PositionLike;
+declare const promptHelpers_marketAnalysis: typeof marketAnalysis;
+declare const promptHelpers_orderConfirmation: typeof orderConfirmation;
+declare const promptHelpers_portfolioSummary: typeof portfolioSummary;
+declare const promptHelpers_riskReport: typeof riskReport;
+declare const promptHelpers_systemPrompt: typeof systemPrompt;
+declare namespace promptHelpers {
+  export { type promptHelpers_FundsLike as FundsLike, type promptHelpers_HoldingLike as HoldingLike, type promptHelpers_PositionLike as PositionLike, promptHelpers_marketAnalysis as marketAnalysis, promptHelpers_orderConfirmation as orderConfirmation, promptHelpers_portfolioSummary as portfolioSummary, promptHelpers_riskReport as riskReport, promptHelpers_systemPrompt as systemPrompt };
+}
+
+/**
+ * Black-Scholes pricing, Greeks and implied volatility.
+ *
+ * Time to expiry is in years and rates/volatilities are annualized decimals
+ * (`0.065` for 6.5%), matching the convention in the Ruby gem.
+ */
+type OptionKind = "call" | "put";
+interface BlackScholesInput {
+    spot: number;
+    strike: number;
+    timeToExpiry: number;
+    riskFreeRate: number;
+    volatility: number;
+    optionType: OptionKind;
+}
+interface Greeks {
+    delta: number;
+    gamma: number;
+    /** Per-day theta, i.e. the annual figure divided by 365. */
+    theta: number;
+    /** Per 1% change in volatility. */
+    vega: number;
+    /** Per 1% change in the risk-free rate. */
+    rho: number;
+}
+/** Theoretical option price. Returns 0 at or past expiry. */
+declare function price(input: BlackScholesInput): number;
+/** Delta, gamma, theta, vega and rho. All zero at or past expiry. */
+declare function greeks(input: BlackScholesInput): Greeks;
+interface ImpliedVolatilityInput {
+    marketPrice: number;
+    spot: number;
+    strike: number;
+    timeToExpiry: number;
+    riskFreeRate: number;
+    optionType: OptionKind;
+    tolerance?: number;
+    maxIterations?: number;
+}
+/**
+ * Implied volatility by Newton-Raphson from a 20% seed.
+ *
+ * Returns the best estimate reached within `maxIterations`; deep in- or
+ * out-of-the-money options where vega collapses may not converge, in which
+ * case the last iterate is returned rather than throwing.
+ */
+declare function impliedVolatility(input: ImpliedVolatilityInput): number;
+/** Standard normal CDF. */
+declare function normalCdf(x: number): number;
+/** Standard normal PDF. */
+declare function normalPdf(x: number): number;
+/** Abramowitz & Stegun 7.1.26 error function approximation. */
+declare function erf(value: number): number;
+/** Years between now and an expiry date, floored at zero. */
+declare function yearsToExpiry(expiry: Date | string, now?: Date): number;
+
+/** Open interest at one strike, both sides. */
+interface StrikeOpenInterest {
+    strike: number;
+    callOi: number;
+    putOi: number;
+}
+interface MaxPainDetail {
+    maxPainStrike: number;
+    totalPain: number;
+    painDistribution: Array<{
+        strike: number;
+        pain: number;
+    }>;
+}
+/**
+ * Max pain: the expiry price at which option writers lose the least, i.e.
+ * the strike where the most contracts expire worthless.
+ */
+declare function maxPain(data: StrikeOpenInterest[]): number | undefined;
+/** Max pain plus the full pain curve, for plotting or inspection. */
+declare function detailedMaxPain(data: StrikeOpenInterest[]): MaxPainDetail | undefined;
+/** Put-call ratio by open interest. Returns 0 when there is no call OI. */
+declare function putCallRatio(data: StrikeOpenInterest[]): number;
+/** Put-call ratio by traded volume. */
+declare function volumePutCallRatio(chain: NormalizedOptionChain): number;
+/** Extracts the open-interest view a max-pain calculation needs from a chain. */
+declare function openInterestFromChain(chain: NormalizedOptionChain): StrikeOpenInterest[];
+interface OiConcentration {
+    strike: number;
+    oi: number;
+}
+/** The `count` strikes carrying the most call open interest — resistance. */
+declare function highestCallOi(chain: NormalizedOptionChain, count?: number): OiConcentration[];
+/** The `count` strikes carrying the most put open interest — support. */
+declare function highestPutOi(chain: NormalizedOptionChain, count?: number): OiConcentration[];
+
+/**
+ * Enumerations and helper lookups shared by the REST, WebSocket, risk, skill and
+ * agent layers. Mirrors `DhanHQ::Constants` in the Ruby gem.
+ */
+declare const ExchangeSegment: {
+    readonly IDX_I: "IDX_I";
+    readonly NSE_EQ: "NSE_EQ";
+    readonly NSE_FNO: "NSE_FNO";
+    readonly NSE_CURRENCY: "NSE_CURRENCY";
+    readonly NSE_COMM: "NSE_COMM";
+    readonly BSE_EQ: "BSE_EQ";
+    readonly MCX_COMM: "MCX_COMM";
+    readonly BSE_CURRENCY: "BSE_CURRENCY";
+    readonly BSE_FNO: "BSE_FNO";
+    /**
+     * US / international equities, traded through the Global Stocks APIs
+     * (`/v2/globalstocks/*`). Deliberately excluded from `ALL` so it can never
+     * satisfy a domestic order contract.
+     */
+    readonly INX_EQ: "INX_EQ";
+};
+declare const EXCHANGE_SEGMENTS: readonly ["IDX_I", "NSE_EQ", "NSE_FNO", "NSE_CURRENCY", "NSE_COMM", "BSE_EQ", "MCX_COMM", "BSE_CURRENCY", "BSE_FNO"];
+/** Segments served by the Global Stocks APIs. */
+declare const GLOBAL_EXCHANGE_SEGMENTS: readonly ["INX_EQ"];
+/** Segments allowed by `POST /v2/margincalculator` (single and multi). */
+declare const MARGIN_CALC_SEGMENTS: readonly ["NSE_EQ", "NSE_FNO", "BSE_EQ", "BSE_FNO", "MCX_COMM"];
+/** Segments allowed by `POST /v2/forever/orders`. */
+declare const FOREVER_ORDER_SEGMENTS: readonly ["NSE_EQ", "NSE_FNO", "BSE_EQ", "BSE_FNO", "MCX_COMM"];
+/** Segments for conditional triggers — equities and indices only. */
+declare const ALERT_CONDITION_SEGMENTS: readonly ["NSE_EQ", "BSE_EQ", "IDX_I"];
+/** Segments allowed by the charts endpoints (excludes `NSE_COMM`). */
+declare const CHART_SEGMENTS: readonly ["IDX_I", "NSE_EQ", "NSE_FNO", "NSE_CURRENCY", "BSE_EQ", "BSE_FNO", "BSE_CURRENCY", "MCX_COMM"];
+declare const ProductType: {
+    readonly CNC: "CNC";
+    readonly INTRADAY: "INTRADAY";
+    readonly MARGIN: "MARGIN";
+    readonly MTF: "MTF";
+    readonly CO: "CO";
+    readonly BO: "BO";
+};
+declare const PRODUCT_TYPES: readonly ["CNC", "INTRADAY", "MARGIN", "MTF", "CO", "BO"];
+/** Product types allowed by the margin calculator. */
+declare const MARGIN_CALC_PRODUCT_TYPES: readonly ["CNC", "INTRADAY", "MARGIN", "MTF"];
+/** Product types allowed by `POST /v2/forever/orders`. */
+declare const FOREVER_ORDER_PRODUCT_TYPES: readonly ["CNC", "MTF"];
+declare const TransactionType: {
+    readonly BUY: "BUY";
+    readonly SELL: "SELL";
+};
+declare const TRANSACTION_TYPES: readonly ["BUY", "SELL"];
+declare const OrderTypeEnum: {
+    readonly LIMIT: "LIMIT";
+    readonly MARKET: "MARKET";
+    readonly STOP_LOSS: "STOP_LOSS";
+    readonly STOP_LOSS_MARKET: "STOP_LOSS_MARKET";
+};
+declare const ORDER_TYPES: readonly ["LIMIT", "MARKET", "STOP_LOSS", "STOP_LOSS_MARKET"];
+declare const ValidityEnum: {
+    readonly DAY: "DAY";
+    readonly IOC: "IOC";
+};
+declare const VALIDITIES: readonly ["DAY", "IOC"];
+declare const OrderStatus: {
+    readonly TRANSIT: "TRANSIT";
+    readonly PENDING: "PENDING";
+    readonly CLOSED: "CLOSED";
+    readonly TRIGGERED: "TRIGGERED";
+    readonly REJECTED: "REJECTED";
+    readonly CANCELLED: "CANCELLED";
+    readonly PART_TRADED: "PART_TRADED";
+    readonly TRADED: "TRADED";
+    readonly EXPIRED: "EXPIRED";
+    readonly MODIFIED: "MODIFIED";
+};
+declare const AmoTime: {
+    readonly PRE_OPEN: "PRE_OPEN";
+    readonly OPEN: "OPEN";
+    readonly OPEN_30: "OPEN_30";
+    readonly OPEN_60: "OPEN_60";
+};
+declare const ExpiryCode: {
+    readonly CURRENT: 0;
+    readonly NEXT: 1;
+    readonly FAR: 2;
+};
+declare const InstrumentType: {
+    readonly INDEX: "INDEX";
+    readonly FUTIDX: "FUTIDX";
+    readonly OPTIDX: "OPTIDX";
+    readonly EQUITY: "EQUITY";
+    readonly FUTSTK: "FUTSTK";
+    readonly OPTSTK: "OPTSTK";
+    readonly FUTCOM: "FUTCOM";
+    readonly OPTFUT: "OPTFUT";
+    readonly FUTCUR: "FUTCUR";
+    readonly OPTCUR: "OPTCUR";
+};
+/** Minute intervals accepted by `POST /v2/charts/intraday`. */
+declare const ChartInterval: {
+    readonly ONE: "1";
+    readonly FIVE: "5";
+    readonly FIFTEEN: "15";
+    readonly TWENTY_FIVE: "25";
+    readonly SIXTY: "60";
+};
+declare const CHART_INTERVALS: readonly ["1", "5", "15", "25", "60"];
+declare const OptionType: {
+    readonly CALL: "CALL";
+    readonly PUT: "PUT";
+};
+/** Short-form option types used throughout the option chain payloads. */
+declare const OptionSide: {
+    readonly CE: "CE";
+    readonly PE: "PE";
+};
+declare const LegName: {
+    readonly ENTRY_LEG: "ENTRY_LEG";
+    readonly TARGET_LEG: "TARGET_LEG";
+    readonly STOP_LOSS_LEG: "STOP_LOSS_LEG";
+};
+declare const OrderFlag: {
+    readonly SINGLE: "SINGLE";
+    readonly OCO: "OCO";
+};
+declare const PositionType: {
+    readonly LONG: "LONG";
+    readonly SHORT: "SHORT";
+};
+/** Request codes for the Live Market Feed WebSocket. */
+declare const FeedRequest: {
+    readonly CONNECT: 11;
+    readonly DISCONNECT: 12;
+    readonly SUBSCRIBE_TICKER: 15;
+    readonly UNSUBSCRIBE_TICKER: 16;
+    readonly SUBSCRIBE_QUOTE: 17;
+    readonly UNSUBSCRIBE_QUOTE: 18;
+    readonly SUBSCRIBE_FULL: 21;
+    readonly UNSUBSCRIBE_FULL: 22;
+    readonly SUBSCRIBE_DEPTH: 23;
+    readonly UNSUBSCRIBE_DEPTH: 24;
+};
+/** Response codes on the Live Market Feed WebSocket. */
+declare const FeedResponse: {
+    readonly INDEX_PACKET: 1;
+    readonly TICKER_PACKET: 2;
+    readonly QUOTE_PACKET: 4;
+    readonly OI_PACKET: 5;
+    readonly PREV_CLOSE_PACKET: 6;
+    readonly MARKET_STATUS_PACKET: 7;
+    readonly FULL_PACKET: 8;
+    readonly FEED_DISCONNECT: 50;
+};
+/**
+ * Global Stocks (US equities) enumerations, served under `/v2/globalstocks/*`.
+ * These orders carry no exchange segment, product type or validity, so the
+ * domestic {@link ProductType}/{@link ValidityEnum} enums do not apply.
+ */
+declare const GlobalStocks: {
+    readonly EXCHANGE_SEGMENT: "INX_EQ";
+    readonly EXCHANGE_SEGMENT_CODE: 14;
+    readonly MAX_INSTRUMENTS_PER_REQUEST: 100;
+    readonly MAX_SUBSCRIPTIONS_PER_CONNECTION: 5000;
+    readonly MAX_CONNECTIONS_PER_CLIENT: 5;
+    readonly OrderType: {
+        readonly MARKET: "MARKET";
+        readonly LIMIT: "LIMIT";
+        readonly STOP_LOSS: "STOP_LOSS";
+        readonly STOP_LOSS_MARKET: "STOP_LOSS_MARKET";
+        /** Notional / dollar-value orders — quantity is replaced by `amount`. */
+        readonly AMOUNT: "AMOUNT";
+    };
+    readonly MarketStatus: {
+        readonly OPEN: "open";
+        readonly CLOSED: "closed";
+    };
+    readonly MsgCode: {
+        readonly TRADE: 1;
+        readonly PREV_CLOSE: 32;
+        readonly CIRCUIT_LIMIT: 33;
+        readonly FIFTY_TWO_WEEK: 36;
+    };
+};
+declare const GLOBAL_ORDER_TYPES: readonly ["MARKET", "LIMIT", "STOP_LOSS", "STOP_LOSS_MARKET", "AMOUNT"];
+declare const ComparisonType: {
+    readonly TECHNICAL_WITH_VALUE: "TECHNICAL_WITH_VALUE";
+    readonly TECHNICAL_WITH_INDICATOR: "TECHNICAL_WITH_INDICATOR";
+    readonly TECHNICAL_WITH_CLOSE: "TECHNICAL_WITH_CLOSE";
+    readonly PRICE_WITH_VALUE: "PRICE_WITH_VALUE";
+};
+declare const Operator: {
+    readonly CROSSING_UP: "CROSSING_UP";
+    readonly CROSSING_DOWN: "CROSSING_DOWN";
+    readonly CROSSING_ANY_SIDE: "CROSSING_ANY_SIDE";
+    readonly GREATER_THAN: "GREATER_THAN";
+    readonly LESS_THAN: "LESS_THAN";
+    readonly GREATER_THAN_EQUAL: "GREATER_THAN_EQUAL";
+    readonly LESS_THAN_EQUAL: "LESS_THAN_EQUAL";
+    readonly EQUAL: "EQUAL";
+    readonly NOT_EQUAL: "NOT_EQUAL";
+};
+declare const TriggerStatus: {
+    readonly ACTIVE: "ACTIVE";
+    readonly TRIGGERED: "TRIGGERED";
+    readonly EXPIRED: "EXPIRED";
+    readonly CANCELLED: "CANCELLED";
+};
+/** Trading API error codes (DH-900 series). */
+declare const TradingErrorCode: {
+    readonly INVALID_AUTHENTICATION: "DH-901";
+    readonly INVALID_ACCESS: "DH-902";
+    readonly USER_ACCOUNT: "DH-903";
+    readonly RATE_LIMIT: "DH-904";
+    readonly INPUT_EXCEPTION: "DH-905";
+    readonly ORDER_ERROR: "DH-906";
+    readonly DATA_ERROR: "DH-907";
+    readonly INTERNAL_SERVER_ERROR: "DH-908";
+    readonly NETWORK_ERROR: "DH-909";
+    readonly OTHERS: "DH-910";
+    readonly NO_HOLDINGS: "DH-1111";
+};
+/**
+ * Published DhanHQ rate limits per API tier. Order APIs 10/sec, Data APIs
+ * 5/sec, Market Quote 1/sec, Option Chain one call every 3 seconds.
+ */
+declare const RATE_LIMITS: {
+    readonly order_api: {
+        readonly perSecond: 10;
+        readonly perDay: 100000;
+    };
+    readonly data_api: {
+        readonly perSecond: 5;
+        readonly perDay: 7000;
+    };
+    readonly quote_api: {
+        readonly perSecond: 1;
+        readonly perDay: number;
+    };
+    readonly option_chain: {
+        readonly perSecond: number;
+        readonly perDay: 4800;
+    };
+    readonly non_trading_api: {
+        readonly perSecond: 20;
+        readonly perDay: number;
+    };
+};
+type ApiTier = keyof typeof RATE_LIMITS;
+/** Indian market hours in IST, used by the risk pipeline. */
+declare const MARKET_HOURS: {
+    readonly timezoneOffsetMinutes: 330;
+    readonly openHour: 9;
+    readonly openMinute: 15;
+    readonly closeHour: 15;
+    readonly closeMinute: 30;
+    /** Minutes in a regular NSE trading session. */
+    readonly sessionMinutes: 375;
+};
+/**
+ * Maps a scrip-master `(EXCH_ID, SEGMENT)` pair to an exchange segment. Keyed
+ * as `"EXCH_ID:SEGMENT"` because tuples are not usable as object keys.
+ */
+declare const SEGMENT_MAP: Record<string, string>;
+
+declare const constants_ALERT_CONDITION_SEGMENTS: typeof ALERT_CONDITION_SEGMENTS;
+declare const constants_AmoTime: typeof AmoTime;
+type constants_ApiTier = ApiTier;
+declare const constants_CHART_INTERVALS: typeof CHART_INTERVALS;
+declare const constants_CHART_SEGMENTS: typeof CHART_SEGMENTS;
+declare const constants_ChartInterval: typeof ChartInterval;
+declare const constants_ComparisonType: typeof ComparisonType;
+declare const constants_EXCHANGE_SEGMENTS: typeof EXCHANGE_SEGMENTS;
+declare const constants_ExchangeSegment: typeof ExchangeSegment;
+declare const constants_ExpiryCode: typeof ExpiryCode;
+declare const constants_FOREVER_ORDER_PRODUCT_TYPES: typeof FOREVER_ORDER_PRODUCT_TYPES;
+declare const constants_FOREVER_ORDER_SEGMENTS: typeof FOREVER_ORDER_SEGMENTS;
+declare const constants_FeedRequest: typeof FeedRequest;
+declare const constants_FeedResponse: typeof FeedResponse;
+declare const constants_GLOBAL_EXCHANGE_SEGMENTS: typeof GLOBAL_EXCHANGE_SEGMENTS;
+declare const constants_GLOBAL_ORDER_TYPES: typeof GLOBAL_ORDER_TYPES;
+declare const constants_GlobalStocks: typeof GlobalStocks;
+declare const constants_InstrumentType: typeof InstrumentType;
+declare const constants_LegName: typeof LegName;
+declare const constants_MARGIN_CALC_PRODUCT_TYPES: typeof MARGIN_CALC_PRODUCT_TYPES;
+declare const constants_MARGIN_CALC_SEGMENTS: typeof MARGIN_CALC_SEGMENTS;
+declare const constants_MARKET_HOURS: typeof MARKET_HOURS;
+declare const constants_ORDER_TYPES: typeof ORDER_TYPES;
+declare const constants_Operator: typeof Operator;
+declare const constants_OptionSide: typeof OptionSide;
+declare const constants_OptionType: typeof OptionType;
+declare const constants_OrderFlag: typeof OrderFlag;
+declare const constants_OrderStatus: typeof OrderStatus;
+declare const constants_OrderTypeEnum: typeof OrderTypeEnum;
+declare const constants_PRODUCT_TYPES: typeof PRODUCT_TYPES;
+declare const constants_PositionType: typeof PositionType;
+declare const constants_ProductType: typeof ProductType;
+declare const constants_RATE_LIMITS: typeof RATE_LIMITS;
+declare const constants_SEGMENT_MAP: typeof SEGMENT_MAP;
+declare const constants_TRANSACTION_TYPES: typeof TRANSACTION_TYPES;
+declare const constants_TradingErrorCode: typeof TradingErrorCode;
+declare const constants_TransactionType: typeof TransactionType;
+declare const constants_TriggerStatus: typeof TriggerStatus;
+declare const constants_VALIDITIES: typeof VALIDITIES;
+declare const constants_ValidityEnum: typeof ValidityEnum;
+declare namespace constants {
+  export { constants_ALERT_CONDITION_SEGMENTS as ALERT_CONDITION_SEGMENTS, constants_AmoTime as AmoTime, type constants_ApiTier as ApiTier, constants_CHART_INTERVALS as CHART_INTERVALS, constants_CHART_SEGMENTS as CHART_SEGMENTS, constants_ChartInterval as ChartInterval, constants_ComparisonType as ComparisonType, constants_EXCHANGE_SEGMENTS as EXCHANGE_SEGMENTS, constants_ExchangeSegment as ExchangeSegment, constants_ExpiryCode as ExpiryCode, constants_FOREVER_ORDER_PRODUCT_TYPES as FOREVER_ORDER_PRODUCT_TYPES, constants_FOREVER_ORDER_SEGMENTS as FOREVER_ORDER_SEGMENTS, constants_FeedRequest as FeedRequest, constants_FeedResponse as FeedResponse, constants_GLOBAL_EXCHANGE_SEGMENTS as GLOBAL_EXCHANGE_SEGMENTS, constants_GLOBAL_ORDER_TYPES as GLOBAL_ORDER_TYPES, constants_GlobalStocks as GlobalStocks, constants_InstrumentType as InstrumentType, constants_LegName as LegName, constants_MARGIN_CALC_PRODUCT_TYPES as MARGIN_CALC_PRODUCT_TYPES, constants_MARGIN_CALC_SEGMENTS as MARGIN_CALC_SEGMENTS, constants_MARKET_HOURS as MARKET_HOURS, constants_ORDER_TYPES as ORDER_TYPES, constants_Operator as Operator, constants_OptionSide as OptionSide, constants_OptionType as OptionType, constants_OrderFlag as OrderFlag, constants_OrderStatus as OrderStatus, constants_OrderTypeEnum as OrderTypeEnum, constants_PRODUCT_TYPES as PRODUCT_TYPES, constants_PositionType as PositionType, constants_ProductType as ProductType, constants_RATE_LIMITS as RATE_LIMITS, constants_SEGMENT_MAP as SEGMENT_MAP, constants_TRANSACTION_TYPES as TRANSACTION_TYPES, constants_TradingErrorCode as TradingErrorCode, constants_TransactionType as TransactionType, constants_TriggerStatus as TriggerStatus, constants_VALIDITIES as VALIDITIES, constants_ValidityEnum as ValidityEnum };
 }
 
 declare const orderSchema: z.ZodObject<{
@@ -4607,6 +3117,16 @@ declare class ApiResponseError extends DhanError {
     constructor(message: string, status: number, details?: unknown, cause?: unknown);
 }
 
+/**
+ * A write tool was invoked without the live-trading gate open.
+ *
+ * Agent and MCP write paths require both `DHANHQ_MCP_ENABLE_WRITES=true` and
+ * `LIVE_TRADING=true`, so an agent cannot place orders by default.
+ */
+declare class LiveTradingDisabledError extends DhanError {
+    constructor(message?: string);
+}
+
 declare class NetworkError extends DhanError {
     constructor(message: string, cause?: unknown);
 }
@@ -4615,9 +3135,161 @@ declare class RateLimitError extends DhanError {
     constructor(message?: string, cause?: unknown);
 }
 
+/**
+ * A pre-trade risk check rejected the order. Raised by the risk pipeline
+ * before anything reaches the broker, so no order was placed.
+ */
+declare class RiskViolationError extends DhanError {
+    /** Name of the check that rejected the order, e.g. `"quantity"`. */
+    readonly check: string;
+    constructor(check: string, message: string, details?: unknown);
+}
+
 declare class ValidationError extends DhanError {
     readonly issues: ZodError["issues"];
     constructor(error: ZodError);
 }
 
-export { Alerts, ApiResponseError, AuthResolver, BaseWS, type CancelOrderRequest, type CancelSuperOrderRequest, Charts, type CorrelatedRequest, DhanAuth, type DhanAuthDependencies, DhanClient, type DhanClientConfig, type DhanClientDependencies, DhanError, DhanWS, type DhanWSOptions, Edis, type EnableAutoTokenManagementOptions, type ExchangeSegment, ForeverOrders, Funds, type GenerateAccessTokenRequest, index as Generated, GeneratedClient, HttpClient, type HttpClientDependencies, type InstrumentSubscription, IpSetup, LTPStore, type LedgerRequest, type MarketDepthLevel, type MarketDisconnectEvent, type MarketFeedEvent, type MarketFeedMode, MarketFeedWS, type MarketFeedWSOptions, type MarketFullEvent, type MarketOiEvent, type MarketPacketHeader, type MarketPrevCloseEvent, type MarketQuoteEvent, type MarketTickerEvent, type ModifyOrderRequest, type ModifySuperOrderRequest, NetworkError, type OrderOperationResult, type OrderResponse, type OrderState, OrderStore, type OrderType, type OrderUpdateEvent, OrderUpdateWS, type OrderUpdateWSOptions, Orders, type PlaceOrderRequest, type PlaceSuperOrderRequest, Positions, type ProductType, RateLimitError, RateLimiter, type RateLimiterConfig, type RenewWebTokenRequest, type RequestOptions, Statements, type StoredSubscription, type SuperOrderLeg, type SuperOrderProductType, type SuperOrderResponse, type SuperOrderType, SuperOrders, type TickEvent, TokenManager, type TokenResponse, type TradeHistoryRequest, type TradeResponse, TraderControls, type TransactionType, ValidationError, type Validity, type WebSocketLike, orderSchema, parseMarketFeedPacket, splitPackets, superOrderSchema };
+/** Blocks instruments the exchange has flagged as not tradable. */
+declare const tradingPermissionCheck: RiskCheck;
+/** Blocks ASM/GSM surveillance-restricted instruments. */
+declare const asmGsmCheck: RiskCheck;
+/** Rejects BO/CO orders on instruments that do not support them. */
+declare const productSupportCheck: RiskCheck;
+/** Restricts order types to the configured allowlist. */
+declare const orderTypeCheck: RiskCheck;
+/** Enforces per-order quantity and notional ceilings. */
+declare const quantityCheck: RiskCheck;
+/** Blocks orders outside 09:15–15:30 IST. */
+declare const marketHoursCheck: RiskCheck;
+/** Caps the number of concurrently open positions. */
+declare const positionLimitsCheck: RiskCheck;
+/** Caps how much of the available balance a single symbol may represent. */
+declare const concentrationCheck: RiskCheck;
+/** Stops new orders once aggregate unrealized loss crosses the daily limit. */
+declare const maxLossCheck: RiskCheck;
+/**
+ * Options-only rules: index underlyings, a stop loss and target on every
+ * order, and a target further from entry than the stop.
+ */
+declare const optionsCheck: RiskCheck;
+/**
+ * `GET /v2/fundlimit` returns `availabelBalance` — the misspelling is in the
+ * upstream API, so both spellings are accepted.
+ */
+declare function availableBalance(funds: RiskFunds): number;
+
+/**
+ * Position sizing and stop-loss placement.
+ *
+ * All functions are pure — they take numbers and return numbers, so they can
+ * be used for planning without any API access.
+ */
+interface FixedRiskSizingInput {
+    accountBalance: number;
+    /** Share of the account to risk on this trade, in percent (`2` for 2%). */
+    riskPercent: number;
+    entryPrice: number;
+    stopLossPrice: number;
+    /** Rounds down to a whole multiple of the lot size. Defaults to 1. */
+    lotSize?: number;
+}
+/** Quantity such that a stop-out costs `riskPercent` of the account. */
+declare function fixedRiskSize(input: FixedRiskSizingInput): number;
+interface KellySizingInput {
+    /** Historical win rate as a fraction in `(0, 1)`. */
+    winRate: number;
+    avgWin: number;
+    /** Average loss as a positive number. */
+    avgLoss: number;
+    accountBalance: number;
+    entryPrice: number;
+    /** Fraction of full Kelly to deploy. Defaults to 0.5 (half-Kelly). */
+    fraction?: number;
+}
+/**
+ * Kelly criterion sizing, scaled by `fraction`.
+ *
+ * Full Kelly is famously over-aggressive against estimation error in the win
+ * rate, which is why the default is half.
+ */
+declare function kellySize(input: KellySizingInput): number;
+interface VolatilitySizingInput {
+    accountBalance: number;
+    riskPercent: number;
+    entryPrice: number;
+    atr: number;
+    /** ATR multiples between entry and stop. Defaults to 2. */
+    atrMultiplier?: number;
+    lotSize?: number;
+}
+/** Fixed-risk sizing where the stop distance comes from ATR. */
+declare function volatilitySize(input: VolatilitySizingInput): number;
+/** Stop a fixed percentage below entry. */
+declare function percentageStop(entryPrice: number, riskPercent: number): number;
+/** Stop `multiplier` ATRs below entry. */
+declare function atrStop(entryPrice: number, atr: number, multiplier?: number): number;
+/**
+ * Stop just below the nearest support under entry. Returns 0 when no support
+ * level sits below the entry price.
+ */
+declare function supportStop(entryPrice: number, supportLevels: number[], buffer?: number): number;
+/** Target at `riskRewardRatio` times the stop distance above entry. */
+declare function takeProfit(entryPrice: number, stopLossPrice: number, riskRewardRatio?: number): number;
+interface TrailUpdate {
+    stop: number;
+    highest: number;
+    triggered: boolean;
+}
+/**
+ * ATR trailing stop for a long position.
+ *
+ * The stop ratchets up with the high-water mark and never moves down, so a
+ * pullback cannot loosen protection already earned.
+ */
+declare class TrailManager {
+    readonly entryPrice: number;
+    readonly initialStop: number;
+    private readonly atr;
+    private readonly trailMultiplier;
+    private currentStop;
+    private highestPrice;
+    constructor(entryPrice: number, initialStop: number, atr: number, trailMultiplier?: number);
+    /** Feeds a new price in and returns the updated stop state. */
+    update(currentPrice: number): TrailUpdate;
+    get stop(): number;
+    get highest(): number;
+    isTriggered(currentPrice: number): boolean;
+    profit(currentPrice: number): number;
+    profitPercent(currentPrice: number): number;
+}
+
+/**
+ * Trading-day arithmetic for the Indian equity market.
+ *
+ * Dates are handled as `YYYY-MM-DD` strings in IST so that a call made from a
+ * machine in another timezone still resolves to the right trading session.
+ */
+/**
+ * NSE trading holidays, as `YYYY-MM-DD`. Weekends are handled separately, so
+ * only weekday holidays need listing. Extend this when the exchange publishes
+ * the next calendar.
+ */
+declare const MARKET_HOLIDAYS: Set<string>;
+/** Formats a date as `YYYY-MM-DD` in IST. */
+declare function toIstDateString(date?: Date): string;
+/** Parses `YYYY-MM-DD` as UTC midnight, which keeps day arithmetic exact. */
+declare function fromDateString(value: string): Date;
+declare function addDays(value: string, days: number): string;
+declare function isWeekday(value: string): boolean;
+declare function isTradingDay(value: string): boolean;
+/** `from` itself if it is a trading day, else the most recent one before it. */
+declare function lastTradingDay(from?: string): string;
+/** The trading day strictly before `from`. */
+declare function previousTradingDay(from?: string): string;
+/** Today when the market trades today, otherwise the previous session. */
+declare function todayOrLastTradingDay(): string;
+/** Walks back `days` trading sessions from `date`. */
+declare function tradingDaysAgo(date: string, days: number): string;
+
+export { type AdxResult, ApiResponseError, AuthResolver, BearCallSpreadSkill, type Bias, type BlackScholesInput, type BollingerBandsResult, BullPutSpreadSkill, BuyAtmCallSkill, type Candle, type CatalogueDependencies, type ChartSeries, Charts, type ComputeRequest, constants as Constants, CoveredCallSkill, DEFAULT_TOOL_VERSION, DhanClient, DhanClientConfig, DhanError, type FixedRiskSizingInput, type FundsLike, index as Generated, type Greeks, type HoldingLike, type ImpliedVolatilityInput, type IndicatorSeries, Instrument, type IntentLeg, IronCondorSkill, JsonSchema, type KellySizingInput, LiveTradingDisabledError, MARKET_HOLIDAYS, type MacdResult, MarketDataSummarizerSkill, MarketFeedEvent, type MaxPainDetail, type Momentum, type MultiTimeframeSummary, NetworkError, NormalizedOptionChain, type OhlcBar, type OiConcentration, type OptionKind, type OrderPreviewOptions, type OrderPreviewResult, Pipeline, type PositionLike, promptHelpers as PromptHelpers, ProtectivePutSkill, RateLimitError, RiskCheck, RiskFunds, RiskViolationError, type Setup, type Signal, Skill, SkillContext, SkillDefinition, SkillParam, SkillRegistry, SkillStep, SquareOffAllSkill, SquareOffPositionSkill, type StochasticResult, StoredSubscription, StraddleSkill, StrangleSkill, type StrikeOpenInterest, type SupertrendResult, TIMEFRAMES, TechnicalAnalysis, type TechnicalAnalysisOptions, type TechnicalAnalysisResult, type TimeframeClassification, type TimeframeIndicators, type TimeframeKey, Tool, schemas as ToolSchemas, TrailManager, type TrailUpdate, type TrendStrength, ValidationError, type VolatilitySizingInput, Workflow, type WorkflowStep, addDays, adx, analyzeMultiTimeframe, asmGsmCheck, atr, atrStop, availableBalance, bollingerBands, buildCatalogue, builtinSkills, candlesFromSeries, closes, concentrationCheck, createSkillRegistry, detailedMaxPain, ema, erf, fixedRiskSize, fromDateString, greeks, highestCallOi, highestPutOi, highs, impliedVolatility, isTradingDay, isWeekday, kellySize, lastTradingDay, latest, lows, macd, marketAnalysis, marketHoursCheck, maxLossCheck, maxPain, nearestStrike, normalCdf, normalPdf, obv, openInterestFromChain, optionsCheck, orderConfirmation, orderSchema, orderTypeCheck, parseMarketFeedPacket, parseTimestamp, percentageStop, portfolioSummary, positionLimitsCheck, previewOrder, previousTradingDay, price, productSupportCheck, putCallRatio, quantityCheck, resample, riskReport, rsi, sma, splitPackets, stochastic, superOrderSchema, supertrend, supportStop, systemPrompt, takeProfit, toIstDateString, todayOrLastTradingDay, tradingDaysAgo, tradingPermissionCheck, trueRanges, volatilitySize, volumePutCallRatio, volumes, vwap, wma, yearsToExpiry };
