@@ -1,6 +1,7 @@
 import {
   CHART_INTERVALS,
   EXCHANGE_SEGMENTS,
+  GLOBAL_ORDER_TYPES,
   ORDER_TYPES,
   PRODUCT_TYPES,
   TRANSACTION_TYPES,
@@ -227,3 +228,77 @@ export function skillInputSchema(
 
   return { type: "object", properties, required, additionalProperties: false };
 }
+
+/* --- Global Stocks (US equities) --- */
+
+export const globalOrderSchema: JsonSchema = {
+  type: "object",
+  required: ["transactionType", "orderType", "securityId"],
+  properties: {
+    transactionType: enumOf(TRANSACTION_TYPES),
+    orderType: enumOf(GLOBAL_ORDER_TYPES),
+    securityId: { type: "string" },
+    quantity: {
+      type: "number",
+      exclusiveMinimum: 0,
+      description: "Fractional shares allowed. Required unless orderType is AMOUNT",
+    },
+    price: { type: "number", minimum: 0 },
+    triggerPrice: { type: "number", exclusiveMinimum: 0 },
+    stopLossPrice: { type: "number", exclusiveMinimum: 0 },
+    targetPrice: { type: "number", exclusiveMinimum: 0 },
+    amount: {
+      type: "number",
+      exclusiveMinimum: 0,
+      description: "Dollar value for AMOUNT orders",
+    },
+    correlationId: { type: "string", maxLength: 30 },
+  },
+  additionalProperties: true,
+};
+
+export const globalEstimateToolSchema: JsonSchema = {
+  type: "object",
+  required: ["securityId", "transactionType", "price", "quantity"],
+  properties: {
+    securityId: { type: "string" },
+    transactionType: enumOf(TRANSACTION_TYPES),
+    price: { type: "number", minimum: 0 },
+    quantity: { type: "number", exclusiveMinimum: 0 },
+  },
+  additionalProperties: false,
+};
+
+/* --- Trader controls --- */
+
+export const killSwitchSchema: JsonSchema = {
+  type: "object",
+  required: ["killSwitchStatus"],
+  properties: {
+    killSwitchStatus: enumOf(["ACTIVATE", "DEACTIVATE"]),
+  },
+  additionalProperties: false,
+};
+
+export const pnlExitSchema: JsonSchema = {
+  type: "object",
+  properties: {
+    profitValue: {
+      type: "number",
+      description: "Square off all positions once profit reaches this amount",
+    },
+    lossValue: {
+      type: "number",
+      description: "Square off all positions once loss reaches this amount",
+    },
+    enableKillSwitch: {
+      type: "boolean",
+      description: "Also trip the kill switch, blocking re-entry after the exit",
+    },
+    productType: {
+      type: "array",
+      items: enumOf(["INTRADAY", "DELIVERY"]),
+    },
+  },
+  additionalProperties: false,
+};

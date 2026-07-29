@@ -10,12 +10,16 @@ import {
   emptySchema,
   expiryListSchema,
   feedSchema,
+  globalEstimateToolSchema,
+  globalOrderSchema,
   historicalSchema,
   intradaySchema,
+  killSwitchSchema,
   marginSchema,
   modifyOrderSchema,
   optionChainSchema,
   orderSchema,
+  pnlExitSchema,
   searchSchema,
   skillInputSchema,
   technicalsSchema,
@@ -50,6 +54,8 @@ export function buildCatalogue(deps: CatalogueDependencies): Tool[] {
     ...marketTools(deps),
     ...analysisTools(deps),
     ...orderTools(deps),
+    ...traderControlTools(deps),
+    ...globalStocksTools(deps),
     ...skillTools(deps),
   ];
 }
@@ -352,6 +358,182 @@ function orderTools({ client, pipeline }: CatalogueDependencies): Tool[] {
         },
       },
       handler: (args) => client.orders.cancel(String(args.orderId)),
+    }),
+  ];
+}
+
+/**
+ * Account-level protective controls. These are the only tools on the
+ * `risk:write` scope — an agent that may place orders does not automatically
+ * get to disarm the account's own safety rails.
+ */
+function traderControlTools({ client }: CatalogueDependencies): Tool[] {
+  return [
+    tool({
+      name: "dhan_kill_switch_status",
+      description: "Check whether the account-level kill switch is active",
+      scope: "portfolio:read",
+      risk: "read_only",
+      inputSchema: emptySchema,
+      outputSchema: { type: "object" },
+      handler: () => client.traderControls.getKillSwitchStatus(),
+    }),
+    tool({
+      name: "dhan_kill_switch",
+      description:
+        "Activate or deactivate the kill switch, which blocks all trading for the day",
+      scope: "risk:write",
+      risk: "destructive_write",
+      inputSchema: killSwitchSchema,
+      outputSchema: { type: "object" },
+      handler: (args) =>
+        client.traderControls.setKillSwitch(String(args.killSwitchStatus)),
+    }),
+    tool({
+      name: "dhan_pnl_exit_status",
+      description: "Read the configured profit/loss auto-exit thresholds",
+      scope: "portfolio:read",
+      risk: "read_only",
+      inputSchema: emptySchema,
+      outputSchema: { type: "object" },
+      handler: () => client.traderControls.getPnlExit(),
+    }),
+    tool({
+      name: "dhan_set_pnl_exit",
+      description:
+        "Set profit/loss thresholds that auto-square-off all positions when hit",
+      scope: "risk:write",
+      risk: "live_write",
+      inputSchema: pnlExitSchema,
+      outputSchema: { type: "object" },
+      handler: (args) => client.traderControls.setPnlExit(args as never),
+    }),
+    tool({
+      name: "dhan_stop_pnl_exit",
+      description: "Remove the configured profit/loss auto-exit thresholds",
+      scope: "risk:write",
+      risk: "destructive_write",
+      inputSchema: emptySchema,
+      outputSchema: { type: "object" },
+      handler: () => client.traderControls.stopPnlExit(),
+    }),
+  ];
+}
+
+/**
+ * The Global Stocks (US equities) book gets its own tools rather than extra
+ * flags on the domestic ones — an agent asked for "my holdings" should never
+ * silently blend USD positions into the INR book.
+ */
+function globalStocksTools({ client }: CatalogueDependencies): Tool[] {
+  return [
+    tool({
+      name: "dhan_global_holdings",
+      description: "List US stock holdings",
+      scope: "portfolio:read",
+      risk: "read_only",
+      inputSchema: emptySchema,
+      outputSchema: { type: "array", items: { type: "object" } },
+      handler: () => client.globalStocks.holdings.list(),
+    }),
+    tool({
+      name: "dhan_global_funds",
+      description: "Fetch US (USD) fund limits",
+      scope: "portfolio:read",
+      risk: "read_only",
+      inputSchema: emptySchema,
+      outputSchema: {
+        type: "object",
+        properties: { availableCash: { type: "number" } },
+      },
+      handler: () => client.globalStocks.funds.getLimit(),
+    }),
+    tool({
+      name: "dhan_global_orders",
+      description: "List US stock orders",
+      scope: "orders:read",
+      risk: "read_only",
+      inputSchema: emptySchema,
+      outputSchema: { type: "array", items: { type: "object" } },
+      handler: () => client.globalStocks.orders.list(),
+    }),
+    tool({
+      name: "dhan_global_trades",
+      description: "List US stock trades",
+      scope: "orders:read",
+      risk: "read_only",
+      inputSchema: emptySchema,
+      outputSchema: { type: "array", items: { type: "object" } },
+      handler: () => client.globalStocks.trades.list(),
+    }),
+    tool({
+      name: "dhan_global_market_status",
+      description: "Check whether the US market is currently open",
+      scope: "market:read",
+      risk: "read_only",
+      inputSchema: emptySchema,
+      outputSchema: {
+        type: "object",
+        properties: { status: { type: "string" } },
+      },
+      handler: () => client.globalStocks.marketStatus.get(),
+    }),
+    tool({
+      name: "dhan_global_order_estimate",
+      description:
+        "Estimate charges and margin for a US stock order without placing it",
+      scope: "orders:read",
+      risk: "trade_adjacent_read",
+      inputSchema: globalEstimateToolSchema,
+      outputSchema: {
+        type: "object",
+        properties: {
+          totalCharges: { type: "number" },
+          totalMargin: { type: "number" },
+          sufficient: { type: "boolean" },
+        },
+      },
+      handler: (args) => client.globalStocks.costSummary(args as never),
+    }),
+    tool({
+      name: "dhan_global_place_order",
+      description: "Place a US stock order after external confirmation",
+      scope: "orders:write",
+      risk: "live_write",
+      inputSchema: globalOrderSchema,
+      outputSchema: {
+        type: "object",
+        properties: { orderId: { type: "string" } },
+      },
+      // No risk-pipeline run here: its checks resolve instruments from the
+      // Indian scrip master and encode NSE/BSE rules, neither of which applies
+      // to US equities. The scope and live-trading gates still apply, as does
+      // the Global Stocks order contract.
+      handler: (args) => client.globalStocks.orders.place(args as never),
+    }),
+    tool({
+      name: "dhan_global_modify_order",
+      description: "Modify a pending US stock order",
+      scope: "orders:write",
+      risk: "live_write",
+      inputSchema: globalOrderSchema,
+      outputSchema: {
+        type: "object",
+        properties: { orderId: { type: "string" } },
+      },
+      handler: (args) => client.globalStocks.orders.modify(args as never),
+    }),
+    tool({
+      name: "dhan_global_cancel_order",
+      description: "Cancel a pending US stock order",
+      scope: "orders:cancel",
+      risk: "destructive_write",
+      inputSchema: cancelSchema,
+      outputSchema: {
+        type: "object",
+        properties: { orderId: { type: "string" } },
+      },
+      handler: (args) => client.globalStocks.orders.cancel(String(args.orderId)),
     }),
   ];
 }

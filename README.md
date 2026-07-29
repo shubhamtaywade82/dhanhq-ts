@@ -268,6 +268,119 @@ The server exposes tools, six account resources (`dhanhq://account/*`,
 
 ---
 
+### 11. WebSocket Execution Orchestration
+
+The WebSocket is the real-time truth source. `OrderTracker` resolves a placed
+order to its fill using order-update events instead of polling
+`GET /orders/{id}`, and `PositionMonitor` turns market ticks into exit signals.
+
+```ts
+import { OrderTracker, PositionMonitor } from "@shubhamtaywade82/dhanhq-ts";
+
+const tracker = new OrderTracker();
+const monitor = new PositionMonitor();
+
+client.ws.orders.on("order", (state) => tracker.onOrderUpdate(state));
+client.ws.market.on("tick", (tick) => monitor.onTick(tick));
+
+// Register the waiter *before* placing — a fast fill can beat the HTTP response.
+const correlationId = "entry-001";
+const settled = tracker.waitFor(correlationId, { timeoutMs: 60_000 });
+await client.orders.place({ correlationId, /* … */ });
+const fill = await settled; // { status: "TRADED", filledQuantity, averagePrice }
+
+monitor.track({
+  securityId: "2885",
+  exchangeSegment: "NSE_EQ",
+  quantity: fill.filledQuantity,
+  entryPrice: fill.averagePrice!,
+  stopLoss: 1386,
+  target: 1428,
+  trail: { atr: 7, multiplier: 2 },
+});
+
+monitor.on("exit", async (signal) => {
+  // stop_loss | target | trailing_stop
+  console.log(signal.reason, signal.pnl);
+});
+```
+
+`PositionMonitor` only *decides* — it never places an order, so the same
+instance drives a live exit, a paper log, or an alert. It emits exactly one
+exit per position, checks the stop before the target when a tick gaps through
+both, and ratchets the trailing stop upward only.
+
+Full loop in [`examples/ws-execution.ts`](examples/ws-execution.ts).
+
+---
+
+### 12. Account-Level Risk Controls
+
+The pre-trade pipeline stops a bad order before it is sent. These stop the
+damage after it accumulates — and they keep working when your process does not.
+
+```ts
+// Auto-square-off everything at +₹5,000 or −₹2,500
+await client.traderControls.setPnlExit({
+  profitValue: 5_000,
+  lossValue: 2_500,
+  enableKillSwitch: true,     // block re-entry once the book is flattened
+  productType: ["INTRADAY"],
+});
+await client.traderControls.getPnlExit();
+await client.traderControls.stopPnlExit();
+
+// Emergency stop: blocks trading for the rest of the day
+await client.traderControls.setKillSwitch("ACTIVATE");
+```
+
+Through the agent layer these sit on `risk:write`, deliberately separate from
+`orders:write` — an agent allowed to trade cannot disarm the account's own
+safety rails as a side effect.
+
+See [`examples/risk-controls.ts`](examples/risk-controls.ts).
+
+---
+
+### 13. Global Stocks (US Equities)
+
+A separate book under `/v2/globalstocks/*`: balances in USD, fractional
+quantities, and no exchange segment, product type or validity on orders.
+
+```ts
+await client.globalStocks.marketStatus.isOpen();
+await client.globalStocks.funds.getLimit();       // USD, not INR
+await client.globalStocks.holdings.list();
+
+// Charges + margin in one affordability decision
+const { sufficient, totalMargin } = await client.globalStocks.costSummary({
+  securityId: "AAPL", transactionType: "BUY", price: 190, quantity: 2,
+});
+
+await client.globalStocks.orders.place({
+  transactionType: "BUY", orderType: "LIMIT",
+  securityId: "AAPL", quantity: 0.5, price: 190,   // fractional shares
+  targetPrice: 205, stopLossPrice: 180,
+});
+
+// AMOUNT orders spend a dollar value instead of buying a share count
+await client.globalStocks.orders.place({
+  transactionType: "BUY", orderType: "AMOUNT", securityId: "MSFT", amount: 100,
+});
+```
+
+Kept in its own namespace so USD and INR positions never blend — an agent
+asked for "my holdings" gets one book or the other, never a mix.
+
+The domestic **risk pipeline does not apply here**: its checks resolve
+instruments from the Indian scrip master and encode NSE/BSE rules. Global
+Stocks writes are still gated by scope, the live-trading flag, and their own
+order contract.
+
+See [`examples/global-stocks.ts`](examples/global-stocks.ts).
+
+---
+
 ## Architecture
 
 ```text
@@ -320,12 +433,18 @@ Only safe retries are allowed for non-order operations such as:
 
 | Feature | Node | Browser |
 | --- | --- | --- |
-| REST API | ✅ | ⚠️ |
-| WebSocket Feed | ✅ | ⚠️ |
-| Order Placement | ✅ | ⚠️ backend recommended |
-| Trading Automation | ✅ | ❌ |
+| Indicators, analytics, position sizing | ✅ | ✅ pure functions, no credentials |
+| `PositionMonitor` exit signals | ✅ | ✅ feed it ticks from your own socket |
+| REST API | ✅ | ❌ needs a token, and `api.dhan.co` sends no CORS headers |
+| WebSocket Feed | ✅ | ❌ needs a token |
+| Order Placement | ✅ | ❌ |
+| Agent tools / MCP server | ✅ | ❌ Node-only |
 
-Browser use should be limited to read-only or carefully proxied scenarios. Do not expose trading credentials in frontend applications.
+The browser blockers are independent: a Dhan access token is a bearer
+credential for a live trading account and must never ship to a client, **and**
+the REST API sends no `Access-Control-Allow-Origin`, so the browser blocks the
+response regardless. Run the SDK on a server and expose a narrow read-only API
+to your frontend — see [`docs/BROWSER.md`](docs/BROWSER.md) for the pattern.
 
 ---
 
@@ -333,10 +452,16 @@ Browser use should be limited to read-only or carefully proxied scenarios. Do no
 
 See `/examples`:
 
-- `place-order.ts`
-- `ws-feed.ts`
-- `full-bot.ts`
-- `basic.ts`
+| Example | Covers |
+| --- | --- |
+| `basic.ts` | Client setup and a first call |
+| `place-order.ts` | Order placement with validation |
+| `ws-feed.ts` | Subscribing to the market feed |
+| `full-bot.ts` | End-to-end bot skeleton |
+| `ws-execution.ts` | Fill tracking and tick-driven exits (`DRY_RUN=true` by default) |
+| `risk-controls.ts` | Pipeline, P&L auto-exit and kill switch (`APPLY=true` to arm) |
+| `global-stocks.ts` | US equities book (`PLACE_ORDER=true` to transmit) |
+| `analysis-and-skills.ts` | Indicators, option analytics, skills and agent tools |
 
 ---
 
@@ -389,6 +514,7 @@ src/
   client/        # DhanClient, transport coordination, generated bootstrap
   contracts/     # runtime validation for trading-critical requests
   errors/        # normalized SDK error types
+  execution/     # order fill tracking and tick-driven exit signals
   generated/     # OpenAPI-generated low-level client
   mcp/           # JSON-RPC 2.0 stdio MCP server
   resources/     # public SDK resource surface
@@ -432,10 +558,12 @@ See `docs/` and `AGENTS.md` for repo-level architecture and trading constraints.
 - [x] Expand higher-level trading helpers beyond raw resource wrappers
 - [x] Technical analysis, option analytics and a pre-trade risk pipeline
 - [x] Composable skills, agent tools and an MCP server
-- [ ] Add deeper WebSocket examples for execution orchestration
-- [ ] Improve browser-safe read-only integration guidance
-- [ ] Add advanced risk management examples around pnl exit and kill switch
-- [ ] Global Stocks (US equities) book under `/v2/globalstocks/*`
+- [x] Add deeper WebSocket examples for execution orchestration
+- [x] Improve browser-safe read-only integration guidance
+- [x] Add advanced risk management examples around pnl exit and kill switch
+- [x] Global Stocks (US equities) book under `/v2/globalstocks/*`
+- [ ] Global Stocks binary WebSocket feed
+- [ ] Backtesting harness over the indicator layer
 
 ---
 

@@ -14,6 +14,7 @@ import {
   Edis,
   ForeverOrders,
   Funds,
+  GlobalStocks,
   Instruments,
   IpSetup,
   MarketFeed,
@@ -46,6 +47,8 @@ export class DhanClient {
   public readonly marketFeed: MarketFeed;
   public readonly optionChain: OptionChain;
   public readonly instruments: Instruments;
+  /** The US equities book — a separate namespace so USD and INR never mix. */
+  public readonly globalStocks: GlobalStocks;
   public readonly ws: DhanWS;
   public readonly auth: {
     generateAccessToken: typeof DhanAuth.generateAccessToken;
@@ -81,6 +84,7 @@ export class DhanClient {
     this.instruments = new Instruments(httpClient, {
       cacheTtlMs: config.instrumentCacheTtlMs,
     });
+    this.globalStocks = new GlobalStocks(httpClient);
     this.ws = new DhanWS({
       token: config.token,
       tokenProvider: config.tokenProvider,

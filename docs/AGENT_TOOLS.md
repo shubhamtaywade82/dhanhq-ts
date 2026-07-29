@@ -53,8 +53,27 @@ cannot trade until an operator opens the gate.
 **Orders** — `dhan_order_preview`, `dhan_place_order`, `dhan_modify_order`,
 `dhan_cancel_order`
 
+**Trader controls** — `dhan_kill_switch_status`, `dhan_kill_switch`,
+`dhan_pnl_exit_status`, `dhan_set_pnl_exit`, `dhan_stop_pnl_exit`
+
+**Global Stocks (US equities)** — `dhan_global_holdings`, `dhan_global_funds`,
+`dhan_global_orders`, `dhan_global_trades`, `dhan_global_market_status`,
+`dhan_global_order_estimate`, `dhan_global_place_order`,
+`dhan_global_modify_order`, `dhan_global_cancel_order`
+
 **Skills** — one `dhan_skill_<name>` per registered skill, gated by the risk
 and scope the skill itself declares.
+
+The `risk:write` scope covers only the kill switch and P&L exit controls, and
+is deliberately separate from `orders:write`: an agent permitted to trade
+should not be able to disarm the account's own safety rails as a side effect.
+
+Global Stocks gets its own tools rather than extra flags on the domestic ones,
+so an agent asked for "my holdings" cannot silently blend USD positions into
+the INR book. `dhan_global_place_order` runs no risk pipeline — those checks
+resolve instruments from the Indian scrip master and encode NSE/BSE rules —
+but the scope gate, the live-trading gate and the Global Stocks order contract
+all still apply.
 
 `dhan_place_order` refuses any order whose instrument cannot be resolved from
 the scrip master. That is deliberate: without instrument metadata the

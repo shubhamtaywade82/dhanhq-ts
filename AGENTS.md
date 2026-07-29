@@ -13,6 +13,9 @@ tools and an MCP server.
 - Agent and MCP writes need both the policy scope and the live-trading gate
   (`DHANHQ_MCP_ENABLE_WRITES=true` **and** `LIVE_TRADING=true`)
 - Skills that build option structures stop at an intent; they never place orders
+- `PositionMonitor` decides exits but never places orders; the caller acts on the signal
+- Global Stocks is a separate book — never blend USD and INR positions in one response
+- The risk pipeline is NSE/BSE-specific and does not apply to Global Stocks
 
 ## Architecture
 - `src/generated` = OpenAPI-generated transport surface, do not edit manually
@@ -28,9 +31,10 @@ tools and an MCP server.
 - `src/agent` = policy, tool catalogue, registry, order preview
 - `src/mcp` + `src/bin` = JSON-RPC 2.0 stdio server and its executable
 - `src/ai` = prompt helpers for LLM assistants
+- `src/execution` = order fill tracking and tick-driven exit signals
 
-Dependency flow is one-directional: `resources → ta/analytics/risk → skills →
-agent → mcp`. Nothing below the agent layer knows about policy or MCP.
+Dependency flow is one-directional: `resources → ta/analytics/risk/execution →
+skills → agent → mcp`. Nothing below the agent layer knows about policy or MCP.
 
 ## Commands
 - `build`: `npm run build`
@@ -53,3 +57,5 @@ agent → mcp`. Nothing below the agent layer knows about policy or MCP.
 - See `docs/TRADING_RULES.md`
 - See `docs/WS_PROTOCOL.md`
 - See `docs/AGENT_TOOLS.md`
+- See `docs/BROWSER.md`
+- See `docs/RELEASING.md`
