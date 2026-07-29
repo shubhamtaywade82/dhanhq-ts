@@ -1,0 +1,39 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "npm dist-tag to publish under"
+        required: false
+        default: "latest"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      # Required for npm provenance, which package.json opts into. Without this
+      # the publish fails rather than silently publishing unattested.
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      # `prepublishOnly` reruns clean + typecheck + test + build, so a release
+      # cannot ship a build that does not pass its own suite.
+      - name: Publish to npm
+        run: npm publish --tag ${{ inputs.tag || 'latest' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

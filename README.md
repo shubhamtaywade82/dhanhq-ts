@@ -2,6 +2,8 @@
 
 Production-grade TypeScript SDK for DhanHQ APIs with **WebSocket market feed**, **order execution safety**, and **Node-first support with browser-safe read-only usage where transport limits allow**.
 
+> **Community project.** This is an independent SDK and is not affiliated with, endorsed by, or supported by Dhan. Dhan publishes its own official clients as [`dhanhq`](https://www.npmjs.com/package/dhanhq) and [`dhanhq-ts`](https://www.npmjs.com/package/dhanhq-ts).
+
 ---
 
 ## Why This SDK
@@ -22,22 +24,18 @@ Production-grade TypeScript SDK for DhanHQ APIs with **WebSocket market feed**, 
 
 ## Installation
 
-Install from GitHub until the package is published to npm:
+```bash
+npm install @shubhamtaywade82/dhanhq-ts
+```
+
+Requires Node.js 18 or newer. Ships both ESM and CommonJS builds with
+TypeScript declarations for each.
+
+Installing straight from the repository also works — the `prepare` script
+builds on install:
 
 ```bash
 npm install git+https://github.com/shubhamtaywade82/dhanhq-ts.git
-```
-
-Local development install also works:
-
-```bash
-npm install /absolute/path/to/dhanhq-ts
-```
-
-When the package is published, the install command will be:
-
-```bash
-npm install @dhanhq/client
 ```
 
 ---
@@ -47,7 +45,7 @@ npm install @dhanhq/client
 ### 1. Initialize Client
 
 ```ts
-import { DhanClient } from "@dhanhq/client";
+import { DhanClient } from "@shubhamtaywade82/dhanhq-ts";
 
 const client = new DhanClient({
   token: process.env.DHAN_TOKEN!,
@@ -124,7 +122,7 @@ const chain = await client.optionChain.fetchNormalized({
 ### 6. Technical Analysis
 
 ```ts
-import { TechnicalAnalysis, analyzeMultiTimeframe, rsi, latest } from "@dhanhq/client";
+import { TechnicalAnalysis, analyzeMultiTimeframe, rsi, latest } from "@shubhamtaywade82/dhanhq-ts";
 
 // Indicators are pure functions over number arrays
 latest(rsi([100, 102, 101, 105 /* … */], 14));
@@ -151,7 +149,7 @@ without re-aligning it.
 ### 7. Option Analytics
 
 ```ts
-import { greeks, impliedVolatility, maxPain, openInterestFromChain } from "@dhanhq/client";
+import { greeks, impliedVolatility, maxPain, openInterestFromChain } from "@shubhamtaywade82/dhanhq-ts";
 
 greeks({
   spot: 24_000,
@@ -170,7 +168,7 @@ maxPain(openInterestFromChain(chain));
 ### 8. Risk Pipeline
 
 ```ts
-import { Pipeline, riskProviderFor } from "@dhanhq/client";
+import { Pipeline, riskProviderFor } from "@shubhamtaywade82/dhanhq-ts";
 
 const pipeline = new Pipeline({
   provider: riskProviderFor(client),
@@ -202,7 +200,7 @@ skills stop at an `intent` — they resolve strikes and premiums but never place
 orders, leaving execution to an explicit, separately-gated call.
 
 ```ts
-import { createSkillRegistry } from "@dhanhq/client";
+import { createSkillRegistry } from "@shubhamtaywade82/dhanhq-ts";
 
 const skills = createSkillRegistry();
 
@@ -229,7 +227,7 @@ Every resource, analysis helper and skill is exposed as a tool behind a
 permission policy.
 
 ```ts
-import { AgentToolRegistry, Policy } from "@dhanhq/client";
+import { AgentToolRegistry, Policy } from "@shubhamtaywade82/dhanhq-ts";
 
 const tools = new AgentToolRegistry({ client, policy: Policy.readOnly() });
 
@@ -254,7 +252,7 @@ Claude Desktop / MCP client configuration:
   "mcpServers": {
     "dhanhq": {
       "command": "npx",
-      "args": ["-y", "@dhanhq/client", "dhanhq-mcp"],
+      "args": ["-y", "@shubhamtaywade82/dhanhq-ts", "dhanhq-mcp"],
       "env": {
         "DHAN_CLIENT_ID": "...",
         "DHAN_ACCESS_TOKEN": "...",
@@ -347,8 +345,11 @@ See `/examples`:
 ```bash
 npm install
 npm run build
+npm run typecheck
 npm test -- --runInBand
 ```
+
+Releasing is documented in [`docs/RELEASING.md`](docs/RELEASING.md).
 
 ### Smoke Test
 
