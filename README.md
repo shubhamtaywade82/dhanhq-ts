@@ -47,9 +47,16 @@ npm install git+https://github.com/shubhamtaywade82/dhanhq-ts.git
 ```ts
 import { DhanClient } from "@shubhamtaywade82/dhanhq-ts";
 
+// Option A: Direct static token
 const client = new DhanClient({
   token: process.env.DHAN_TOKEN!,
   clientId: process.env.DHAN_CLIENT_ID!,
+});
+
+// Option B: Auto-fetch token from your auth service endpoint
+const client = await DhanClient.fromTokenEndpoint({
+  endpointBaseUrl: "https://algo-trading-api.onrender.com",
+  bearerToken: process.env.DHAN_TOKEN_ACCESS_TOKEN!,
 });
 ```
 
@@ -73,17 +80,30 @@ await client.orders.place({
 
 ---
 
-### 3. Start WebSocket Market Feed
+### 3. Start WebSocket Market Feed & Market Depth
 
 ```ts
+// Enable 20-level market depth feed (optional)
+client.ws.enableDepth("twenty");
+
 await client.ws.connect();
 
+// Subscribe market feed (LTP, OHLCV, 5-level depth)
 client.ws.market.subscribe([
   { exchangeSegment: "NSE_FNO", securityId: "12345" },
 ]);
 
 client.ws.market.on("tick", (tick) => {
   console.log(tick.ltp);
+});
+
+// Listen for 20-level or 200-level full market depth
+client.ws.depth?.subscribe([
+  { exchangeSegment: "NSE_EQ", securityId: "1333" }, // HDFC Bank
+]);
+
+client.ws.depth?.on("depth", (event) => {
+  console.log(event.type, event.levels); // top 20 bid/ask levels
 });
 ```
 
