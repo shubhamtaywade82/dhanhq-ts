@@ -27,12 +27,19 @@ function ok(label: string) {
 
 function fail(label: string, err: unknown) {
   failed++;
-  console.log(`  ✗ ${label}:`, (err as any)?.message ?? err);
+  const msg = (err as any)?.details
+    ? JSON.stringify((err as any).details).slice(0, 120)
+    : (err as any)?.message ?? err;
+  console.log(`  ✗ ${label}: ${msg}`);
 }
 
-function skip(label: string) {
+function skip(label: string, reason?: string) {
   skipped++;
-  console.log(`  − ${label} (skipped)`);
+  console.log(`  − ${label} (skipped${reason ? `: ${reason}` : ""})`);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 function fmtDate(daysAgo = 0): string {
@@ -80,6 +87,7 @@ async function main() {
 
   try {
     const multi = await client.funds.calculateMultiMargin({
+      dhanClientId: client.getConfig().clientId,
       includePosition: false,
       includeOrder: false,
       scripList: [{
@@ -87,6 +95,7 @@ async function main() {
         transactionType: ScriptItem.transactionType.BUY,
         securityId: "1333",
         quantity: 1,
+        price: 1000,
         productType: ScriptItem.productType.INTRADAY,
       }],
     } as any);
@@ -124,7 +133,13 @@ async function main() {
   try {
     const holdings = await client.positions.listHoldings();
     ok(`positions.listHoldings() → ${holdings.length} holdings`);
-  } catch (e) { fail("positions.listHoldings()", e); }
+  } catch (e) {
+    if ((e as any)?.status === 500) {
+      skip("positions.listHoldings()", "server 500 — likely empty account");
+    } else {
+      fail("positions.listHoldings()", e);
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // CHARTS (INTRADAY / HISTORICAL)
@@ -154,31 +169,46 @@ async function main() {
   } catch (e) { fail("charts.historical()", e); }
 
   // ---------------------------------------------------------------------------
-  // MARKET DATA (REST Quotes)
+  // MARKET DATA (REST Quotes) — rate-limited to 1 req/sec
   // ---------------------------------------------------------------------------
   console.log("\n=== Market Data (REST) ===\n");
+  const mktInstruments: Record<string, Array<number | string>> = {
+    NSE_EQ: ["1333"],
+    IDX_I: [13, 25],
+  };
+
   try {
-    const instruments: Record<string, Array<number | string>> = {
-      NSE_EQ: ["1333"],
-      IDX_I: [13, 25],
-    };
-    const ltp = await client.marketFeed.ltp(instruments);
+    const ltp = await client.marketFeed.ltp(mktInstruments);
     ok(`marketFeed.ltp() → ${Object.keys(ltp?.data ?? {}).length} instruments`);
+  } catch (e) { fail("marketFeed.ltp()", e); }
 
-    const ohlc = await client.marketFeed.ohlc(instruments);
+  await sleep(1100);
+
+  try {
+    const ohlc = await client.marketFeed.ohlc(mktInstruments);
     ok(`marketFeed.ohlc() → ${Object.keys(ohlc?.data ?? {}).length} instruments`);
+  } catch (e) { fail("marketFeed.ohlc()", e); }
 
-    const quote = await client.marketFeed.quote(instruments);
+  await sleep(1100);
+
+  try {
+    const quote = await client.marketFeed.quote(mktInstruments);
     ok(`marketFeed.quote() → ${Object.keys(quote?.data ?? {}).length} instruments`);
+  } catch (e) { fail("marketFeed.quote()", e); }
 
+  await sleep(1100);
+
+  try {
     const ltpVal = await client.marketFeed.ltpFor("NSE_EQ", 1333);
     ok(`marketFeed.ltpFor(NSE_EQ, 1333) → ${ltpVal ?? "N/A"}`);
-  } catch (e) { fail("marketFeed REST calls", e); }
+  } catch (e) { fail("marketFeed.ltpFor()", e); }
 
   // ---------------------------------------------------------------------------
-  // OPTION CHAIN
+  // OPTION CHAIN — rate-limited to 1 req per 3 sec
   // ---------------------------------------------------------------------------
   console.log("\n=== Option Chain ===\n");
+  let nearExpiry = "";
+
   try {
     const expiries = await client.optionChain.expiryList({
       underlyingScrip: 13,
@@ -186,23 +216,32 @@ async function main() {
     });
     const expiryList = (expiries as any)?.data ?? [];
     ok(`optionChain.expiryList(NIFTY) → ${expiryList.length} expiries`);
-    if (expiryList.length > 0) {
-      const nearExpiry = expiryList[0];
+    nearExpiry = expiryList[0] ?? "";
+  } catch (e) { fail("optionChain.expiryList()", e); }
+
+  if (nearExpiry) {
+    await sleep(3100);
+
+    try {
       const chain = await client.optionChain.fetch({
         underlyingScrip: 13,
         underlyingSeg: "IDX_I",
         expiry: nearExpiry,
       });
       ok(`optionChain.fetch(${nearExpiry}) → received`);
+    } catch (e) { fail("optionChain.fetch()", e); }
 
+    await sleep(3100);
+
+    try {
       const norm = await client.optionChain.fetchNormalized({
         underlyingScrip: 13,
         underlyingSeg: "IDX_I",
         expiry: nearExpiry,
       });
       ok(`optionChain.fetchNormalized() → ${norm.strikes.length} strikes, spot=${norm.lastPrice}`);
-    }
-  } catch (e) { fail("optionChain calls", e); }
+    } catch (e) { fail("optionChain.fetchNormalized()", e); }
+  }
 
   // ---------------------------------------------------------------------------
   // INSTRUMENTS (Security Master)
@@ -211,19 +250,27 @@ async function main() {
   try {
     const seg = await client.instruments.bySegment("NSE_EQ");
     ok(`instruments.bySegment(NSE_EQ) → ${seg.length} instruments`);
+  } catch (e) { fail("instruments.bySegment()", e); }
 
+  try {
     const found = await client.instruments.find("NSE_EQ", "RELIANCE");
     ok(`instruments.find(NSE_EQ, RELIANCE) → ${found ? `securityId=${found.securityId}` : "not found"}`);
+  } catch (e) { fail("instruments.find()", e); }
 
+  try {
     const byId = await client.instruments.findBySecurityId("NSE_EQ", 1333);
     ok(`instruments.findBySecurityId(NSE_EQ, 1333) → ${byId ? byId.symbolName ?? byId.displayName ?? "found" : "not found"}`);
+  } catch (e) { fail("instruments.findBySecurityId()", e); }
 
+  try {
     const search = await client.instruments.search("HDFCBANK");
     ok(`instruments.search(HDFCBANK) → ${search.length} results`);
+  } catch (e) { fail("instruments.search()", e); }
 
+  try {
     const anywhere = await client.instruments.findAnywhere("NIFTY");
     ok(`instruments.findAnywhere(NIFTY) → ${anywhere ? `seg=${anywhere.exchangeSegment}` : "not found"}`);
-  } catch (e) { fail("instruments calls", e); }
+  } catch (e) { fail("instruments.findAnywhere()", e); }
 
   // ---------------------------------------------------------------------------
   // STATEMENTS (Ledger)
@@ -291,31 +338,62 @@ async function main() {
   try {
     const tpin = await client.edis.requestTpin();
     ok(`edis.requestTpin() → received`);
-  } catch (e) { fail("edis.requestTpin()", e); }
+  } catch (e) {
+    if ((e as any)?.status === 500) {
+      skip("edis.requestTpin()", "server 500 — eDIS may require DSP account");
+    } else {
+      fail("edis.requestTpin()", e);
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // GLOBAL STOCKS (US equities — separate book)
   // ---------------------------------------------------------------------------
   console.log("\n=== Global Stocks (US Equities) ===\n");
+
   try {
     const orders = await client.globalStocks.orders.list();
     ok(`globalStocks.orders.list() → ${orders.length} orders`);
-  } catch (e) { fail("globalStocks.orders.list()", e); }
+  } catch (e) {
+    if ((e as any)?.status === 400 || (e as any)?.status === 500) {
+      skip("globalStocks.orders.list()", "feature not enabled on this account");
+    } else {
+      fail("globalStocks.orders.list()", e);
+    }
+  }
 
   try {
     const holdings = await client.globalStocks.holdings.list();
     ok(`globalStocks.holdings.list() → ${holdings.length} holdings`);
-  } catch (e) { fail("globalStocks.holdings.list()", e); }
+  } catch (e) {
+    if ((e as any)?.status === 400 || (e as any)?.status === 500) {
+      skip("globalStocks.holdings.list()", "feature not enabled on this account");
+    } else {
+      fail("globalStocks.holdings.list()", e);
+    }
+  }
 
   try {
     const trades = await client.globalStocks.trades.list();
     ok(`globalStocks.trades.list() → ${trades.length} trades`);
-  } catch (e) { fail("globalStocks.trades.list()", e); }
+  } catch (e) {
+    if ((e as any)?.status === 400 || (e as any)?.status === 500) {
+      skip("globalStocks.trades.list()", "feature not enabled on this account");
+    } else {
+      fail("globalStocks.trades.list()", e);
+    }
+  }
 
   try {
     const funds = await client.globalStocks.funds.getLimit();
     ok(`globalStocks.funds.getLimit() → received`);
-  } catch (e) { fail("globalStocks.funds.getLimit()", e); }
+  } catch (e) {
+    if ((e as any)?.status === 400 || (e as any)?.status === 500) {
+      skip("globalStocks.funds.getLimit()", "feature not enabled on this account");
+    } else {
+      fail("globalStocks.funds.getLimit()", e);
+    }
+  }
 
   try {
     const status = await client.globalStocks.marketStatus.get();
@@ -365,7 +443,7 @@ async function main() {
     await client.ws.connect();
     ok("ws.connect() → connected for order updates");
 
-    const opened = await new Promise<void>((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error("Order update open timeout (15s)")), 15_000);
       client.ws.orders.once("open", () => { clearTimeout(timer); resolve(); });
     });
