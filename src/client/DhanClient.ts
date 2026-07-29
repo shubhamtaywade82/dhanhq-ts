@@ -14,6 +14,7 @@ import {
   Charts,
   ConditionalTriggers,
   Edis,
+  ExpiredOptionsData,
   ForeverOrders,
   Funds,
   GlobalStocks,
@@ -39,6 +40,7 @@ export class DhanClient {
   public readonly positions: Positions;
   public readonly alerts: Alerts;
   public readonly conditionalTriggers: ConditionalTriggers;
+  public readonly expiredOptionsData: ExpiredOptionsData;
   public readonly foreverOrders: ForeverOrders;
   public readonly funds: Funds;
   public readonly charts: Charts;
@@ -75,6 +77,7 @@ export class DhanClient {
     this.positions = new Positions(httpClient);
     this.alerts = new Alerts(httpClient);
     this.conditionalTriggers = new ConditionalTriggers(httpClient);
+    this.expiredOptionsData = new ExpiredOptionsData(httpClient);
     this.foreverOrders = new ForeverOrders(httpClient);
     this.funds = new Funds(httpClient);
     this.charts = new Charts(httpClient);

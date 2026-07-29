@@ -2,6 +2,7 @@ export * from "./Alerts";
 export * from "./Charts";
 export * from "./ConditionalTriggers";
 export * from "./Edis";
+export * from "./ExpiredOptionsData";
 export * from "./ForeverOrders";
 export * from "./Funds";
 export * from "./GlobalStocks";
