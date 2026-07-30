@@ -1,24 +1,8 @@
-# DhanHQ TS — TypeScript SDK for Dhan API (v2)
+# DhanHQ TS — TypeScript & Node.js SDK for DhanHQ API v2
 
-Production-grade TypeScript SDK for DhanHQ APIs with **WebSocket market feed**, **order execution safety**, and **Node-first support with browser-safe read-only usage where transport limits allow**.
+Production-grade TypeScript SDK and Node.js client for the [DhanHQ](https://dhanhq.co) trading API. Build algorithmic trading systems with typed REST APIs, real-time WebSocket market data, order updates, historical OHLC, option chains and Greeks, technical indicators, risk management, composable trading skills, and MCP tools for AI trading agents.
 
 > **Community project.** This is an independent SDK and is not affiliated with, endorsed by, or supported by Dhan. Dhan publishes its own official clients as [`dhanhq`](https://www.npmjs.com/package/dhanhq) and [`dhanhq-ts`](https://www.npmjs.com/package/dhanhq-ts).
-
----
-
-## Why This SDK
-
-- Typed API generated from OpenAPI
-- Real-time market data with binary WebSocket parsing
-- Safe order execution with validation, `correlationId`, and no blind retries
-- Built for Node.js trading systems, bots, and backend services
-- Exposes both ergonomic resources and the low-level generated client
-- Batteries included above the transport layer:
-  - **Technical analysis** — SMA/EMA/WMA, RSI, MACD, Bollinger, ATR, ADX, Stochastic, Supertrend, VWAP, OBV, plus a multi-timeframe bias engine
-  - **Option analytics** — Black-Scholes pricing, Greeks, implied volatility, max pain, PCR, OI walls
-  - **Risk pipeline** — pre-trade checks wired into every agent order path
-  - **Skills** — eleven composable trading strategies that stop at a reviewable intent
-  - **Agent tools + MCP server** — the whole SDK exposed to LLM clients behind a scope and live-trading gate
 
 ---
 
@@ -31,12 +15,20 @@ npm install @shubhamtaywade82/dhanhq-ts
 Requires Node.js 18 or newer. Ships both ESM and CommonJS builds with
 TypeScript declarations for each.
 
-Installing straight from the repository also works — the `prepare` script
-builds on install:
+---
 
-```bash
-npm install git+https://github.com/shubhamtaywade82/dhanhq-ts.git
-```
+## Why This SDK
+
+- Typed API generated from OpenAPI — every endpoint, every parameter
+- Real-time WebSocket market data with binary packet parsing (LTP, OHLCV, 5/20-level depth)
+- Safe order execution with validation, `correlationId`, and no blind retries
+- Built for Node.js trading systems, bots, and backend services
+- Batteries included above the transport layer:
+  - **Technical analysis** — SMA/EMA/WMA, RSI, MACD, Bollinger, ATR, ADX, Stochastic, Supertrend, VWAP, OBV, multi-timeframe bias
+  - **Option analytics** — Black-Scholes pricing, Greeks, implied volatility, max pain, PCR, OI walls
+  - **Risk pipeline** — pre-trade checks wired into every order path
+  - **Composable trading skills** — eleven strategies that stop at a reviewable intent
+  - **MCP server + agent tools** — the whole SDK exposed to LLM/AI clients behind a policy gate
 
 ---
 
