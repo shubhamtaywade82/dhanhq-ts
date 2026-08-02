@@ -2,6 +2,7 @@ import type { AxiosInstance } from "axios";
 
 import { HttpClient } from "../src/client/HttpClient";
 import { RateLimiter } from "../src/client/RateLimiter";
+import { MarketFeed } from "../src/resources/MarketFeed";
 import { Orders } from "../src/resources/Orders";
 import { OptionChain } from "../src/resources/OptionChain";
 
@@ -71,6 +72,21 @@ describe("tiered rate limiting — resource wiring", () => {
       { kind: "tier", tier: "order_api", isWrite: false },
       { kind: "tier", tier: "order_api", isWrite: false },
       { kind: "tier", tier: "order_api", isWrite: true },
+    ]);
+  });
+
+  it("tags MarketFeed ltp/ohlc/quote as the quote_api tier", async () => {
+    const { rateLimiter, calls } = createSpyRateLimiter();
+    const marketFeed = new MarketFeed(createHttpClient(rateLimiter));
+
+    await marketFeed.ltp({ NSE_EQ: [11536] });
+    await marketFeed.ohlc({ NSE_EQ: [11536] });
+    await marketFeed.quote({ NSE_EQ: [11536] });
+
+    expect(calls).toEqual([
+      { kind: "tier", tier: "quote_api", isWrite: true },
+      { kind: "tier", tier: "quote_api", isWrite: true },
+      { kind: "tier", tier: "quote_api", isWrite: true },
     ]);
   });
 

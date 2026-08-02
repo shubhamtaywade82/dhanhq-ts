@@ -1,6 +1,25 @@
 import { OpenAPI } from "../generated";
 import type { DhanClientConfig } from "../types/common.types";
 
+/**
+ * Raw access to the OpenAPI-codegen services (`client.generated.*`) for
+ * endpoints not yet wrapped by a hand-written resource class.
+ *
+ * Unlike every `client.<resource>` call, these bypass {@link HttpClient} —
+ * and with it the tiered {@link RateLimiter} — entirely. Each generated
+ * service method calls the codegen's own `request()` against the default
+ * `axios` export directly, with no interceptor hook and no way to pass a
+ * custom axios instance without editing files under `src/generated` (which
+ * `npm run generate` overwrites). Patching the global `axios` singleton from
+ * here was considered and rejected: it would throttle any other code in the
+ * host process that happens to import the raw `axios` package, which is
+ * exactly the kind of surprising action-at-a-distance a library must not do.
+ *
+ * Prefer the wrapped resource classes (`client.optionChain`, `client.orders`,
+ * etc.) for anything rate-sensitive. If you call `client.generated.*`
+ * directly — especially the option-chain or order endpoints — you are
+ * responsible for spacing your own calls to Dhan's documented limits.
+ */
 export class GeneratedClient {
   constructor(config: DhanClientConfig) {
     OpenAPI.BASE = config.baseURL ?? "https://api.dhan.co/v2";
