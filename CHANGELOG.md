@@ -6,8 +6,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-08-02
+
 ### Added
 
+- **Live tick-to-candle aggregator** (`CandleAggregator`, `src/ws`) — builds
+  OHLCV bars in real time from `ticker`/`full` WS packets, the missing piece
+  between the parsed market feed and the REST-only `candlesFromSeries()`.
+  Per-bar volume is derived as a delta against Dhan's cumulative day volume
+  and self-corrects (re-bases instead of going negative) on a day rollover or
+  feed restart. `seed()` primes a bucket from historical data on connect;
+  `flush()`/`flushAll()` close out in-progress bars on the caller's own
+  schedule — the aggregator itself holds no timers. 7 new tests; 232 total.
 - **Authentication** — `TokenResponse` with `isExpired`, `expiresIn`,
   `needsRefresh` and the account fields (`clientName`, `ucc`,
   `powerOfAttorney`); `AuthenticationError` carrying the broker's own
@@ -127,6 +137,7 @@ First release published to npm, as `@shubhamtaywade82/dhanhq-ts`.
 Initial pre-release: REST resources, contracts, WebSocket market feed and
 order updates, auth helpers, and the OpenAPI-generated transport layer.
 
-[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.2.0...v0.4.0
 [0.2.0]: https://github.com/shubhamtaywade82/dhanhq-ts/releases/tag/v0.2.0
 [0.1.0]: https://github.com/shubhamtaywade82/dhanhq-ts/releases/tag/v0.1.0
