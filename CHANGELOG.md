@@ -6,6 +6,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-08-02
+
+### Fixed
+
+- **`RATE_LIMITS` (option chain 1 req/3s, orders 10/s, etc.) was dead data.**
+  `HttpClient` applied one flat Bottleneck queue per GET/write regardless of
+  endpoint, so nothing stopped back-to-back `getOptionChain()` calls from
+  blowing through Dhan's real 3-second limit and drawing error 805.
+  `RateLimiter` now keeps a Bottleneck per tier alongside the generic
+  read/write queues; a request layers its tier's stricter spacing on top via
+  an optional `tier` field on `RequestOptions`. Wired into
+  `OptionChain.fetch()`/`expiryList()` (hard 3s lock) and every
+  `Orders`/`SuperOrders`/`ForeverOrders` call (10/s). Other resources keep
+  the prior generic-only behavior. 8 new tests; 237 total.
+
 ## [0.4.0] — 2026-08-02
 
 ### Added
@@ -137,7 +152,8 @@ First release published to npm, as `@shubhamtaywade82/dhanhq-ts`.
 Initial pre-release: REST resources, contracts, WebSocket market feed and
 order updates, auth helpers, and the OpenAPI-generated transport layer.
 
-[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.2.0...v0.4.0
 [0.2.0]: https://github.com/shubhamtaywade82/dhanhq-ts/releases/tag/v0.2.0
 [0.1.0]: https://github.com/shubhamtaywade82/dhanhq-ts/releases/tag/v0.1.0
