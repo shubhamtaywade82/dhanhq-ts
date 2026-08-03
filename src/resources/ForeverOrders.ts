@@ -15,6 +15,7 @@ export class ForeverOrders {
       method: "GET",
       url: "/forever/orders",
       safeToRetry: true,
+      tier: "order_api",
     });
   }
 
@@ -26,6 +27,7 @@ export class ForeverOrders {
       url: "/forever/orders",
       data: request,
       safeToRetry: false,
+      tier: "order_api",
     });
   }
 
@@ -38,6 +40,7 @@ export class ForeverOrders {
       url: `/forever/orders/${encodeURIComponent(orderId)}`,
       data: request,
       safeToRetry: false,
+      tier: "order_api",
     });
   }
 
@@ -46,6 +49,7 @@ export class ForeverOrders {
       method: "DELETE",
       url: `/forever/orders/${encodeURIComponent(orderId)}`,
       safeToRetry: false,
+      tier: "order_api",
     });
   }
 }

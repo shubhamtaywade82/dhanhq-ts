@@ -92,6 +92,7 @@ export class OptionChain {
       url: "/optionchain",
       data: request,
       safeToRetry: true,
+      tier: "option_chain",
     });
   }
 
@@ -109,6 +110,7 @@ export class OptionChain {
       url: "/optionchain/expirylist",
       data: request,
       safeToRetry: true,
+      tier: "option_chain",
     });
   }
 

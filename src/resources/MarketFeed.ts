@@ -87,6 +87,7 @@ export class MarketFeed {
       url: "/marketfeed/ltp",
       data: toNumericInstruments(instruments),
       safeToRetry: true,
+      tier: "quote_api",
     });
   }
 
@@ -102,6 +103,7 @@ export class MarketFeed {
       url: "/marketfeed/ohlc",
       data: toNumericInstruments(instruments),
       safeToRetry: true,
+      tier: "quote_api",
     });
   }
 
@@ -117,6 +119,7 @@ export class MarketFeed {
       url: "/marketfeed/quote",
       data: toNumericInstruments(instruments),
       safeToRetry: true,
+      tier: "quote_api",
     });
   }
 
