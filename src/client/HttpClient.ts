@@ -4,11 +4,13 @@ import axios, {
   AxiosRequestConfig,
   AxiosResponse,
 } from "axios";
+import Bottleneck from "bottleneck";
 
 import { AuthResolver } from "../auth";
 import type { ApiTier } from "../constants";
 import { ApiResponseError, NetworkError, RateLimitError } from "../errors";
 import type { DhanClientConfig } from "../types/common.types";
+import type { Logger } from "../types/logger.types";
 import { RateLimiter } from "./RateLimiter";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
@@ -31,6 +33,7 @@ export interface RequestOptions<TBody = unknown> {
 export interface HttpClientDependencies {
   axiosInstance?: AxiosInstance;
   rateLimiter?: RateLimiter;
+  logger?: Logger;
 }
 
 export class HttpClient {
@@ -38,6 +41,7 @@ export class HttpClient {
   private readonly rateLimiter: RateLimiter;
   private readonly authResolver: AuthResolver;
   private readonly clientId: string;
+  private readonly logger?: Logger;
 
   constructor(
     config: DhanClientConfig,
@@ -45,6 +49,7 @@ export class HttpClient {
   ) {
     this.authResolver = new AuthResolver(config);
     this.clientId = config.clientId;
+    this.logger = dependencies.logger;
     this.rateLimiter =
       dependencies.rateLimiter ??
       new RateLimiter({ minTime: config.rateLimitMinTimeMs });
@@ -182,11 +187,28 @@ export class HttpClient {
       }
     }
 
-    if (error instanceof BottleneckError) {
-      return new RateLimitError(error.message, error);
+    if (error instanceof Bottleneck.BottleneckError) {
+      this.logger?.warn('Rate limit exceeded', undefined, { 
+        message: error.message,
+        retryAfterMs: this.extractRetryAfter(error)
+      });
+      return new RateLimitError(
+        `Rate limit exceeded: ${error.message}`,
+        { cause: error, retryAfterMs: this.extractRetryAfter(error) }
+      );
     }
 
     return new NetworkError("Unexpected request failure", error);
+  }
+
+  private extractRetryAfter(error: Bottleneck.BottleneckError): number | undefined {
+    // Extract retry-after information from bottleneck error if available
+    const anyError = error as any;
+    if (anyError.retryAfterMs !== undefined) {
+      return anyError.retryAfterMs;
+    }
+    // Default to 1 second if not specified
+    return 1000;
   }
 
   private extractErrorPayload(response: AxiosResponse<unknown>): unknown {
@@ -200,8 +222,6 @@ export class HttpClient {
     return response.data;
   }
 }
-
-class BottleneckError extends Error {}
 
 function isAxiosLikeError(error: unknown): error is AxiosError {
   return (

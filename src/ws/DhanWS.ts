@@ -1,5 +1,6 @@
 import type { InstrumentSubscription } from "../types/common.types";
 import type { DhanWSOptions, MarketDepthMode } from "../types/ws.types";
+import type { Logger } from "../types/logger.types";
 import { MarketDepthWS } from "./MarketDepthWS";
 import { MarketFeedWS } from "./MarketFeedWS";
 import { OrderUpdateWS } from "./OrderUpdateWS";
@@ -12,8 +13,10 @@ export class DhanWS {
   public readonly market: MarketFeedWS;
   public readonly orders: OrderUpdateWS;
   public depth?: MarketDepthWS;
+  private readonly logger?: Logger;
 
   constructor(private readonly options: DhanWSOptions) {
+    this.logger = options.logger;
     this.market = new MarketFeedWS(
       {
         token: options.token,
@@ -24,6 +27,7 @@ export class DhanWS {
         maxReconnectDelayMs: options.maxReconnectDelayMs,
         maxReconnectAttempts: options.maxReconnectAttempts,
         webSocketFactory: options.marketSocketFactory,
+        logger: options.logger,
       },
       this.ltpStore,
     );
@@ -40,6 +44,7 @@ export class DhanWS {
         userType: options.orderUserType,
         partnerId: options.partnerId,
         partnerSecret: options.partnerSecret,
+        logger: options.logger,
       },
       this.orderStore,
     );
