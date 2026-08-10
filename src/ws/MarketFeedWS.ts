@@ -8,6 +8,7 @@ import type {
   StoredSubscription,
   WebSocketLike,
 } from "../types/ws.types";
+import type { Logger } from "../types/logger.types";
 import { BaseWS } from "./BaseWS";
 import { parseMarketFeedPacket } from "./parsers/marketFeed";
 import { splitPackets } from "./parsers/packetSplitter";
@@ -19,12 +20,16 @@ const REQUEST_CODE_BY_MODE: Record<MarketFeedMode, number> = {
   full: 21,
 };
 
+export interface MarketFeedWSOptionsWithLogger extends MarketFeedWSOptions {
+  logger?: Logger;
+}
+
 export class MarketFeedWS extends BaseWS {
   private readonly subscriptions = new Map<string, StoredSubscription>();
   private readonly ltpStore: LTPStore;
   private readonly mode: MarketFeedMode;
 
-  constructor(options: MarketFeedWSOptions, ltpStore: LTPStore) {
+  constructor(options: MarketFeedWSOptionsWithLogger, ltpStore: LTPStore) {
     const authResolver = new AuthResolver({
       token: options.token,
       tokenProvider: options.tokenProvider,
@@ -42,6 +47,7 @@ export class MarketFeedWS extends BaseWS {
       options.webSocketFactory ?? defaultFactory,
       options.maxReconnectDelayMs,
       options.maxReconnectAttempts,
+      options.logger,
     );
     this.ltpStore = ltpStore;
     this.mode = options.mode ?? "full";

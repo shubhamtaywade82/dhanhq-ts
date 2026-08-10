@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 
 import type { WebSocketLike } from "../types/ws.types";
+import type { Logger } from "../types/logger.types";
 
 export abstract class BaseWS extends EventEmitter {
   private reconnectTimer?: NodeJS.Timeout;
@@ -8,6 +9,13 @@ export abstract class BaseWS extends EventEmitter {
   protected manuallyClosed = false;
   protected reconnectAttempts = 0;
   public isConnected = false;
+  protected logger?: Logger;
+  
+  // Heartbeat configuration
+  private pingInterval?: NodeJS.Timeout;
+  private pongTimeout?: NodeJS.Timeout;
+  private readonly pingIntervalMs = 30000; // 30 seconds
+  private readonly pongTimeoutMs = 10000;   // 10 seconds
 
   private readonly maxReconnectDelayMs: number;
   private readonly maxReconnectAttempts: number;
@@ -18,10 +26,12 @@ export abstract class BaseWS extends EventEmitter {
     private readonly webSocketFactory: (url: string) => WebSocketLike,
     maxReconnectDelayMs?: number,
     maxReconnectAttempts?: number,
+    logger?: Logger,
   ) {
     super();
     this.maxReconnectDelayMs = maxReconnectDelayMs ?? 30000;
     this.maxReconnectAttempts = maxReconnectAttempts ?? Infinity;
+    this.logger = logger;
   }
 
   public async connect(): Promise<void> {
@@ -40,6 +50,7 @@ export abstract class BaseWS extends EventEmitter {
 
   public disconnect(): void {
     this.manuallyClosed = true;
+    this.stopHeartbeat();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = undefined;
@@ -55,6 +66,7 @@ export abstract class BaseWS extends EventEmitter {
     connection.on("open", () => {
       this.reconnectAttempts = 0;
       this.isConnected = true;
+      this.startHeartbeat();
       void this.onOpen();
     });
 
@@ -68,6 +80,7 @@ export abstract class BaseWS extends EventEmitter {
 
     connection.on("close", () => {
       this.isConnected = false;
+      this.stopHeartbeat();
       this.onClose();
       if (!this.manuallyClosed) {
         this.scheduleReconnect();
@@ -84,15 +97,61 @@ export abstract class BaseWS extends EventEmitter {
       return;
     }
 
-    const exponentialFactor = Math.pow(2, Math.min(this.reconnectAttempts, 5));
-    const baseDelay = this.reconnectDelayMs * exponentialFactor;
-    const jitter = Math.floor(Math.random() * 500);
-    const delay = Math.min(this.maxReconnectDelayMs, baseDelay + jitter);
-
+    const delay = this.calculateBackoff(this.reconnectAttempts);
+    
+    this.logger?.info(`Reconnecting in ${delay.toFixed(0)}ms`, undefined, {
+      attempt: this.reconnectAttempts + 1,
+      maxAttempts: this.maxReconnectAttempts,
+    });
+    
     this.reconnectAttempts += 1;
     this.reconnectTimer = setTimeout(() => {
       void this.connect();
     }, delay);
+  }
+
+  /**
+   * Calculate exponential backoff with jitter.
+   * Formula: min(maxDelay, baseDelay * 2^attempt) ± 25% jitter
+   */
+  private calculateBackoff(attempt: number): number {
+    const baseDelay = 1000; // 1 second
+    const maxDelay = this.maxReconnectDelayMs;
+    const exponential = Math.min(
+      maxDelay,
+      baseDelay * Math.pow(2, Math.min(attempt, 6)) // Cap at 2^6 = 64 seconds
+    );
+    
+    // Add jitter: ±25% randomization to prevent thundering herd
+    const jitter = exponential * 0.25 * (Math.random() * 2 - 1);
+    
+    return exponential + jitter;
+  }
+
+  private startHeartbeat(): void {
+    this.pingInterval = setInterval(() => {
+      try {
+        this.send(JSON.stringify({ type: "ping" }));
+        
+        this.pongTimeout = setTimeout(() => {
+          this.logger?.warn("Pong not received, reconnecting");
+          this.connection?.close();
+        }, this.pongTimeoutMs);
+      } catch (error) {
+        this.logger?.error("Failed to send ping", error as Error);
+      }
+    }, this.pingIntervalMs);
+  }
+
+  private stopHeartbeat(): void {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = undefined;
+    }
+    if (this.pongTimeout) {
+      clearTimeout(this.pongTimeout);
+      this.pongTimeout = undefined;
+    }
   }
 
   protected abstract onOpen(): Promise<void> | void;
