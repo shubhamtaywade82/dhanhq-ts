@@ -45,7 +45,7 @@ cannot trade until an operator opens the gate.
 
 **Market data** — `dhan_search_instruments`, `dhan_ltp`, `dhan_ohlc`,
 `dhan_quote`, `dhan_option_chain`, `dhan_option_expiries`,
-`dhan_historical_data`, `dhan_intraday_data`
+`dhan_historical_data`, `dhan_intraday_data`, `dhan_expired_options`
 
 **Analysis** — `dhan_technical_analysis`, `dhan_market_bias`,
 `dhan_margin_requirement`

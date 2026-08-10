@@ -3,6 +3,9 @@ import { HttpClient } from "../client/HttpClient";
 /**
  * Instruments keyed by exchange segment, e.g. `{ NSE_EQ: [11536], IDX_I: [13] }`.
  * Up to 1000 instruments per request.
+ *
+ * Dhan's API requires **numeric** security IDs in the request body — the SDK
+ * converts string values automatically before sending.
  */
 export type MarketFeedInstruments = Record<string, Array<number | string>>;
 
@@ -49,6 +52,21 @@ export interface MarketFeedResponse<TQuote> {
 }
 
 /**
+ * Dhan's API requires numeric security IDs, so string values are converted.
+ */
+function toNumericInstruments(
+  instruments: MarketFeedInstruments,
+): Record<string, Array<number>> {
+  const result: Record<string, Array<number>> = {};
+  for (const [segment, ids] of Object.entries(instruments)) {
+    result[segment] = ids.map((id) =>
+      typeof id === "string" ? Number.parseInt(id, 10) || 0 : id,
+    );
+  }
+  return result;
+}
+
+/**
  * On-demand market data snapshots (`/v2/marketfeed/*`).
  *
  * These are snapshot reads, not a stream — for continuous updates use
@@ -63,12 +81,13 @@ export class MarketFeed {
   ): Promise<MarketFeedResponse<LtpQuote>> {
     return this.httpClient.request<
       MarketFeedResponse<LtpQuote>,
-      MarketFeedInstruments
+      Record<string, Array<number>>
     >({
       method: "POST",
       url: "/marketfeed/ltp",
-      data: instruments,
+      data: toNumericInstruments(instruments),
       safeToRetry: true,
+      tier: "quote_api",
     });
   }
 
@@ -78,12 +97,13 @@ export class MarketFeed {
   ): Promise<MarketFeedResponse<OhlcQuote>> {
     return this.httpClient.request<
       MarketFeedResponse<OhlcQuote>,
-      MarketFeedInstruments
+      Record<string, Array<number>>
     >({
       method: "POST",
       url: "/marketfeed/ohlc",
-      data: instruments,
+      data: toNumericInstruments(instruments),
       safeToRetry: true,
+      tier: "quote_api",
     });
   }
 
@@ -93,12 +113,13 @@ export class MarketFeed {
   ): Promise<MarketFeedResponse<FullQuote>> {
     return this.httpClient.request<
       MarketFeedResponse<FullQuote>,
-      MarketFeedInstruments
+      Record<string, Array<number>>
     >({
       method: "POST",
       url: "/marketfeed/quote",
-      data: instruments,
+      data: toNumericInstruments(instruments),
       safeToRetry: true,
+      tier: "quote_api",
     });
   }
 

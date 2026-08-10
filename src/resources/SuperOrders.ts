@@ -27,6 +27,7 @@ export class SuperOrders {
       url: "/super/orders",
       data: payload,
       safeToRetry: false,
+      tier: "order_api",
     });
 
     return {
@@ -43,6 +44,7 @@ export class SuperOrders {
       method: "GET",
       url: "/super/orders",
       safeToRetry: true,
+      tier: "order_api",
     });
   }
 
@@ -62,6 +64,7 @@ export class SuperOrders {
         quantity: request.quantity,
       },
       safeToRetry: false,
+      tier: "order_api",
     });
   }
 
@@ -74,6 +77,7 @@ export class SuperOrders {
         request.orderLeg,
       )}`,
       safeToRetry: false,
+      tier: "order_api",
     });
   }
 

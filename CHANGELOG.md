@@ -6,8 +6,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-08-02
+
+### Fixed
+
+- **`RATE_LIMITS` (option chain 1 req/3s, orders 10/s, quote 1/s, etc.) was
+  dead data.** `HttpClient` applied one flat Bottleneck queue per GET/write
+  regardless of endpoint, so nothing stopped back-to-back `getOptionChain()`
+  calls from blowing through Dhan's real 3-second limit and drawing error
+  805 — and `MarketFeed.ltp()`/`ohlc()`/`quote()` could exceed the 1/s quote
+  limit the same way. `RateLimiter` now keeps a Bottleneck per tier alongside
+  the generic read/write queues; a request layers its tier's stricter spacing
+  on top via an optional `tier` field on `RequestOptions`. Wired into
+  `OptionChain.fetch()`/`expiryList()` (3s lock), every
+  `Orders`/`SuperOrders`/`ForeverOrders` call (10/s), and `MarketFeed`'s three
+  quote methods (1/s). `client.generated.*` (the raw OpenAPI-codegen escape
+  hatch) bypasses `HttpClient` entirely and is documented as such on
+  `GeneratedClient` rather than silently left unprotected — prefer the
+  wrapped resource classes for anything rate-sensitive. 9 new tests; 238
+  total.
+
+## [0.4.0] — 2026-08-02
+
 ### Added
 
+- **Live tick-to-candle aggregator** (`CandleAggregator`, `src/ws`) — builds
+  OHLCV bars in real time from `ticker`/`full` WS packets, the missing piece
+  between the parsed market feed and the REST-only `candlesFromSeries()`.
+  Per-bar volume is derived as a delta against Dhan's cumulative day volume
+  and self-corrects (re-bases instead of going negative) on a day rollover or
+  feed restart. `seed()` primes a bucket from historical data on connect;
+  `flush()`/`flushAll()` close out in-progress bars on the caller's own
+  schedule — the aggregator itself holds no timers. 7 new tests; 232 total.
 - **Authentication** — `TokenResponse` with `isExpired`, `expiresIn`,
   `needsRefresh` and the account fields (`clientName`, `ucc`,
   `powerOfAttorney`); `AuthenticationError` carrying the broker's own
@@ -62,6 +92,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The published `exports` map, `README` and docs reflect the new surface.
 
+> **Note on this section and `0.2.0`/`0.3.0` below:** a `v0.3.0` git tag
+> exists but was never given its own dated section here — its tree is
+> nearly identical to `v0.2.0`'s, so the auth/Global Stocks/execution-helper
+> work above most likely landed as part of one of those two releases rather
+> than being genuinely unreleased. `0.3.1` was also published to npm with no
+> matching git tag or commit at all (metadata-only: description, keywords,
+> homepage, VitePress docs scripts). Reconstructing exactly which change
+> shipped in which of those three isn't possible from git history alone, so
+> rather than guess, this gap is left as-is: `0.4.0` is the first release
+> whose tag and changelog are known to match what's actually on npm.
 
 ## [0.2.0] — 2026-07-29
 
@@ -127,6 +167,8 @@ First release published to npm, as `@shubhamtaywade82/dhanhq-ts`.
 Initial pre-release: REST resources, contracts, WebSocket market feed and
 order updates, auth helpers, and the OpenAPI-generated transport layer.
 
-[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.2.0...v0.4.0
 [0.2.0]: https://github.com/shubhamtaywade82/dhanhq-ts/releases/tag/v0.2.0
 [0.1.0]: https://github.com/shubhamtaywade82/dhanhq-ts/releases/tag/v0.1.0

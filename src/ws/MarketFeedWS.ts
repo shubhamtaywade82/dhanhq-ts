@@ -40,6 +40,8 @@ export class MarketFeedWS extends BaseWS {
         ),
       options.reconnectDelayMs ?? 1000,
       options.webSocketFactory ?? defaultFactory,
+      options.maxReconnectDelayMs,
+      options.maxReconnectAttempts,
     );
     this.ltpStore = ltpStore;
     this.mode = options.mode ?? "full";

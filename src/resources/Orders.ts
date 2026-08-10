@@ -25,6 +25,7 @@ export class Orders {
       url: "/orders",
       data: payload,
       safeToRetry: false,
+      tier: "order_api",
     });
 
     return {
@@ -41,6 +42,7 @@ export class Orders {
       method: "GET",
       url: "/orders",
       safeToRetry: true,
+      tier: "order_api",
     });
   }
 
@@ -49,6 +51,7 @@ export class Orders {
       method: "GET",
       url: `/orders/${encodeURIComponent(orderId)}`,
       safeToRetry: true,
+      tier: "order_api",
     });
   }
 
@@ -59,6 +62,7 @@ export class Orders {
       method: "GET",
       url: `/orders/external/${encodeURIComponent(correlationId)}`,
       safeToRetry: true,
+      tier: "order_api",
     });
   }
 
@@ -67,6 +71,7 @@ export class Orders {
       method: "GET",
       url: `/trades/${encodeURIComponent(orderId)}`,
       safeToRetry: true,
+      tier: "order_api",
     });
   }
 
@@ -75,6 +80,7 @@ export class Orders {
       method: "GET",
       url: "/trades",
       safeToRetry: true,
+      tier: "order_api",
     });
   }
 
@@ -87,6 +93,7 @@ export class Orders {
         request.toDate,
       )}/${encodeURIComponent(request.pageNumber ?? "0")}`,
       safeToRetry: true,
+      tier: "order_api",
     });
   }
 
@@ -100,6 +107,7 @@ export class Orders {
       url: "/orders/slicing",
       data: payload,
       safeToRetry: false,
+      tier: "order_api",
     });
   }
 
@@ -117,6 +125,7 @@ export class Orders {
           triggerPrice: request.triggerPrice,
         },
         safeToRetry: false,
+        tier: "order_api",
       },
     );
   }
@@ -126,6 +135,7 @@ export class Orders {
       method: "DELETE",
       url: `/orders/${encodeURIComponent(orderId)}`,
       safeToRetry: false,
+      tier: "order_api",
     });
   }
 

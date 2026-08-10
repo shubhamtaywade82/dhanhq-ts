@@ -12,12 +12,15 @@ import type { DhanClientConfig } from "../types/common.types";
 import {
   Alerts,
   Charts,
+  ConditionalTriggers,
   Edis,
+  ExpiredOptionsData,
   ForeverOrders,
   Funds,
   GlobalStocks,
   Instruments,
   IpSetup,
+  MarginCalculator,
   MarketFeed,
   OptionChain,
   Orders,
@@ -37,6 +40,8 @@ export class DhanClient {
   public readonly superOrders: SuperOrders;
   public readonly positions: Positions;
   public readonly alerts: Alerts;
+  public readonly conditionalTriggers: ConditionalTriggers;
+  public readonly expiredOptionsData: ExpiredOptionsData;
   public readonly foreverOrders: ForeverOrders;
   public readonly funds: Funds;
   public readonly charts: Charts;
@@ -50,6 +55,7 @@ export class DhanClient {
   public readonly instruments: Instruments;
   /** The US equities book — a separate namespace so USD and INR never mix. */
   public readonly globalStocks: GlobalStocks;
+  public readonly marginCalculator: MarginCalculator;
   public readonly ws: DhanWS;
   public readonly auth: {
     generateAccessToken: typeof DhanAuth.generateAccessToken;
@@ -72,6 +78,8 @@ export class DhanClient {
     this.superOrders = new SuperOrders(httpClient);
     this.positions = new Positions(httpClient);
     this.alerts = new Alerts(httpClient);
+    this.conditionalTriggers = new ConditionalTriggers(httpClient);
+    this.expiredOptionsData = new ExpiredOptionsData(httpClient);
     this.foreverOrders = new ForeverOrders(httpClient);
     this.funds = new Funds(httpClient);
     this.charts = new Charts(httpClient);
@@ -86,6 +94,7 @@ export class DhanClient {
       cacheTtlMs: config.instrumentCacheTtlMs,
     });
     this.globalStocks = new GlobalStocks(httpClient);
+    this.marginCalculator = new MarginCalculator(httpClient);
     this.ws = new DhanWS({
       token: config.token,
       tokenProvider: config.tokenProvider,

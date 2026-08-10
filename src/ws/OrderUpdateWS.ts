@@ -28,6 +28,8 @@ export class OrderUpdateWS extends BaseWS {
       () => options.url ?? "wss://api-order-update.dhan.co",
       options.reconnectDelayMs ?? 1000,
       options.webSocketFactory ?? defaultFactory,
+      options.maxReconnectDelayMs,
+      options.maxReconnectAttempts,
     );
     this.authResolver = authResolver;
     this.clientId = options.clientId;

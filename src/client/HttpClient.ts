@@ -6,6 +6,7 @@ import axios, {
 } from "axios";
 
 import { AuthResolver } from "../auth";
+import type { ApiTier } from "../constants";
 import { ApiResponseError, NetworkError, RateLimitError } from "../errors";
 import type { DhanClientConfig } from "../types/common.types";
 import { RateLimiter } from "./RateLimiter";
@@ -19,6 +20,12 @@ export interface RequestOptions<TBody = unknown> {
   params?: Record<string, unknown>;
   headers?: Record<string, string>;
   safeToRetry?: boolean;
+  /**
+   * Enforces the documented Dhan rate limit for this endpoint (`RATE_LIMITS`)
+   * in addition to the generic read/write queue. Omit for endpoints without a
+   * documented tier-specific limit narrower than the generic default.
+   */
+  tier?: ApiTier;
 }
 
 export interface HttpClientDependencies {
@@ -56,13 +63,18 @@ export class HttpClient {
     options: RequestOptions<TBody>,
   ): Promise<TResponse> {
     const execute = () => this.execute<TResponse, TBody>(options);
+    const isWrite = options.method !== "GET";
 
     try {
-      if (options.method === "GET") {
-        return await this.rateLimiter.scheduleRead(execute);
+      if (options.tier) {
+        return await this.rateLimiter.scheduleTier(options.tier, isWrite, execute);
       }
 
-      return await this.rateLimiter.scheduleWrite(execute);
+      if (isWrite) {
+        return await this.rateLimiter.scheduleWrite(execute);
+      }
+
+      return await this.rateLimiter.scheduleRead(execute);
     } catch (error) {
       throw this.normalizeError(error);
     }
@@ -122,6 +134,7 @@ export class HttpClient {
       params: options.params,
       headers: {
         "access-token": token,
+        "client-id": this.clientId,
         ...options.headers,
       },
     };
