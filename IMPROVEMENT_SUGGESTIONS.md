@@ -1587,7 +1587,34 @@ RateLimitError: Too many requests
 
 ## 12. Browser Compatibility
 
-### 12.1 Browser-Safe Bundle
+### 12.1 Browser-Safe Bundle — Done
+
+Implemented as `src/browser.ts`, built as its own tsup entry and shipped at
+the subpath `@shubhamtaywade82/dhanhq-ts/browser` — a real subpath
+(matching the existing `/mcp` pattern) rather than a `"browser"` exports
+*condition* on `"."` as originally sketched, since a subpath resolves the
+same way under plain `require`/`import` regardless of whether the consumer's
+tool recognizes the `browser` condition, where a condition only works for
+bundlers that check for it.
+
+Re-exports `src/ta` (minus the network-fetching `TechnicalAnalysis` class),
+`src/analytics`, `src/risk` (including `Pipeline` — its account-state
+checks just no-op without a `RiskDataProvider`, which a browser can't
+legitimately supply anyway), `src/execution`, and `src/contracts`. Verified
+by import-time inspection (`grep` for `axios`/`ws` `require` calls in the
+built output — none) rather than trusting tree-shaking, and wired into
+CI's tarball-install check alongside the existing main/mcp verification.
+
+Caught a real esbuild bug along the way: with `splitting: true` (four tsup
+entries sharing chunks), `Pipeline` resolved to `undefined` specifically
+through `browser.cjs`'s re-export — a lazy `__esm`-wrapped chunk whose
+initializer never ran on that access path, confirmed absent from the main
+`index.cjs` entry, so it wasn't pre-existing. `splitting: false` fixed it
+at the cost of per-entry bundle size (no more cross-entry dedup) — a
+correctness-over-size tradeoff worth making.
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Current State:** Documented limitations in `docs/BROWSER.md`.
 
@@ -1647,6 +1674,8 @@ Update `package.json`:
   }
 }
 ```
+
+</details>
 
 ### 12.2 Backend Proxy Example
 

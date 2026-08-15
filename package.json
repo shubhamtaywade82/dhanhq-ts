@@ -62,12 +62,25 @@
         "default": "./dist/mcp/index.cjs"
       }
     },
+    "./browser": {
+      "import": {
+        "types": "./dist/browser.d.mts",
+        "default": "./dist/browser.mjs"
+      },
+      "require": {
+        "types": "./dist/browser.d.ts",
+        "default": "./dist/browser.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
       "mcp": [
         "dist/mcp/index.d.ts"
+      ],
+      "browser": [
+        "dist/browser.d.ts"
       ]
     }
   },
