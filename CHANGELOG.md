@@ -6,6 +6,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Circuit breaker on `HttpClient`.** After 5 consecutive network/5xx
+  failures, `HttpClient` stops issuing new requests for 30s and rejects
+  immediately with `CircuitOpenError` instead of queuing behind the rate
+  limiter — a struggling backend no longer gets hammered by every in-flight
+  caller. Only transport failures (`NetworkError`, `ApiResponseError` with
+  status ≥ 500) count toward the threshold; validation errors, 4xx
+  responses, and rate-limit throttling do not. Configurable via
+  `DhanClientConfig.circuitBreaker` (or disable with `circuitBreaker:
+  false`). 8 new tests; 246 total.
+- **Jest coverage thresholds.** `jest.config.js` now fails the run if
+  statement/line coverage drops below 70%, branch coverage below 55%, or
+  function coverage below 62% (floors set a few points under the measured
+  baseline). CI now runs `npm test -- --coverage` to enforce it.
+
+### Fixed
+
+- `HttpClient.normalizeError()` and `BaseWS.scheduleReconnect()` called
+  `logger.warn`/`logger.info` with a stray extra `undefined` argument that
+  the `Logger` interface's two-argument signature doesn't accept —
+  `tsc --noEmit` (and therefore `npm run build`) failed outright on a clean
+  install.
+
 ## [0.4.1] — 2026-08-02
 
 ### Fixed

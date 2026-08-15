@@ -99,7 +99,7 @@ export abstract class BaseWS extends EventEmitter {
 
     const delay = this.calculateBackoff(this.reconnectAttempts);
     
-    this.logger?.info(`Reconnecting in ${delay.toFixed(0)}ms`, undefined, {
+    this.logger?.info(`Reconnecting in ${delay.toFixed(0)}ms`, {
       attempt: this.reconnectAttempts + 1,
       maxAttempts: this.maxReconnectAttempts,
     });

@@ -11,6 +11,11 @@ import type { ApiTier } from "../constants";
 import { ApiResponseError, NetworkError, RateLimitError } from "../errors";
 import type { DhanClientConfig } from "../types/common.types";
 import type { Logger } from "../types/logger.types";
+import {
+  CircuitBreaker,
+  type CircuitBreakerOptions,
+  type CircuitState,
+} from "./CircuitBreaker";
 import { RateLimiter } from "./RateLimiter";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
@@ -34,6 +39,8 @@ export interface HttpClientDependencies {
   axiosInstance?: AxiosInstance;
   rateLimiter?: RateLimiter;
   logger?: Logger;
+  /** Pass `false` to disable the circuit breaker outright. */
+  circuitBreaker?: CircuitBreaker | false;
 }
 
 export class HttpClient {
@@ -42,6 +49,7 @@ export class HttpClient {
   private readonly authResolver: AuthResolver;
   private readonly clientId: string;
   private readonly logger?: Logger;
+  private readonly circuitBreaker?: CircuitBreaker;
 
   constructor(
     config: DhanClientConfig,
@@ -62,27 +70,61 @@ export class HttpClient {
           Accept: "application/json",
         },
       });
+    this.circuitBreaker = this.resolveCircuitBreaker(config, dependencies);
   }
 
   public async request<TResponse, TBody = unknown>(
     options: RequestOptions<TBody>,
   ): Promise<TResponse> {
-    const execute = () => this.execute<TResponse, TBody>(options);
-    const isWrite = options.method !== "GET";
+    const run = async (): Promise<TResponse> => {
+      const execute = () => this.execute<TResponse, TBody>(options);
+      const isWrite = options.method !== "GET";
 
-    try {
-      if (options.tier) {
-        return await this.rateLimiter.scheduleTier(options.tier, isWrite, execute);
+      try {
+        if (options.tier) {
+          return await this.rateLimiter.scheduleTier(options.tier, isWrite, execute);
+        }
+
+        if (isWrite) {
+          return await this.rateLimiter.scheduleWrite(execute);
+        }
+
+        return await this.rateLimiter.scheduleRead(execute);
+      } catch (error) {
+        throw this.normalizeError(error);
       }
+    };
 
-      if (isWrite) {
-        return await this.rateLimiter.scheduleWrite(execute);
-      }
+    return this.circuitBreaker ? this.circuitBreaker.execute(run) : run();
+  }
 
-      return await this.rateLimiter.scheduleRead(execute);
-    } catch (error) {
-      throw this.normalizeError(error);
+  /** Current circuit-breaker state, mainly useful for health checks/observability. */
+  public getCircuitState(): CircuitState | undefined {
+    return this.circuitBreaker?.getState();
+  }
+
+  private resolveCircuitBreaker(
+    config: DhanClientConfig,
+    dependencies: HttpClientDependencies,
+  ): CircuitBreaker | undefined {
+    if (dependencies.circuitBreaker !== undefined) {
+      return dependencies.circuitBreaker === false ? undefined : dependencies.circuitBreaker;
     }
+
+    if (config.circuitBreaker === false) {
+      return undefined;
+    }
+
+    const options: CircuitBreakerOptions = config.circuitBreaker ?? {};
+    return new CircuitBreaker({
+      ...options,
+      logger: options.logger ?? this.logger,
+      isFailure:
+        options.isFailure ??
+        ((error) =>
+          error instanceof NetworkError ||
+          (error instanceof ApiResponseError && (error.status ?? 0) >= 500)),
+    });
   }
 
   public getClientId(): string {
@@ -188,7 +230,7 @@ export class HttpClient {
     }
 
     if (error instanceof Bottleneck.BottleneckError) {
-      this.logger?.warn('Rate limit exceeded', undefined, { 
+      this.logger?.warn('Rate limit exceeded', {
         message: error.message,
         retryAfterMs: this.extractRetryAfter(error)
       });

@@ -1,5 +1,6 @@
 export * from "./ApiResponseError";
 export * from "./AuthenticationError";
+export * from "./CircuitOpenError";
 export * from "./DhanError";
 export * from "./LiveTradingDisabledError";
 export * from "./NetworkError";

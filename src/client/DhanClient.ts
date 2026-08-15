@@ -78,6 +78,7 @@ export class DhanClient {
       axiosInstance: dependencies.axiosInstance,
       rateLimiter: dependencies.rateLimiter,
       logger: dependencies.logger,
+      circuitBreaker: dependencies.circuitBreaker,
     });
 
     this.generated = new GeneratedClient(config);

@@ -2,6 +2,7 @@ import type { AxiosInstance } from "axios";
 
 import {
   ApiResponseError,
+  CircuitOpenError,
   DhanAuth,
   DhanClient,
   HttpClient,
@@ -304,6 +305,63 @@ describe("DhanClient", () => {
     ).rejects.toBeInstanceOf(ApiResponseError);
 
     expect(axiosStub.requests).toHaveLength(1);
+  });
+
+  it("opens the circuit breaker after repeated 5xx failures and short-circuits further calls", async () => {
+    const axiosStub = createAxiosStub();
+    const serverError = {
+      isAxiosError: true,
+      response: { status: 503, data: { message: "busy" } },
+      message: "server error",
+      name: "AxiosError",
+    };
+
+    const httpClient = new HttpClient(
+      { token: "token", clientId: "client-id" },
+      { axiosInstance: axiosStub.axiosInstance },
+    );
+
+    // Default threshold is 5 consecutive failures.
+    for (let i = 0; i < 5; i += 1) {
+      axiosStub.enqueueFailure(serverError as never);
+      await expect(
+        httpClient.request({ method: "GET", url: "/orders" }),
+      ).rejects.toBeInstanceOf(ApiResponseError);
+    }
+
+    expect(axiosStub.requests).toHaveLength(5);
+    expect(httpClient.getCircuitState()).toBe("open");
+
+    await expect(
+      httpClient.request({ method: "GET", url: "/orders" }),
+    ).rejects.toBeInstanceOf(CircuitOpenError);
+    // No new request went out — the breaker rejected before touching the network.
+    expect(axiosStub.requests).toHaveLength(5);
+  });
+
+  it("does not trip the circuit breaker on validation failures", async () => {
+    const axiosStub = createAxiosStub();
+    const client = new DhanClient(
+      { token: "token", clientId: "client-id" },
+      { axiosInstance: axiosStub.axiosInstance },
+    );
+
+    for (let i = 0; i < 5; i += 1) {
+      await expect(
+        client.orders.place({
+          transactionType: "BUY",
+          exchangeSegment: "NSE_FNO",
+          productType: "INTRADAY",
+          orderType: "STOP_LOSS",
+          quantity: 10,
+          securityId: "12345",
+        }),
+      ).rejects.toBeInstanceOf(ValidationError);
+    }
+
+    axiosStub.enqueueSuccess({ orderId: "order-1" });
+    const result = await client.orders.list();
+    expect(result).toBeDefined();
   });
 
   it("tracks market feed subscriptions and updates ltp store", async () => {

@@ -180,7 +180,17 @@ export class MarketFeedWS extends TypedEventEmitter<MarketFeedEvents> {
 }
 ```
 
-### 2.3 Circuit Breaker Pattern
+### 2.3 Circuit Breaker Pattern — Done
+
+Implemented as `src/client/CircuitBreaker.ts` (dependency-free, no `opossum`)
+and wired into `HttpClient`. Opens after 5 consecutive `NetworkError`/5xx
+failures, short-circuits with `CircuitOpenError` for 30s, then allows a
+half-open trial request. Validation errors, 4xx responses, and rate-limit
+throttling don't count toward the threshold. Configurable via
+`DhanClientConfig.circuitBreaker` or disable with `circuitBreaker: false`.
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Missing:** No circuit breaker for repeated failures.
 
@@ -212,6 +222,8 @@ export class HttpClient {
   }
 }
 ```
+
+</details>
 
 ---
 
@@ -803,7 +815,18 @@ describe('Orders Integration', () => {
 });
 ```
 
-### 7.3 Test Coverage Thresholds
+### 7.3 Test Coverage Thresholds — Done
+
+`jest.config.js` now sets `coverageThreshold` (global: 70% statements/lines,
+55% branches, 62% functions — floors set a few points under the measured
+baseline, not the 80%/70% aspirational numbers originally sketched below).
+Per-directory thresholds weren't added: the codebase's coverage is
+unevenly distributed enough that a blanket 90-100% on `src/client/` or
+`src/errors/` would fail immediately rather than function as a real gate.
+CI now runs `npm test -- --coverage` to enforce the global floor.
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Current State:** No coverage configuration.
 
@@ -833,6 +856,8 @@ module.exports = {
   },
 };
 ```
+
+</details>
 
 ---
 
