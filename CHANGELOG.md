@@ -75,6 +75,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `getMarketSessionInfo()` — provably dead, not a behavioral bug, since
   `lastTradingDay(X)` and `previousTradingDay(X)` compute identically for
   any non-trading day `X`.
+- **`npm run lint` crashed on Node 18 in CI** (`TypeError: util.styleText is
+  not a function`, inside `eslint@10.8.1`'s own stylish formatter — an API
+  Node added in 20.12/21.7 and never backported to 18). Every ESLint 10
+  transitive dependency also declares `engines.node: "^20.19.0 || ^22.13.0 ||
+  >=24"`, so this wasn't a fluke — ESLint 10 doesn't support Node 18 at all,
+  which stayed invisible right up until this branch was the first to wire
+  `npm run lint` into CI. Downgraded to `eslint@^9.39.5` /
+  `@eslint/js@^9.39.5` (`engines.node: "^18.18.0 || ^20.9.0 || >=21.1.0"`,
+  compatible with the `18`/`20`/`22` CI matrix and the README's stated
+  Node ≥18 floor); `eslint.config.js` needed no changes since ESLint 9
+  already defaults to flat config.
 - `.gitignore` had the whole file wrapped in a stray pair of markdown code
   fences (` ``` `) — inert as gitignore patterns (no file is ever named
   that), but clearly a paste artifact. Removed.
