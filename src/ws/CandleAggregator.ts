@@ -52,7 +52,7 @@ export class CandleAggregator extends EventEmitter {
     const cumulativeVolume = event.type === "full" ? event.volume : undefined;
     const existing = this.state.get(key);
 
-    if (!existing || existing.bucketStart !== bucketStart) {
+    if (existing?.bucketStart !== bucketStart) {
       if (existing) {
         this.emit("close", key, existing.candle);
       }

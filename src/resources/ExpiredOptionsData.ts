@@ -83,7 +83,7 @@ export class ExpiredOptionsData {
   public async fetch(
     request: ExpiredOptionsDataRequest,
   ): Promise<ExpiredOptionsDataResponse> {
-    let reqCopy = { ...request };
+    const reqCopy = { ...request };
     delete reqCopy.autoAdjustDates;
 
     // Auto-adjust enabled by default unless explicitly disabled with autoAdjustDates: false

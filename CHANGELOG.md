@@ -29,6 +29,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the `Logger` interface's two-argument signature doesn't accept —
   `tsc --noEmit` (and therefore `npm run build`) failed outright on a clean
   install.
+- **`npm run lint` couldn't run at all.** `.eslintrc.json` is the legacy
+  format; ESLint 9 dropped support for it and this project pins `^10.8.1`,
+  so linting has been silently broken since that dependency bump — nothing
+  enforced it because CI never called `npm run lint` either. Replaced with
+  `eslint.config.js` (flat config, same rule set) and added a lint step to
+  CI. Fixed the 7 real errors this surfaced once lint could actually run:
+  3 `let` that should have been `const`, one `!x || x.y !== z` rewritten as
+  `x?.y !== z`, and one always-false `else if` branch in
+  `getMarketSessionInfo()` — provably dead, not a behavioral bug, since
+  `lastTradingDay(X)` and `previousTradingDay(X)` compute identically for
+  any non-trading day `X`.
 
 ## [0.4.1] — 2026-08-02
 

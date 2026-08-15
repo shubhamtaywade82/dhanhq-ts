@@ -56,7 +56,22 @@ This is a production-grade TypeScript SDK for DhanHQ APIs with strong architectu
 
 **Impact:** Catches more bugs at compile time, improves type safety.
 
-### 1.2 Add ESLint/Prettier Configuration
+### 1.2 Add ESLint/Prettier Configuration — Done
+
+Configured, then re-migrated: `eslint.config.js` (flat config) replaces the
+original `.eslintrc.json`, which ESLint 10 can no longer load at all
+(v9 dropped the legacy format outright, so a fresh `npm install` at that
+`eslint` version left `npm run lint` unable to start). Same rule set,
+ported using `@typescript-eslint/eslint-plugin`'s `flat/recommended` and
+`flat/strict` exports plus `@eslint/js` and `globals` for the parts flat
+config no longer infers implicitly (env globals, base recommended rules).
+One addition: `no-extraneous-class` is turned off — the `strict` preset
+flags `DhanAuth` (static-method namespace) and `GeneratedClient`
+(constructor-only composition root) for a pattern this codebase uses
+intentionally. `npm run lint` is now wired into CI.
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Missing:** No linting configuration found.
 
@@ -95,6 +110,8 @@ Add to `package.json`:
   }
 }
 ```
+
+</details>
 
 ### 1.3 Consistent Error Handling Pattern
 

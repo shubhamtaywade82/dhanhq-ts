@@ -139,8 +139,6 @@ export function getMarketSessionInfo(now: Date = new Date()): MarketSessionInfo 
   let lastCompletedTradingDay = istDate;
   if (!tradingDay || totalMinutes < 555) {
     lastCompletedTradingDay = previousTradingDay(istDate);
-  } else if (!tradingDay) {
-    lastCompletedTradingDay = lastTradingDay(istDate);
   }
 
   return {
