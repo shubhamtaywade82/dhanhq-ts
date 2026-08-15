@@ -642,7 +642,7 @@ See `docs/` and `AGENTS.md` for repo-level architecture and trading constraints.
 - [x] Add advanced risk management examples around pnl exit and kill switch
 - [x] Global Stocks (US equities) book under `/v2/globalstocks/*`
 - [ ] Global Stocks binary WebSocket feed
-- [ ] Backtesting harness over the indicator layer
+- [x] Backtesting harness over the indicator layer
 
 ---
 
