@@ -1,0 +1,15 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "name": "API Reference",
+  "out": "website/reference",
+  "plugin": ["typedoc-plugin-markdown"],
+  "exclude": ["src/generated/**"],
+  "excludeExternals": true,
+  "excludeInternal": true,
+  "readme": "none",
+  "entryFileName": "index",
+  "githubPages": false,
+  "hideGenerator": true,
+  "sort": ["source-order"]
+}

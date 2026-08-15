@@ -8,6 +8,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Generated API reference.** `npm run docs:api` (`typedoc` +
+  `typedoc-plugin-markdown`) renders every exported class, interface, and
+  type into `website/reference/`, wired into `docs:dev`/`docs:build` so the
+  existing VitePress site — not a disconnected `docs/api` folder — gets a
+  new "Full Reference" nav entry alongside the hand-written guides.
+  `src/generated/**` (OpenAPI codegen output) is excluded from the crawl;
+  `GeneratedClient`'s own page already documents that escape hatch. Output
+  is gitignored and regenerated on every build, not committed.
 - **Backtesting harness** (`src/backtest`). `new Backtester().run(config)`
   replays a `Strategy` bar-by-bar over historical `Candle[]`: the strategy
   reacts to a closed bar and returns `enter`/`exit`/`hold`, fills always
@@ -55,6 +63,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `getMarketSessionInfo()` — provably dead, not a behavioral bug, since
   `lastTradingDay(X)` and `previousTradingDay(X)` compute identically for
   any non-trading day `X`.
+- `.gitignore` had the whole file wrapped in a stray pair of markdown code
+  fences (` ``` `) — inert as gitignore patterns (no file is ever named
+  that), but clearly a paste artifact. Removed.
 
 ## [0.4.1] — 2026-08-02
 

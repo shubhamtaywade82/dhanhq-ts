@@ -54,6 +54,7 @@ export default defineConfig({
       { text: "WebSocket", link: "/websocket/market-feed" },
       { text: "Analytics", link: "/analytics/technical-analysis" },
       { text: "MCP Server", link: "/ai/mcp-server" },
+      { text: "Full Reference", link: "/reference/" },
       { text: "GitHub", link: "https://github.com/shubhamtaywade82/dhanhq-ts" },
     ],
 
@@ -108,6 +109,10 @@ export default defineConfig({
       {
         text: "Reference",
         items: [
+          {
+            text: "Full API Reference (generated)",
+            link: "/reference/",
+          },
           { text: "Architecture", link: "https://github.com/shubhamtaywade82/dhanhq-ts/blob/main/docs/ARCHITECTURE.md" },
           { text: "Trading Rules", link: "https://github.com/shubhamtaywade82/dhanhq-ts/blob/main/docs/TRADING_RULES.md" },
           { text: "WS Protocol", link: "https://github.com/shubhamtaywade82/dhanhq-ts/blob/main/docs/WS_PROTOCOL.md" },

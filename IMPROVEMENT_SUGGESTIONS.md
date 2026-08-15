@@ -1383,7 +1383,30 @@ jobs:
 
 ## 11. Documentation Improvements
 
-### 11.1 API Reference Generation
+### 11.1 API Reference Generation — Done
+
+`typedoc.json` generates markdown (via `typedoc-plugin-markdown`) straight
+into `website/reference/` — the existing VitePress site, not a
+disconnected `docs/api` folder — so the exhaustive, JSDoc-derived reference
+sits alongside the hand-curated guides already in `website/api/*.md`
+instead of competing with them. `src/generated/**` (the OpenAPI codegen
+output) is excluded from the crawl: those ~170 files are low-value to
+document standalone, and `GeneratedClient`'s own page already explains the
+escape hatch and points readers back to the wrapped resource classes.
+Wired into `npm run docs:api` (standalone) and prepended to `docs:dev` /
+`docs:build`, so CI's existing `docs.yml` (which already runs
+`npm run docs:build`) picks it up with no workflow changes. Generated
+output is gitignored, not committed — regenerated fresh on every build.
+
+One limitation worth knowing: `docs.yml` only triggers on
+`website/**` changes, so a `src/`-only change (e.g. a JSDoc edit) won't by
+itself redeploy the live reference until something under `website/` also
+changes or the workflow is dispatched manually. Left as-is rather than
+widening the trigger to `src/**`, since that path scoping looked like a
+deliberate choice to avoid a docs redeploy on every unrelated commit.
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Recommendation:** Generate API docs from JSDoc:
 
@@ -1411,6 +1434,8 @@ jobs:
   "readme": "none"
 }
 ```
+
+</details>
 
 ### 11.2 Migration Guide
 
