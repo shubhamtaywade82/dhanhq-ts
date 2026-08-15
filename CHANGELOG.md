@@ -8,6 +8,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Backtesting harness** (`src/backtest`). `new Backtester().run(config)`
+  replays a `Strategy` bar-by-bar over historical `Candle[]`: the strategy
+  reacts to a closed bar and returns `enter`/`exit`/`hold`, fills always
+  happen at the *next* bar's open (never the deciding bar, so there's no
+  lookahead bias), stops/targets are checked intrabar, and at most one
+  position is open at a time. Multi-timeframe from the start —
+  `higherTimeframesMinutes` resamples the base series once and a two-pointer
+  cursor per timeframe guarantees a higher-timeframe bar is only visible
+  after it has fully closed, so `indicators.timeframe(60).rsi(14)` and
+  `indicators.bias()` (the same blend `analyzeMultiTimeframe()` produces
+  live) cost O(n) total, not O(n²), with no lookahead risk. Entries
+  optionally gate through the existing `Pipeline.report()` — the same risk
+  checks that already run pre-trade in live code, not a parallel model — and
+  `CostModel.slippage()`/`fees()` are optional pure-function hooks for
+  frictionless-by-default fills. 11 new tests; 257 total.
 - **Circuit breaker on `HttpClient`.** After 5 consecutive network/5xx
   failures, `HttpClient` stops issuing new requests for 30s and rejects
   immediately with `CircuitOpenError` instead of queuing behind the rate

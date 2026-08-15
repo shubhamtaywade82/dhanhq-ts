@@ -1160,7 +1160,36 @@ export class MultiAccountClient {
 }
 ```
 
-### 9.3 Backtesting Framework
+### 9.3 Backtesting Framework — Done
+
+Implemented as `src/backtest/` (`types.ts`, `cursors.ts`, `indicators.ts`,
+`runner.ts`, `metrics.ts`), exported from the package root. Differs from the
+sketch below in shape, not intent — it grew out of a design review rather
+than following this sketch directly:
+
+- Bar-by-bar, not signal-list-up-front: `Strategy = (context) => StrategySignal`
+  is called once per closed bar (`enter` / `exit` / `hold`), so a strategy can
+  react to its own open position — the sketch's `strategy(context): Signal[]`
+  shape can't express "exit when stopped out."
+- Fills happen at the *next* bar's open, never the bar the signal was decided
+  on — the sketch didn't specify fill timing, which is exactly where
+  lookahead bias creeps in if left unspecified.
+- One position at a time (`StrategyContext.position: OpenPosition | undefined`),
+  not a portfolio — a deliberate v1 scope cut, not an oversight.
+- Multi-timeframe from v1: `higherTimeframesMinutes` resamples the base
+  series once, and a two-pointer cursor per timeframe guarantees a bar is
+  only visible after it has fully closed — O(n), not O(n²), and reuses
+  `analyzeMultiTimeframe()` for `indicators.bias()` so backtested bias
+  matches the live multi-timeframe analyzer exactly.
+- Risk gating reuses `Pipeline.report()` instead of a separate backtest-only
+  risk model, so the limits validated in a backtest are the same code path
+  as live trading.
+- Options-strategy backtesting (synthetic Black-Scholes repricing over
+  historical spot+IV) was scoped out — no historical option-chain data
+  exists to validate against except near-expiry (`ExpiredOptionsData`).
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Roadmap Item:** Add backtesting harness.
 
@@ -1203,6 +1232,8 @@ export class Backtester {
   }
 }
 ```
+
+</details>
 
 ---
 
