@@ -402,6 +402,25 @@ describe("DhanClient", () => {
         ltp: 100.5,
       }),
     );
+
+    market.disconnect();
+  });
+
+  it("unrefs its heartbeat timer so a live connection alone can't keep the process alive", async () => {
+    const socket = new FakeSocket();
+    const market = new MarketFeedWS(
+      { token: "token", clientId: "client-id", webSocketFactory: () => socket },
+      clientLtpStore(),
+    );
+
+    await market.connect();
+    socket.emit("open");
+
+    const pingInterval = (market as unknown as { pingInterval?: NodeJS.Timeout }).pingInterval;
+    expect(pingInterval).toBeDefined();
+    expect(pingInterval?.hasRef()).toBe(false);
+
+    market.disconnect();
   });
 
   it("authenticates order update ws and stores events", async () => {
@@ -463,6 +482,8 @@ describe("DhanClient", () => {
         status: "TRADED",
       }),
     );
+
+    orders.disconnect();
   });
 
   it("supports partner auth for order update ws", async () => {
@@ -492,6 +513,8 @@ describe("DhanClient", () => {
         Secret: "partner-secret",
       }),
     ]);
+
+    orders.disconnect();
   });
 
   it("generates deterministic totp for known timestamp", () => {

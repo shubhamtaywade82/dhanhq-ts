@@ -89,6 +89,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `.gitignore` had the whole file wrapped in a stray pair of markdown code
   fences (` ``` `) — inert as gitignore patterns (no file is ever named
   that), but clearly a paste artifact. Removed.
+- **`npm test -- --runInBand` never exited — it hung indefinitely after
+  every test passed.** `BaseWS.startHeartbeat()`'s ping `setInterval` (and
+  the pong-timeout/reconnect `setTimeout`s it schedules) never called
+  `.unref()`, unlike `OrderTracker.waitFor()`'s timer, which already does.
+  Three `DhanClient.spec.ts` tests connect a `MarketFeedWS`/`OrderUpdateWS`
+  against a fake socket and, before this fix, never disconnected it, so the
+  live heartbeat interval kept the process alive forever once Jest's normal
+  multi-worker pool — which force-kills each worker after its tests finish,
+  regardless of open handles — was out of the picture. `--runInBand` runs
+  everything in the one main process, so nothing was left to force it shut.
+  This is why `npm test` always looked fine locally while CI's
+  `npm test -- --runInBand --coverage` step could run for 15+ minutes
+  producing no new output before GitHub Actions' silence-based watchdog
+  cancelled it — confirmed by reproducing the identical hang against a
+  clean `main` checkout with none of this branch's other changes applied.
+  Added `.unref()` to all three timers and `disconnect()` calls to the
+  three tests that were leaving connections open; added a regression test
+  asserting the heartbeat timer is unref'd immediately after connecting.
 
 ## [0.4.1] — 2026-08-02
 
