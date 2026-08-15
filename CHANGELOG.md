@@ -8,6 +8,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Browser-safe entry point**, `@shubhamtaywade82/dhanhq-ts/browser`. Built
+  as its own tsup entry (mirroring the existing `/mcp` subpath) re-exporting
+  `src/ta` (minus the network-fetching `TechnicalAnalysis` class),
+  `src/analytics`, `src/risk` (including `Pipeline`), `src/execution`, and
+  `src/contracts` — `src/client`/`src/resources`/`src/ws` are structurally
+  absent from this entry's module graph, not just tree-shaken away by a
+  cooperative bundler. `docs/BROWSER.md` updated to import from it directly.
+  Verified against the actual published tarball (CJS + ESM), and wired into
+  CI's tarball-install check.
 - **`PositionLedger`** (`src/execution`) — derives open positions, fill
   history, realized P&L, and mark-to-market exposure from fills, via
   `recordFill()`. `applyFill()`, the pure add/reduce/close/flip state
@@ -59,6 +68,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **`Pipeline` resolved to `undefined` when imported from the new
+  `/browser` entry, though it worked fine from the main entry.** tsup's
+  `splitting: true` let a chunk shared across the four build entries carry
+  a lazy `__esm`-wrapped initializer that never ran on `browser.cjs`'s
+  access path specifically. `splitting: false` trades per-entry bundle
+  size (no more cross-entry dedup) for actually working.
 - `HttpClient.normalizeError()` and `BaseWS.scheduleReconnect()` called
   `logger.warn`/`logger.info` with a stray extra `undefined` argument that
   the `Logger` interface's two-argument signature doesn't accept —

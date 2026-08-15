@@ -89,37 +89,42 @@ client.ws.market.on("tick", (tick) => {
 ## What is browser-safe
 
 Parts of this SDK are pure computation with no credentials and no network, and
-those bundle into a frontend fine:
+those bundle into a frontend fine. Import them from
+**`@shubhamtaywade82/dhanhq-ts/browser`**, a dedicated entry point that only
+contains this subset — not a promise that your bundler will tree-shake the
+rest away, but a build with `src/client`, `src/resources`, and `src/ws`
+structurally absent from its module graph:
 
-| Module | Browser-safe | Notes |
+```ts
+// Charting a position in the browser, no credentials involved
+import { rsi, latest, bollingerBands, greeks } from "@shubhamtaywade82/dhanhq-ts/browser";
+
+const signal = latest(rsi(closesFromYourApi, 14));
+```
+
+| Module | In `/browser` | Notes |
 | --- | --- | --- |
-| `src/ta` (indicators, candles, calendar) | ✅ | Pure functions over arrays |
-| `src/analytics` (Black-Scholes, max pain) | ✅ | Pure math |
-| `src/risk` sizing and stops | ✅ | `fixedRiskSize`, `TrailManager`, etc. |
-| `src/constants` | ✅ | Data only |
-| `src/risk` `Pipeline` | ⚠️ | Pure without a `provider`; needs the API with one |
-| `src/execution` | ⚠️ | Pure decisions, but you must feed it ticks |
+| `src/ta` (indicators, candles, calendar) | ✅ | Pure functions over arrays. `TechnicalAnalysis` (the class that fetches candles itself) is left out — it needs a `Charts` instance, which needs a token |
+| `src/analytics` (Black-Scholes, Greeks, max pain) | ✅ | Pure math |
+| `src/risk` (sizing, stops, `Pipeline`, checks) | ✅ | Account-state checks (position limits, concentration, daily loss) no-op without a `RiskDataProvider` — a browser has no legitimate way to supply one — but order-shape checks still run |
+| `src/execution` (`PositionMonitor`, `PositionLedger`, `OrderTracker`) | ✅ | Decides, never executes — feed it ticks/fills from your own WebSocket |
+| `src/contracts` (order/chart/option-chain schemas) | ✅ | Useful for validating a form before it reaches your backend |
+| `src/constants` | ✅ | Data only, under `Constants` |
 | `src/resources`, `src/client` | ❌ | Needs a token, blocked by CORS |
 | `src/ws` | ❌ | Needs a token |
 | `src/agent`, `src/mcp` | ❌ | Node-only; MCP reads stdin/stdout |
 
-Import the safe parts directly so bundlers can tree-shake the rest — the
-package sets `sideEffects: false`:
-
-```ts
-// Charting a position in the browser, no credentials involved
-import { rsi, latest, bollingerBands } from "@shubhamtaywade82/dhanhq-ts";
-import { greeks } from "@shubhamtaywade82/dhanhq-ts";
-
-const signal = latest(rsi(closesFromYourApi, 14));
-```
+The main entry (`@shubhamtaywade82/dhanhq-ts`) still exports everything,
+`/browser` included, for server-side code that wants one import path — the
+package sets `sideEffects: false` so a bundler *can* tree-shake that down
+too, but `/browser` doesn't ask you to trust that it will.
 
 `PositionMonitor` also works in a browser, since it only turns ticks into exit
 *signals* and never places an order. Feed it ticks from your own WebSocket and
 let the server act on the decision:
 
 ```ts
-import { PositionMonitor } from "@shubhamtaywade82/dhanhq-ts";
+import { PositionMonitor } from "@shubhamtaywade82/dhanhq-ts/browser";
 
 const monitor = new PositionMonitor();
 monitor.track({ securityId: "2885", exchangeSegment: "NSE_EQ", quantity: 10, entryPrice: 1400, stopLoss: 1386 });
