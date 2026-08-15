@@ -1,8 +1,11 @@
 import {
   OrderTracker,
+  PositionLedger,
   PositionMonitor,
   TERMINAL_ORDER_STATUSES,
+  applyFill,
   type ExitSignal,
+  type Fill,
   type MonitoredPosition,
 } from "../src";
 import type { MarketFeedEvent, OrderState } from "../src";
@@ -159,6 +162,117 @@ describe("PositionMonitor", () => {
 
     expect(exits).not.toHaveBeenCalled();
     expect(monitor.tracked()).toEqual([]);
+  });
+});
+
+function fill(overrides: Partial<Fill> = {}): Fill {
+  return {
+    exchangeSegment: "NSE_EQ",
+    securityId: "2885",
+    transactionType: "BUY",
+    quantity: 10,
+    price: 100,
+    timestamp: new Date("2026-01-01T09:20:00Z"),
+    ...overrides,
+  };
+}
+
+describe("applyFill", () => {
+  it("opens a position from the first fill", () => {
+    const position = applyFill(undefined, fill({ quantity: 10, price: 100 }));
+    expect(position).toMatchObject({ netQuantity: 10, averagePrice: 100, realizedPnl: 0 });
+  });
+
+  it("folds an add into a volume-weighted average price", () => {
+    let position = applyFill(undefined, fill({ quantity: 10, price: 100 }));
+    position = applyFill(position, fill({ quantity: 10, price: 110 }));
+    expect(position).toMatchObject({ netQuantity: 20, averagePrice: 105 });
+  });
+
+  it("realizes P&L on a partial reduce without moving the cost basis", () => {
+    let position = applyFill(undefined, fill({ quantity: 10, price: 100 }));
+    position = applyFill(position, fill({ quantity: 10, price: 110 })); // qty 20 @ 105
+    position = applyFill(position, fill({ transactionType: "SELL", quantity: 5, price: 120 }));
+    expect(position).toMatchObject({ netQuantity: 15, averagePrice: 105, realizedPnl: 75 });
+  });
+
+  it("closes and flips through flat in one oversized fill", () => {
+    let position = applyFill(undefined, fill({ quantity: 10, price: 100 }));
+    position = applyFill(position, fill({ quantity: 10, price: 110 })); // qty 20 @ 105
+    position = applyFill(position, fill({ transactionType: "SELL", quantity: 5, price: 120 })); // qty 15, +75
+    position = applyFill(position, fill({ transactionType: "SELL", quantity: 20, price: 130 }));
+    // Closes 15 @ 130 (+375, total 450) and opens short 5 @ 130.
+    expect(position).toMatchObject({ netQuantity: -5, averagePrice: 130, realizedPnl: 450 });
+  });
+
+  it("resets the cost basis to 0 on an exact close", () => {
+    let position = applyFill(undefined, fill({ quantity: 10, price: 100 }));
+    position = applyFill(position, fill({ transactionType: "SELL", quantity: 10, price: 108 }));
+    expect(position).toMatchObject({ netQuantity: 0, averagePrice: 0, realizedPnl: 80 });
+  });
+});
+
+describe("PositionLedger", () => {
+  it("derives an open position from recorded fills", () => {
+    const ledger = new PositionLedger();
+    ledger.recordFill(fill({ quantity: 10, price: 100 }));
+    ledger.recordFill(fill({ quantity: 10, price: 110 }));
+
+    expect(ledger.position("NSE_EQ", "2885")).toMatchObject({ netQuantity: 20, averagePrice: 105 });
+    expect(ledger.openPositions()).toHaveLength(1);
+    expect(ledger.fills()).toHaveLength(2);
+  });
+
+  it("keeps a closed position out of openPositions() but visible in allPositions()", () => {
+    const ledger = new PositionLedger();
+    ledger.recordFill(fill({ quantity: 10, price: 100 }));
+    ledger.recordFill(fill({ transactionType: "SELL", quantity: 10, price: 108 }));
+
+    expect(ledger.openPositions()).toHaveLength(0);
+    expect(ledger.allPositions()).toHaveLength(1);
+    expect(ledger.totalRealizedPnl()).toBe(80);
+  });
+
+  it("tracks positions across symbols independently", () => {
+    const ledger = new PositionLedger();
+    ledger.recordFill(fill({ securityId: "2885", quantity: 10, price: 100 }));
+    ledger.recordFill(fill({ securityId: "11536", quantity: 5, price: 50 }));
+
+    expect(ledger.openPositions()).toHaveLength(2);
+    expect(ledger.position("NSE_EQ", "11536")).toMatchObject({ netQuantity: 5, averagePrice: 50 });
+  });
+
+  it("computes exposure and unrealized P&L from the latest tick, falling back to cost basis without one", () => {
+    const ledger = new PositionLedger();
+    ledger.recordFill(fill({ quantity: 10, price: 100 }));
+
+    const beforeTick = ledger.exposure();
+    expect(beforeTick.bySymbol[0]).toMatchObject({ markPrice: 100, exposure: 1000, unrealizedPnl: 0 });
+
+    ledger.onTick(tick("2885", 112));
+    const afterTick = ledger.exposure();
+    expect(afterTick.bySymbol[0]).toMatchObject({ markPrice: 112, exposure: 1120, unrealizedPnl: 120 });
+    expect(afterTick.total).toBe(1120);
+  });
+
+  it("excludes flat positions from exposure", () => {
+    const ledger = new PositionLedger();
+    ledger.recordFill(fill({ quantity: 10, price: 100 }));
+    ledger.recordFill(fill({ transactionType: "SELL", quantity: 10, price: 108 }));
+
+    expect(ledger.exposure()).toEqual({ bySymbol: [], total: 0 });
+  });
+
+  it("reset() clears positions, fills, and mark prices", () => {
+    const ledger = new PositionLedger();
+    ledger.recordFill(fill());
+    ledger.onTick(tick("2885", 105));
+
+    ledger.reset();
+
+    expect(ledger.allPositions()).toHaveLength(0);
+    expect(ledger.fills()).toHaveLength(0);
+    expect(ledger.exposure()).toEqual({ bySymbol: [], total: 0 });
   });
 });
 

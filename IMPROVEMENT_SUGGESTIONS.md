@@ -1064,7 +1064,37 @@ main().catch(console.error);
 
 ## 9. Feature Enhancements
 
-### 9.1 Order Book Management
+### 9.1 Order Book Management — Done
+
+Implemented as `PositionLedger` (`src/execution/PositionLedger.ts`), not
+`OrderBook` — "order book" already means something else in this codebase
+(`MarketDepthWS`, bid/ask levels), so reusing it for a portfolio ledger
+would collide with an established term, not just a class name.
+
+Two differences from the sketch below, both deliberate:
+
+- It doesn't listen to the order-update WebSocket directly. Dhan's typed
+  `OrderState` doesn't carry `exchangeSegment`/`transactionType`, and its
+  `tradedQty` is cumulative for the order, not a per-event delta — parsing
+  those out of the untyped `raw` payload would be guessing at undocumented
+  field names. Instead, `recordFill()` takes an explicit `Fill`, typically
+  called once from an `OrderTracker` `filled` handler using the
+  `exchangeSegment`/`transactionType` your own place-order request already
+  had in scope. Documented in the class-level JSDoc, including the
+  double-counting trap of feeding cumulative `partial`-event quantities in
+  directly.
+- Position state (`netQuantity`, `averagePrice`, `realizedPnl`) is derived
+  by `applyFill()`, a pure function handling add/reduce/close/flip-through-
+  flat with volume-weighted average cost — exported standalone so each case
+  is unit-testable without a `PositionLedger` instance.
+
+`exposure()` and per-position `unrealizedPnl` mark against the latest
+`onTick()` price, falling back to cost basis for a symbol no tick has
+arrived for yet. No persistence, matching the original brief — state resets
+on restart or an explicit `reset()`. 17 new tests.
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Missing:** No order book tracking beyond WebSocket updates.
 
@@ -1124,6 +1154,8 @@ export class OrderBook {
   }
 }
 ```
+
+</details>
 
 ### 9.2 Multi-Account Support
 

@@ -8,6 +8,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`PositionLedger`** (`src/execution`) — derives open positions, fill
+  history, realized P&L, and mark-to-market exposure from fills, via
+  `recordFill()`. `applyFill()`, the pure add/reduce/close/flip state
+  machine underneath it, is exported standalone. Doesn't listen to the
+  order-update WebSocket directly — `OrderState`'s typed fields don't carry
+  `exchangeSegment`/`transactionType`, and `tradedQty` is cumulative per
+  order rather than a per-event delta, so the class-level JSDoc documents
+  bridging it from an `OrderTracker` `filled` handler instead, using the
+  fields your own place-order request already had. `exposure()` marks
+  against the latest `onTick()` price per symbol, falling back to cost
+  basis before one arrives. No persistence — in-memory, resets on restart
+  or `reset()`. 17 new tests; 268 total.
 - **Generated API reference.** `npm run docs:api` (`typedoc` +
   `typedoc-plugin-markdown`) renders every exported class, interface, and
   type into `website/reference/`, wired into `docs:dev`/`docs:build` so the
