@@ -99,7 +99,7 @@ export abstract class BaseWS extends EventEmitter {
 
     const delay = this.calculateBackoff(this.reconnectAttempts);
     
-    this.logger?.info(`Reconnecting in ${delay.toFixed(0)}ms`, undefined, {
+    this.logger?.info(`Reconnecting in ${delay.toFixed(0)}ms`, {
       attempt: this.reconnectAttempts + 1,
       maxAttempts: this.maxReconnectAttempts,
     });
@@ -108,6 +108,8 @@ export abstract class BaseWS extends EventEmitter {
     this.reconnectTimer = setTimeout(() => {
       void this.connect();
     }, delay);
+    // A pending reconnect must never be the sole reason the process stays alive.
+    this.reconnectTimer.unref?.();
   }
 
   /**
@@ -132,15 +134,19 @@ export abstract class BaseWS extends EventEmitter {
     this.pingInterval = setInterval(() => {
       try {
         this.send(JSON.stringify({ type: "ping" }));
-        
+
         this.pongTimeout = setTimeout(() => {
           this.logger?.warn("Pong not received, reconnecting");
           this.connection?.close();
         }, this.pongTimeoutMs);
+        this.pongTimeout.unref?.();
       } catch (error) {
         this.logger?.error("Failed to send ping", error as Error);
       }
     }, this.pingIntervalMs);
+    // A live socket's own heartbeat must never be the sole reason the
+    // process stays alive — matches OrderTracker.waitFor's timer.unref().
+    this.pingInterval.unref?.();
   }
 
   private stopHeartbeat(): void {

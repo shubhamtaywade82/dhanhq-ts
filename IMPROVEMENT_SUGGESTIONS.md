@@ -56,7 +56,22 @@ This is a production-grade TypeScript SDK for DhanHQ APIs with strong architectu
 
 **Impact:** Catches more bugs at compile time, improves type safety.
 
-### 1.2 Add ESLint/Prettier Configuration
+### 1.2 Add ESLint/Prettier Configuration — Done
+
+Configured, then re-migrated: `eslint.config.js` (flat config) replaces the
+original `.eslintrc.json`, which ESLint 10 can no longer load at all
+(v9 dropped the legacy format outright, so a fresh `npm install` at that
+`eslint` version left `npm run lint` unable to start). Same rule set,
+ported using `@typescript-eslint/eslint-plugin`'s `flat/recommended` and
+`flat/strict` exports plus `@eslint/js` and `globals` for the parts flat
+config no longer infers implicitly (env globals, base recommended rules).
+One addition: `no-extraneous-class` is turned off — the `strict` preset
+flags `DhanAuth` (static-method namespace) and `GeneratedClient`
+(constructor-only composition root) for a pattern this codebase uses
+intentionally. `npm run lint` is now wired into CI.
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Missing:** No linting configuration found.
 
@@ -95,6 +110,8 @@ Add to `package.json`:
   }
 }
 ```
+
+</details>
 
 ### 1.3 Consistent Error Handling Pattern
 
@@ -180,7 +197,17 @@ export class MarketFeedWS extends TypedEventEmitter<MarketFeedEvents> {
 }
 ```
 
-### 2.3 Circuit Breaker Pattern
+### 2.3 Circuit Breaker Pattern — Done
+
+Implemented as `src/client/CircuitBreaker.ts` (dependency-free, no `opossum`)
+and wired into `HttpClient`. Opens after 5 consecutive `NetworkError`/5xx
+failures, short-circuits with `CircuitOpenError` for 30s, then allows a
+half-open trial request. Validation errors, 4xx responses, and rate-limit
+throttling don't count toward the threshold. Configurable via
+`DhanClientConfig.circuitBreaker` or disable with `circuitBreaker: false`.
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Missing:** No circuit breaker for repeated failures.
 
@@ -212,6 +239,8 @@ export class HttpClient {
   }
 }
 ```
+
+</details>
 
 ---
 
@@ -803,7 +832,18 @@ describe('Orders Integration', () => {
 });
 ```
 
-### 7.3 Test Coverage Thresholds
+### 7.3 Test Coverage Thresholds — Done
+
+`jest.config.js` now sets `coverageThreshold` (global: 70% statements/lines,
+55% branches, 62% functions — floors set a few points under the measured
+baseline, not the 80%/70% aspirational numbers originally sketched below).
+Per-directory thresholds weren't added: the codebase's coverage is
+unevenly distributed enough that a blanket 90-100% on `src/client/` or
+`src/errors/` would fail immediately rather than function as a real gate.
+CI now runs `npm test -- --coverage` to enforce the global floor.
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Current State:** No coverage configuration.
 
@@ -833,6 +873,8 @@ module.exports = {
   },
 };
 ```
+
+</details>
 
 ---
 
@@ -1022,7 +1064,37 @@ main().catch(console.error);
 
 ## 9. Feature Enhancements
 
-### 9.1 Order Book Management
+### 9.1 Order Book Management — Done
+
+Implemented as `PositionLedger` (`src/execution/PositionLedger.ts`), not
+`OrderBook` — "order book" already means something else in this codebase
+(`MarketDepthWS`, bid/ask levels), so reusing it for a portfolio ledger
+would collide with an established term, not just a class name.
+
+Two differences from the sketch below, both deliberate:
+
+- It doesn't listen to the order-update WebSocket directly. Dhan's typed
+  `OrderState` doesn't carry `exchangeSegment`/`transactionType`, and its
+  `tradedQty` is cumulative for the order, not a per-event delta — parsing
+  those out of the untyped `raw` payload would be guessing at undocumented
+  field names. Instead, `recordFill()` takes an explicit `Fill`, typically
+  called once from an `OrderTracker` `filled` handler using the
+  `exchangeSegment`/`transactionType` your own place-order request already
+  had in scope. Documented in the class-level JSDoc, including the
+  double-counting trap of feeding cumulative `partial`-event quantities in
+  directly.
+- Position state (`netQuantity`, `averagePrice`, `realizedPnl`) is derived
+  by `applyFill()`, a pure function handling add/reduce/close/flip-through-
+  flat with volume-weighted average cost — exported standalone so each case
+  is unit-testable without a `PositionLedger` instance.
+
+`exposure()` and per-position `unrealizedPnl` mark against the latest
+`onTick()` price, falling back to cost basis for a symbol no tick has
+arrived for yet. No persistence, matching the original brief — state resets
+on restart or an explicit `reset()`. 17 new tests.
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Missing:** No order book tracking beyond WebSocket updates.
 
@@ -1083,6 +1155,8 @@ export class OrderBook {
 }
 ```
 
+</details>
+
 ### 9.2 Multi-Account Support
 
 **Recommendation:** Support multiple client accounts:
@@ -1118,7 +1192,36 @@ export class MultiAccountClient {
 }
 ```
 
-### 9.3 Backtesting Framework
+### 9.3 Backtesting Framework — Done
+
+Implemented as `src/backtest/` (`types.ts`, `cursors.ts`, `indicators.ts`,
+`runner.ts`, `metrics.ts`), exported from the package root. Differs from the
+sketch below in shape, not intent — it grew out of a design review rather
+than following this sketch directly:
+
+- Bar-by-bar, not signal-list-up-front: `Strategy = (context) => StrategySignal`
+  is called once per closed bar (`enter` / `exit` / `hold`), so a strategy can
+  react to its own open position — the sketch's `strategy(context): Signal[]`
+  shape can't express "exit when stopped out."
+- Fills happen at the *next* bar's open, never the bar the signal was decided
+  on — the sketch didn't specify fill timing, which is exactly where
+  lookahead bias creeps in if left unspecified.
+- One position at a time (`StrategyContext.position: OpenPosition | undefined`),
+  not a portfolio — a deliberate v1 scope cut, not an oversight.
+- Multi-timeframe from v1: `higherTimeframesMinutes` resamples the base
+  series once, and a two-pointer cursor per timeframe guarantees a bar is
+  only visible after it has fully closed — O(n), not O(n²), and reuses
+  `analyzeMultiTimeframe()` for `indicators.bias()` so backtested bias
+  matches the live multi-timeframe analyzer exactly.
+- Risk gating reuses `Pipeline.report()` instead of a separate backtest-only
+  risk model, so the limits validated in a backtest are the same code path
+  as live trading.
+- Options-strategy backtesting (synthetic Black-Scholes repricing over
+  historical spot+IV) was scoped out — no historical option-chain data
+  exists to validate against except near-expiry (`ExpiredOptionsData`).
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Roadmap Item:** Add backtesting harness.
 
@@ -1161,6 +1264,8 @@ export class Backtester {
   }
 }
 ```
+
+</details>
 
 ---
 
@@ -1310,7 +1415,30 @@ jobs:
 
 ## 11. Documentation Improvements
 
-### 11.1 API Reference Generation
+### 11.1 API Reference Generation — Done
+
+`typedoc.json` generates markdown (via `typedoc-plugin-markdown`) straight
+into `website/reference/` — the existing VitePress site, not a
+disconnected `docs/api` folder — so the exhaustive, JSDoc-derived reference
+sits alongside the hand-curated guides already in `website/api/*.md`
+instead of competing with them. `src/generated/**` (the OpenAPI codegen
+output) is excluded from the crawl: those ~170 files are low-value to
+document standalone, and `GeneratedClient`'s own page already explains the
+escape hatch and points readers back to the wrapped resource classes.
+Wired into `npm run docs:api` (standalone) and prepended to `docs:dev` /
+`docs:build`, so CI's existing `docs.yml` (which already runs
+`npm run docs:build`) picks it up with no workflow changes. Generated
+output is gitignored, not committed — regenerated fresh on every build.
+
+One limitation worth knowing: `docs.yml` only triggers on
+`website/**` changes, so a `src/`-only change (e.g. a JSDoc edit) won't by
+itself redeploy the live reference until something under `website/` also
+changes or the workflow is dispatched manually. Left as-is rather than
+widening the trigger to `src/**`, since that path scoping looked like a
+deliberate choice to avoid a docs redeploy on every unrelated commit.
+
+<details>
+<summary>Original suggestion (superseded)</summary>
 
 **Recommendation:** Generate API docs from JSDoc:
 
@@ -1338,6 +1466,8 @@ jobs:
   "readme": "none"
 }
 ```
+
+</details>
 
 ### 11.2 Migration Guide
 

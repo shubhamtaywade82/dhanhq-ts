@@ -28,7 +28,9 @@ jobs:
 
       - run: npm run typecheck
 
-      - run: npm test -- --runInBand
+      - run: npm run lint
+
+      - run: npm test -- --runInBand --coverage
 
       - run: npm run build
 

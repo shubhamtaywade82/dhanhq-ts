@@ -6,6 +6,108 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`PositionLedger`** (`src/execution`) — derives open positions, fill
+  history, realized P&L, and mark-to-market exposure from fills, via
+  `recordFill()`. `applyFill()`, the pure add/reduce/close/flip state
+  machine underneath it, is exported standalone. Doesn't listen to the
+  order-update WebSocket directly — `OrderState`'s typed fields don't carry
+  `exchangeSegment`/`transactionType`, and `tradedQty` is cumulative per
+  order rather than a per-event delta, so the class-level JSDoc documents
+  bridging it from an `OrderTracker` `filled` handler instead, using the
+  fields your own place-order request already had. `exposure()` marks
+  against the latest `onTick()` price per symbol, falling back to cost
+  basis before one arrives. No persistence — in-memory, resets on restart
+  or `reset()`. 17 new tests; 268 total.
+- **Generated API reference.** `npm run docs:api` (`typedoc` +
+  `typedoc-plugin-markdown`) renders every exported class, interface, and
+  type into `website/reference/`, wired into `docs:dev`/`docs:build` so the
+  existing VitePress site — not a disconnected `docs/api` folder — gets a
+  new "Full Reference" nav entry alongside the hand-written guides.
+  `src/generated/**` (OpenAPI codegen output) is excluded from the crawl;
+  `GeneratedClient`'s own page already documents that escape hatch. Output
+  is gitignored and regenerated on every build, not committed.
+- **Backtesting harness** (`src/backtest`). `new Backtester().run(config)`
+  replays a `Strategy` bar-by-bar over historical `Candle[]`: the strategy
+  reacts to a closed bar and returns `enter`/`exit`/`hold`, fills always
+  happen at the *next* bar's open (never the deciding bar, so there's no
+  lookahead bias), stops/targets are checked intrabar, and at most one
+  position is open at a time. Multi-timeframe from the start —
+  `higherTimeframesMinutes` resamples the base series once and a two-pointer
+  cursor per timeframe guarantees a higher-timeframe bar is only visible
+  after it has fully closed, so `indicators.timeframe(60).rsi(14)` and
+  `indicators.bias()` (the same blend `analyzeMultiTimeframe()` produces
+  live) cost O(n) total, not O(n²), with no lookahead risk. Entries
+  optionally gate through the existing `Pipeline.report()` — the same risk
+  checks that already run pre-trade in live code, not a parallel model — and
+  `CostModel.slippage()`/`fees()` are optional pure-function hooks for
+  frictionless-by-default fills. 11 new tests; 257 total.
+- **Circuit breaker on `HttpClient`.** After 5 consecutive network/5xx
+  failures, `HttpClient` stops issuing new requests for 30s and rejects
+  immediately with `CircuitOpenError` instead of queuing behind the rate
+  limiter — a struggling backend no longer gets hammered by every in-flight
+  caller. Only transport failures (`NetworkError`, `ApiResponseError` with
+  status ≥ 500) count toward the threshold; validation errors, 4xx
+  responses, and rate-limit throttling do not. Configurable via
+  `DhanClientConfig.circuitBreaker` (or disable with `circuitBreaker:
+  false`). 8 new tests; 246 total.
+- **Jest coverage thresholds.** `jest.config.js` now fails the run if
+  statement/line coverage drops below 70%, branch coverage below 55%, or
+  function coverage below 62% (floors set a few points under the measured
+  baseline). CI now runs `npm test -- --coverage` to enforce it.
+
+### Fixed
+
+- `HttpClient.normalizeError()` and `BaseWS.scheduleReconnect()` called
+  `logger.warn`/`logger.info` with a stray extra `undefined` argument that
+  the `Logger` interface's two-argument signature doesn't accept —
+  `tsc --noEmit` (and therefore `npm run build`) failed outright on a clean
+  install.
+- **`npm run lint` couldn't run at all.** `.eslintrc.json` is the legacy
+  format; ESLint 9 dropped support for it and this project pins `^10.8.1`,
+  so linting has been silently broken since that dependency bump — nothing
+  enforced it because CI never called `npm run lint` either. Replaced with
+  `eslint.config.js` (flat config, same rule set) and added a lint step to
+  CI. Fixed the 7 real errors this surfaced once lint could actually run:
+  3 `let` that should have been `const`, one `!x || x.y !== z` rewritten as
+  `x?.y !== z`, and one always-false `else if` branch in
+  `getMarketSessionInfo()` — provably dead, not a behavioral bug, since
+  `lastTradingDay(X)` and `previousTradingDay(X)` compute identically for
+  any non-trading day `X`.
+- **`npm run lint` crashed on Node 18 in CI** (`TypeError: util.styleText is
+  not a function`, inside `eslint@10.8.1`'s own stylish formatter — an API
+  Node added in 20.12/21.7 and never backported to 18). Every ESLint 10
+  transitive dependency also declares `engines.node: "^20.19.0 || ^22.13.0 ||
+  >=24"`, so this wasn't a fluke — ESLint 10 doesn't support Node 18 at all,
+  which stayed invisible right up until this branch was the first to wire
+  `npm run lint` into CI. Downgraded to `eslint@^9.39.5` /
+  `@eslint/js@^9.39.5` (`engines.node: "^18.18.0 || ^20.9.0 || >=21.1.0"`,
+  compatible with the `18`/`20`/`22` CI matrix and the README's stated
+  Node ≥18 floor); `eslint.config.js` needed no changes since ESLint 9
+  already defaults to flat config.
+- `.gitignore` had the whole file wrapped in a stray pair of markdown code
+  fences (` ``` `) — inert as gitignore patterns (no file is ever named
+  that), but clearly a paste artifact. Removed.
+- **`npm test -- --runInBand` never exited — it hung indefinitely after
+  every test passed.** `BaseWS.startHeartbeat()`'s ping `setInterval` (and
+  the pong-timeout/reconnect `setTimeout`s it schedules) never called
+  `.unref()`, unlike `OrderTracker.waitFor()`'s timer, which already does.
+  Three `DhanClient.spec.ts` tests connect a `MarketFeedWS`/`OrderUpdateWS`
+  against a fake socket and, before this fix, never disconnected it, so the
+  live heartbeat interval kept the process alive forever once Jest's normal
+  multi-worker pool — which force-kills each worker after its tests finish,
+  regardless of open handles — was out of the picture. `--runInBand` runs
+  everything in the one main process, so nothing was left to force it shut.
+  This is why `npm test` always looked fine locally while CI's
+  `npm test -- --runInBand --coverage` step could run for 15+ minutes
+  producing no new output before GitHub Actions' silence-based watchdog
+  cancelled it — confirmed by reproducing the identical hang against a
+  clean `main` checkout with none of this branch's other changes applied.
+  Added `.unref()` to all three timers and `disconnect()` calls to the
+  three tests that were leaving connections open; added a regression test
+  asserting the heartbeat timer is unref'd immediately after connecting.
+
 ## [0.4.1] — 2026-08-02
 
 ### Fixed

@@ -36,7 +36,7 @@ export class Charts {
   public async intraday(
     request: ExtendedIntradayChartsRequest,
   ): Promise<ChartsResponse> {
-    let payload = { ...request };
+    const payload = { ...request };
     delete payload.autoAdjustDates;
 
     // Auto-adjust enabled by default unless explicitly disabled with autoAdjustDates: false
@@ -65,7 +65,7 @@ export class Charts {
   public async historical(
     request: ExtendedHistoricalChartsRequest,
   ): Promise<ChartsResponse> {
-    let payload = { ...request };
+    const payload = { ...request };
     delete payload.autoAdjustDates;
 
     // Auto-adjust enabled by default unless explicitly disabled with autoAdjustDates: false

@@ -2,6 +2,8 @@ export * from "./agent";
 export * from "./ai";
 export * from "./analytics";
 export * from "./auth";
+export * from "./backtest";
+export * from "./client/CircuitBreaker";
 export * from "./client/DhanClient";
 export * from "./client/GeneratedClient";
 export * from "./client/HttpClient";
