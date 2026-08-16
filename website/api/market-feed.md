@@ -5,33 +5,31 @@ description: Fetch LTP, quote, and OHLC data for equities, indices, F&O, and com
 
 # Market Feed (REST)
 
-Snapshot market data for up to 1,000 instruments at once via REST.
+Snapshot market data for up to 1,000 instruments at once via REST, keyed by
+exchange segment with numeric or string security IDs:
+
+```ts
+const instruments = { NSE_EQ: ["1333", "2885"], IDX_I: ["13", "25"] };
+```
 
 ## LTP
 
 ```ts
-const data = await client.marketFeed.ltp({
-  NSE_EQ: ["1333", "2885"],
-  IDX_I: ["13", "25"],
-});
+const data = await client.marketFeed.ltp(instruments);
+```
+
+## OHLC
+
+```ts
+const ohlc = await client.marketFeed.ohlc(instruments);
 ```
 
 ## Quote
 
-Returns LTP, volume, OI, OHLC, and 5-level depth:
+Full quote — LTP, volume, open interest, OHLC, and market depth:
 
 ```ts
-const quote = await client.marketFeed.quote({
-  NSE_EQ: ["1333"],
-});
-```
-
-## Full Market Data
-
-```ts
-const full = await client.marketFeed.full({
-  NSE_FNO: ["58072"],
-});
+const quote = await client.marketFeed.quote(instruments);
 ```
 
 For real-time streaming data, use the [WebSocket market feed](/websocket/market-feed).

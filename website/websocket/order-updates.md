@@ -19,7 +19,7 @@ await client.ws.connect();
 
 ```ts
 client.ws.orders.on("order", (order) => {
-  console.log(order.Status, order.AvgTradedPrice, order.FilledQty);
+  console.log(order.status, order.averageTradedPrice, order.tradedQty);
 });
 ```
 
