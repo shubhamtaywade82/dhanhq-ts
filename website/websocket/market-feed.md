@@ -47,11 +47,11 @@ client.ws.market.on("tick", (tick) => {
 
 ## Market Depth
 
-Enable 5-level or 20-level depth:
+Enable 20-level (default) or 200-level depth:
 
 ```ts
-client.ws.enableDepth("five");   // default: 5 levels
-client.ws.enableDepth("twenty"); // 20 levels
+client.ws.enableDepth("twenty");    // default: 20 levels
+client.ws.enableDepth("twohundred"); // 200 levels, one instrument per connection
 
 client.ws.depth?.subscribe([
   { exchangeSegment: "NSE_EQ", securityId: "1333" },

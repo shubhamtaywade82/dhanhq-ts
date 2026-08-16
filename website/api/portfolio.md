@@ -8,32 +8,46 @@ description: Query holdings, positions, funds, and statements using the DhanHQ T
 ## Holdings
 
 ```ts
-const holdings = await client.positions.holdings();
+const holdings = await client.positions.listHoldings();
 ```
 
 ## Positions
 
 ```ts
-const positions = await client.positions.getAll();
+import { Generated } from "@shubhamtaywade82/dhanhq-ts";
+
+const positions = await client.positions.list();
+
+// Convert an intraday position to delivery, or vice versa. Unlike
+// orders/conditionalTriggers/edis, this one still takes the raw generated
+// enum type rather than a plain string — see
+// https://github.com/shubhamtaywade82/dhanhq-ts/issues/21.
+await client.positions.convert({
+  dhanClientId: process.env.DHAN_CLIENT_ID!,
+  fromProductType: Generated.PositionConversionRequest.fromProductType.INTRADAY,
+  exchangeSegment: Generated.PositionConversionRequest.exchangeSegment.NSE_EQ,
+  positionType: Generated.PositionConversionRequest.positionType.LONG,
+  securityId: "1333",
+  convertQty: 10,
+  toProductType: Generated.PositionConversionRequest.toProductType.CNC,
+});
+
+// Square off every open position
+await client.positions.exitAll();
 ```
 
 ## Funds
 
 ```ts
-const limits = await client.funds.getLimits();
-// Available balance, margin used, etc.
+const limit = await client.funds.getLimit();
+// availabelBalance (sic — the upstream API's own spelling), utilizedAmount, etc.
 ```
 
 ## Statements
 
 ```ts
-// Trade book
-const trades = await client.statements.tradeBook({
-  fromDate: "2026-07-01",
-  toDate: "2026-07-30",
-});
-
-// Ledger
+// Ledger — no separate trade-book endpoint; use client.orders.getTradeHistory()
+// or client.orders.listTrades() for fills.
 const ledger = await client.statements.ledger({
   fromDate: "2026-07-01",
   toDate: "2026-07-30",
@@ -50,9 +64,10 @@ await client.traderControls.setPnlExit({
   enableKillSwitch: true,
 });
 
+await client.traderControls.getPnlExit();
+await client.traderControls.stopPnlExit();
+
 // Emergency kill switch
 await client.traderControls.setKillSwitch("ACTIVATE");
-
-// Stop auto-exit
-await client.traderControls.stopPnlExit();
+await client.traderControls.getKillSwitchStatus();
 ```

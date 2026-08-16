@@ -15,6 +15,9 @@ npm install @shubhamtaywade82/dhanhq-ts
 Requires Node.js 18 or newer. Ships both ESM and CommonJS builds with
 TypeScript declarations for each.
 
+In a hurry? [`QUICKSTART.md`](QUICKSTART.md) covers the five things you'll
+do first in about fifty lines.
+
 ---
 
 ## Why This SDK

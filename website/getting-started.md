@@ -23,7 +23,7 @@ const client = new DhanClient({
   clientId: process.env.DHAN_CLIENT_ID!,
 });
 
-const orderDetail = await client.orders.getById({ orderId: "12345" });
+const orderDetail = await client.orders.getById("12345");
 console.log(orderDetail);
 ```
 
