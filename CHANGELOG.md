@@ -6,6 +6,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **`foreverOrders`, `conditionalTriggers`, and `edis` now accept plain
+  string literals** (`transactionType: "BUY"`), matching every other
+  resource in the SDK. Their request shapes previously passed the raw
+  OpenAPI-generated types straight through, and those use TS `enum`s rather
+  than string-literal unions, so `"BUY"` didn't type-check —
+  `Generated.GTTOrderModel.transactionType.BUY` was required instead. New
+  request interfaces (`PlaceForeverOrderRequest`, `AlertConditionInput`,
+  `AlertOrderInput`, `EdisFormInput`, etc.) derive their literal unions from
+  the generated enums via `` `${Enum}` `` template-literal types, so they
+  can't drift out of sync with `npm run generate` and nothing had to be
+  hand-transcribed (`indicatorName` alone has 20+ members). Fully backward
+  compatible — the old `Generated.*` enum-member workaround still
+  type-checks and behaves identically, since an enum member's runtime value
+  *is* the same string literal. `ConditionalTriggers.buildPriceCondition()`/
+  `buildTechnicalCondition()` simplified accordingly — they no longer need
+  internal `as Enum` casts. Fixes #19. 7 new tests.
+
 ### Added
 
 - **Browser-safe entry point**, `@shubhamtaywade82/dhanhq-ts/browser`. Built

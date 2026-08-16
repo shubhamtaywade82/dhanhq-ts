@@ -530,27 +530,18 @@ See `/examples`:
 ## Less Common Features
 
 Fully wired, tested resources that don't come up in day-to-day usage enough
-to earn their own Quick Start step.
-
-These four take the raw OpenAPI-generated request shapes directly rather
-than the hand-wrapped string-literal types `orders`/`positions`/etc. use, so
-their enum-typed fields (`transactionType`, `exchangeSegment`, ...) need the
-actual enum member, not a bare string — `"BUY"` won't satisfy
-`GTTOrderModel.transactionType`, but `Generated.GTTOrderModel.transactionType.BUY`
-will. Import `Generated` alongside `DhanClient` for these:
-
-```ts
-import { DhanClient, Generated } from "@shubhamtaywade82/dhanhq-ts";
-```
+to earn their own Quick Start step. Plain string literals work directly —
+`place()`/`form()`/etc. accept string-literal-typed request shapes derived
+from the generated OpenAPI enums, not the raw enums themselves.
 
 ### Forever Orders (GTT)
 
 ```ts
 await client.foreverOrders.place({
-  transactionType: Generated.GTTOrderModel.transactionType.BUY,
-  exchangeSegment: Generated.GTTOrderModel.exchangeSegment.NSE_EQ,
-  productType: Generated.GTTOrderModel.productType.CNC,
-  orderType: Generated.GTTOrderModel.orderType.LIMIT,
+  transactionType: "BUY",
+  exchangeSegment: "NSE_EQ",
+  productType: "CNC",
+  orderType: "LIMIT",
   securityId: "1333",
   quantity: 10,
   price: 1450,
@@ -572,24 +563,34 @@ Price- or indicator-based triggers, distinct from Forever Orders — see
 await client.conditionalTriggers.place({
   dhanClientId: process.env.DHAN_CLIENT_ID!,
   condition: {
-    comparisonType: Generated.AlertCondition.comparisonType.PRICE_WITH_VALUE,
-    exchangeSegment: Generated.AlertCondition.exchangeSegment.IDX_I,
+    comparisonType: "PRICE_WITH_VALUE",
+    exchangeSegment: "IDX_I",
     securityId: "1333", // Nifty 50 index
-    operator: Generated.AlertCondition.operator.GREATER_THAN,
+    operator: "GREATER_THAN",
     comparingValue: 24500,
-    frequency: Generated.AlertCondition.frequency.ONCE,
+    frequency: "ONCE",
   },
   orders: [
     {
-      transactionType: Generated.AlertOrder.transactionType.BUY,
-      exchangeSegment: Generated.AlertOrder.exchangeSegment.NSE_FNO,
-      productType: Generated.AlertOrder.productType.INTRADAY,
-      orderType: Generated.AlertOrder.orderType.MARKET,
-      validity: Generated.AlertOrder.validity.DAY,
+      transactionType: "BUY",
+      exchangeSegment: "NSE_FNO",
+      productType: "INTRADAY",
+      orderType: "MARKET",
+      validity: "DAY",
       securityId: "44000", // NIFTY 24500 CE
       quantity: 50,
     },
   ],
+});
+```
+
+Or build the condition with a helper instead of writing it by hand:
+
+```ts
+const condition = ConditionalTriggers.buildPriceCondition({
+  exchangeSegment: "IDX_I",
+  securityId: "1333",
+  triggerAbove: 24500,
 });
 ```
 
@@ -602,8 +603,8 @@ generates the CDSL/NSDL authorization form.
 await client.edis.form({
   isin: "INE002A01018", // Reliance
   qty: 10,
-  exchange: Generated.EdisFormRequest.exchange.NSE,
-  segment: Generated.EdisFormRequest.segment.EQ,
+  exchange: "NSE",
+  segment: "EQ",
   bulk: false,
 });
 
