@@ -1,10 +1,15 @@
 import type { AxiosInstance } from "axios";
 
 import {
+  Alerts,
+  Charts,
   ConditionalTriggers,
   Edis,
   ForeverOrders,
+  Funds,
   HttpClient,
+  MarginCalculator,
+  Positions,
 } from "../src";
 
 function createAxiosStub() {
@@ -205,3 +210,166 @@ describe("Edis — plain string-literal request shape", () => {
     });
   });
 });
+
+describe("Alerts — plain string-literal request shape", () => {
+  it("place() sends string-literal condition and order parameters", async () => {
+    const stub = createAxiosStub();
+    stub.enqueueSuccess({ alertId: "alt-1" });
+    const alerts = new Alerts(createHttpClient(stub.axiosInstance));
+
+    await alerts.place({
+      dhanClientId: "c-1",
+      condition: {
+        comparisonType: "PRICE_WITH_VALUE",
+        exchangeSegment: "NSE_EQ",
+        securityId: "1333",
+        operator: "GREATER_THAN",
+        comparingValue: 1500,
+        frequency: "ONCE",
+      },
+      orders: [
+        {
+          transactionType: "BUY",
+          exchangeSegment: "NSE_EQ",
+          productType: "CNC",
+          orderType: "MARKET",
+          validity: "DAY",
+          securityId: "1333",
+          quantity: 1,
+        },
+      ],
+    });
+
+    expect(stub.requests[0]).toMatchObject({
+      method: "POST",
+      url: "/alerts/orders",
+      data: { dhanClientId: "c-1" },
+    });
+  });
+});
+
+describe("Charts — plain string-literal request shape", () => {
+  it("intraday() and historical() accept plain string literals", async () => {
+    const stub = createAxiosStub();
+    stub.enqueueSuccess({ open: [100], high: [105], low: [99], close: [102] });
+    stub.enqueueSuccess({ open: [100], high: [105], low: [99], close: [102] });
+    const charts = new Charts(createHttpClient(stub.axiosInstance));
+
+    await charts.intraday({
+      exchangeSegment: "NSE_EQ",
+      instrument: "EQUITY",
+      interval: "1",
+      securityId: "1333",
+      fromDate: "2026-01-01",
+      toDate: "2026-01-01",
+      autoAdjustDates: false,
+    });
+
+    await charts.historical({
+      exchangeSegment: "NSE_EQ",
+      instrument: "EQUITY",
+      expiryCode: 0,
+      securityId: "1333",
+      fromDate: "2025-01-01",
+      toDate: "2025-12-31",
+      autoAdjustDates: false,
+    });
+
+    expect(stub.requests[0].data).toMatchObject({
+      exchangeSegment: "NSE_EQ",
+      instrument: "EQUITY",
+      interval: "1",
+    });
+    expect(stub.requests[1].data).toMatchObject({
+      exchangeSegment: "NSE_EQ",
+      instrument: "EQUITY",
+    });
+  });
+});
+
+describe("Funds & MarginCalculator — plain string-literal request shape", () => {
+  it("Funds.calculateMargin() accepts string literals", async () => {
+    const stub = createAxiosStub();
+    stub.enqueueSuccess({ totalMargin: 10000 });
+    const funds = new Funds(createHttpClient(stub.axiosInstance));
+
+    await funds.calculateMargin({
+      exchangeSegment: "NSE_FNO",
+      transactionType: "BUY",
+      productType: "INTRADAY",
+      securityId: "44000",
+      quantity: 50,
+      price: 150,
+    });
+
+    expect(stub.requests[0].data).toMatchObject({
+      exchangeSegment: "NSE_FNO",
+      transactionType: "BUY",
+      productType: "INTRADAY",
+    });
+  });
+
+  it("MarginCalculator.calculateSingle() and calculateMulti() accept string literals", async () => {
+    const stub = createAxiosStub();
+    stub.enqueueSuccess({ totalMargin: 20000 });
+    stub.enqueueSuccess({ totalMargin: 15000 });
+    const mc = new MarginCalculator(createHttpClient(stub.axiosInstance));
+
+    await mc.calculateSingle({
+      exchangeSegment: "NSE_FNO",
+      transactionType: "BUY",
+      productType: "INTRADAY",
+      securityId: "44000",
+      quantity: 50,
+      price: 150,
+    });
+
+    await mc.bullCallSpread({
+      longStrikeSecurityId: "44000",
+      shortStrikeSecurityId: "44050",
+      quantity: 50,
+      longPrice: 150,
+      shortPrice: 100,
+      productType: "INTRADAY",
+    });
+
+    expect(stub.requests[0].data).toMatchObject({
+      scripList: [{ exchangeSegment: "NSE_FNO", transactionType: "BUY" }],
+    });
+    expect(stub.requests[1].data).toMatchObject({
+      scripList: [
+        { exchangeSegment: "NSE_FNO", transactionType: "BUY" },
+        { exchangeSegment: "NSE_FNO", transactionType: "SELL" },
+      ],
+    });
+  });
+});
+
+describe("Positions — plain string-literal request shape", () => {
+  it("convert() accepts plain string literals for position types", async () => {
+    const stub = createAxiosStub();
+    stub.enqueueSuccess({ status: "SUCCESS" });
+    const positions = new Positions(createHttpClient(stub.axiosInstance));
+
+    await positions.convert({
+      fromProductType: "INTRADAY",
+      exchangeSegment: "NSE_EQ",
+      positionType: "LONG",
+      securityId: "1333",
+      convertQty: 10,
+      toProductType: "CNC",
+    });
+
+    expect(stub.requests[0]).toMatchObject({
+      method: "POST",
+      url: "/positions/convert",
+      data: {
+        fromProductType: "INTRADAY",
+        exchangeSegment: "NSE_EQ",
+        positionType: "LONG",
+        toProductType: "CNC",
+      },
+    });
+  });
+});
+

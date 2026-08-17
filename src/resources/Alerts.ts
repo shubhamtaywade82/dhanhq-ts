@@ -1,11 +1,30 @@
 import type {
-  AlertModifyRequest,
-  AlertOrderRequest,
   AlertOrderResponse,
   GetAlertResponse,
 } from "../generated";
+import type { AlertConditionInput, AlertOrderInput } from "./ConditionalTriggers";
 
 import { HttpClient } from "../client/HttpClient";
+
+/**
+ * Plain string-literal request shapes for {@link Alerts} — mirrors
+ * {@link ConditionalTriggers}' `PlaceConditionalTriggerRequest`/
+ * `ModifyConditionalTriggerRequest` (both resources wrap the same
+ * `/alerts/orders` endpoints). Reusing `AlertConditionInput`/`AlertOrderInput`
+ * keeps the enum-to-literal mapping in one place instead of duplicating it.
+ */
+export interface PlaceAlertRequest {
+  dhanClientId: string;
+  condition: AlertConditionInput;
+  orders: AlertOrderInput[];
+}
+
+export interface ModifyAlertRequest {
+  dhanClientId?: string;
+  alertId?: string;
+  condition?: AlertConditionInput;
+  orders?: AlertOrderInput[];
+}
 
 export class Alerts {
   constructor(private readonly httpClient: HttpClient) {}
@@ -27,9 +46,9 @@ export class Alerts {
   }
 
   public async place(
-    request: AlertOrderRequest,
+    request: PlaceAlertRequest,
   ): Promise<AlertOrderResponse> {
-    return this.httpClient.request<AlertOrderResponse, AlertOrderRequest>({
+    return this.httpClient.request<AlertOrderResponse, PlaceAlertRequest>({
       method: "POST",
       url: "/alerts/orders",
       data: request,
@@ -39,9 +58,9 @@ export class Alerts {
 
   public async modify(
     alertId: string,
-    request: AlertModifyRequest,
+    request: ModifyAlertRequest,
   ): Promise<AlertOrderResponse> {
-    return this.httpClient.request<AlertOrderResponse, AlertModifyRequest>({
+    return this.httpClient.request<AlertOrderResponse, ModifyAlertRequest>({
       method: "PUT",
       url: `/alerts/orders/${encodeURIComponent(alertId)}`,
       data: request,

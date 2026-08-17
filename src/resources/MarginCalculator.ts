@@ -1,8 +1,24 @@
-import type { MultiScripMarginCalcRequest, MultiScripMarginCalcResponse, ScriptItem } from "../generated";
+import type { MultiScripMarginCalcResponse, ScriptItem } from "../generated";
 import type { KnowYourMarginResponse as MarginCalculationResponse } from "../generated";
-import { ScriptItem as ScriptItemEnum } from "../generated/models/ScriptItem";
 
 import { HttpClient } from "../client/HttpClient";
+
+/**
+ * Plain string-literal request shape for a single margin-calculation leg — the
+ * generated `ScriptItem` type uses TS enums for `exchangeSegment`/
+ * `transactionType`/`productType`, so `exchangeSegment: "NSE_FNO"` doesn't
+ * type-check against it directly. Deriving the literal unions from the enums
+ * via `${Enum}` keeps them in sync with `npm run generate`.
+ */
+export interface MarginScriptItem {
+  exchangeSegment?: `${ScriptItem.exchangeSegment}`;
+  transactionType?: `${ScriptItem.transactionType}`;
+  quantity?: number;
+  productType?: `${ScriptItem.productType}`;
+  securityId?: string;
+  price?: number;
+  triggerPrice?: number;
+}
 
 /**
  * Margin Calculator API wrapper.
@@ -34,9 +50,9 @@ export class MarginCalculator {
    * ```
    */
   public async calculateSingle(
-    request: Omit<ScriptItem, "scripList">,
+    request: MarginScriptItem,
   ): Promise<MultiScripMarginCalcResponse> {
-    return this.httpClient.request<MultiScripMarginCalcResponse, MultiScripMarginCalcRequest>({
+    return this.httpClient.request<MultiScripMarginCalcResponse, { scripList: MarginScriptItem[] }>({
       method: "POST",
       url: "/margincalculator",
       data: {
@@ -55,15 +71,34 @@ export class MarginCalculator {
    * @example
    * ```ts
    * // Bull Call Spread: Buy lower strike call, sell higher strike call
-   * const margin = await client.marginCalculator.calculateMulti([\n   *   {\n   *     exchangeSegment: "NSE_FNO",\n   *     productType: "INTRADAY",\n   *     optionType: "CALL",\n   *     instrumentType: "OPTIDX",\n   *     securityId: "44000", // NIFTY 24500 CE\n   *     transactionType: "BUY",\n   *     quantity: 50,\n   *     price: 150.00,\n   *   },\n   *   {\n   *     exchangeSegment: "NSE_FNO",\n   *     productType: "INTRADAY",\n   *     optionType: "CALL",\n   *     instrumentType: "OPTIDX",\n   *     securityId: "44050", // NIFTY 24600 CE\n   *     transactionType: "SELL",\n   *     quantity: 50,\n   *     price: 100.00,\n   *   },\n   * ]);\n   * \n   * // The response will show reduced margin due to hedge benefits
+   * const margin = await client.marginCalculator.calculateMulti([
+   *   {
+   *     exchangeSegment: "NSE_FNO",
+   *     productType: "INTRADAY",
+   *     securityId: "44000", // NIFTY 24500 CE
+   *     transactionType: "BUY",
+   *     quantity: 50,
+   *     price: 150.00,
+   *   },
+   *   {
+   *     exchangeSegment: "NSE_FNO",
+   *     productType: "INTRADAY",
+   *     securityId: "44050", // NIFTY 24600 CE
+   *     transactionType: "SELL",
+   *     quantity: 50,
+   *     price: 100.00,
+   *   },
+   * ]);
+   * 
+   * // The response will show reduced margin due to hedge benefits
    * ```
    * 
    * @param legs Array of order legs for the strategy
    */
   public async calculateMulti(
-    legs: Array<Omit<ScriptItem, "scripList">>,
+    legs: MarginScriptItem[],
   ): Promise<MultiScripMarginCalcResponse> {
-    return this.httpClient.request<MultiScripMarginCalcResponse, MultiScripMarginCalcRequest>({
+    return this.httpClient.request<MultiScripMarginCalcResponse, { scripList: MarginScriptItem[] }>({
       method: "POST",
       url: "/margincalculator",
       data: {
@@ -93,7 +128,7 @@ export class MarginCalculator {
     quantity: number;
     longPrice: number;
     shortPrice: number;
-    productType?: "INTRADAY" | "DELIVERY";
+    productType?: `${ScriptItem.productType}`;
   }): Promise<MarginCalculationResponse> {
     const {
       longStrikeSecurityId,
@@ -106,18 +141,18 @@ export class MarginCalculator {
 
     return this.calculateMulti([
       {
-        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
-        productType: productType as ScriptItemEnum.productType,
+        exchangeSegment: "NSE_FNO",
+        productType,
         securityId: longStrikeSecurityId,
-        transactionType: ScriptItemEnum.transactionType.BUY,
+        transactionType: "BUY",
         quantity,
         price: longPrice,
       },
       {
-        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
-        productType: productType as ScriptItemEnum.productType,
+        exchangeSegment: "NSE_FNO",
+        productType,
         securityId: shortStrikeSecurityId,
-        transactionType: ScriptItemEnum.transactionType.SELL,
+        transactionType: "SELL",
         quantity,
         price: shortPrice,
       },
@@ -144,7 +179,7 @@ export class MarginCalculator {
     quantity: number;
     longPrice: number;
     shortPrice: number;
-    productType?: "INTRADAY" | "DELIVERY";
+    productType?: `${ScriptItem.productType}`;
   }): Promise<MarginCalculationResponse> {
     const {
       longStrikeSecurityId,
@@ -157,18 +192,18 @@ export class MarginCalculator {
 
     return this.calculateMulti([
       {
-        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
-        productType: productType as ScriptItemEnum.productType,
+        exchangeSegment: "NSE_FNO",
+        productType,
         securityId: longStrikeSecurityId,
-        transactionType: ScriptItemEnum.transactionType.BUY,
+        transactionType: "BUY",
         quantity,
         price: longPrice,
       },
       {
-        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
-        productType: productType as ScriptItemEnum.productType,
+        exchangeSegment: "NSE_FNO",
+        productType,
         securityId: shortStrikeSecurityId,
-        transactionType: ScriptItemEnum.transactionType.SELL,
+        transactionType: "SELL",
         quantity,
         price: shortPrice,
       },
@@ -207,7 +242,7 @@ export class MarginCalculator {
       shortCall: number;
       longCall: number;
     };
-    productType?: "INTRADAY" | "DELIVERY";
+    productType?: `${ScriptItem.productType}`;
   }): Promise<MarginCalculationResponse> {
     const {
       longPutSecurityId,
@@ -221,34 +256,34 @@ export class MarginCalculator {
 
     return this.calculateMulti([
       {
-        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
-        productType: productType as ScriptItemEnum.productType,
+        exchangeSegment: "NSE_FNO",
+        productType,
         securityId: longPutSecurityId,
-        transactionType: ScriptItemEnum.transactionType.BUY,
+        transactionType: "BUY",
         quantity,
         price: prices.longPut,
       },
       {
-        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
-        productType: productType as ScriptItemEnum.productType,
+        exchangeSegment: "NSE_FNO",
+        productType,
         securityId: shortPutSecurityId,
-        transactionType: ScriptItemEnum.transactionType.SELL,
+        transactionType: "SELL",
         quantity,
         price: prices.shortPut,
       },
       {
-        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
-        productType: productType as ScriptItemEnum.productType,
+        exchangeSegment: "NSE_FNO",
+        productType,
         securityId: shortCallSecurityId,
-        transactionType: ScriptItemEnum.transactionType.SELL,
+        transactionType: "SELL",
         quantity,
         price: prices.shortCall,
       },
       {
-        exchangeSegment: ScriptItemEnum.exchangeSegment.NSE_FNO,
-        productType: productType as ScriptItemEnum.productType,
+        exchangeSegment: "NSE_FNO",
+        productType,
         securityId: longCallSecurityId,
-        transactionType: ScriptItemEnum.transactionType.BUY,
+        transactionType: "BUY",
         quantity,
         price: prices.longCall,
       },

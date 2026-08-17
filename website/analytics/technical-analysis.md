@@ -76,19 +76,15 @@ const { summary } = analyzeMultiTimeframe(result);
 
 ## Historical Data
 
-`Charts.intraday()`/`historical()` still take the raw generated enum types
-rather than plain strings — same issue as `positions.convert()`, see
-[#21](https://github.com/shubhamtaywade82/dhanhq-ts/issues/21):
+Fetch intraday and historical candle data with plain string literals:
 
 ```ts
-import { Generated } from "@shubhamtaywade82/dhanhq-ts";
-
 // Intraday candles
 const candles = await client.charts.intraday({
   securityId: "1333",
-  exchangeSegment: Generated.IntradayChartsRequest.exchangeSegment.NSE_EQ,
-  instrument: Generated.IntradayChartsRequest.instrument.EQUITY,
-  interval: Generated.IntradayChartsRequest.interval._5, // 1, 5, 15, 25, 60 minutes
+  exchangeSegment: "NSE_EQ",
+  instrument: "EQUITY",
+  interval: "5", // "1", "5", "15", "25", "60" minutes
   fromDate: "2026-07-28",
   toDate: "2026-07-29",
 });
@@ -96,8 +92,8 @@ const candles = await client.charts.intraday({
 // Daily candles — same endpoint family, no separate daily() method
 const daily = await client.charts.historical({
   securityId: "13",
-  exchangeSegment: Generated.HistoricalChartsRequest.exchangeSegment.IDX_I,
-  instrument: Generated.HistoricalChartsRequest.instrument.INDEX,
+  exchangeSegment: "IDX_I",
+  instrument: "INDEX",
   fromDate: "2026-06-01",
   toDate: "2026-07-29",
 });

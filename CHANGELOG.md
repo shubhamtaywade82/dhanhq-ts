@@ -6,8 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-08-17
+
 ### Changed
 
+- **`alerts`, `charts`, `funds`, `marginCalculator`, and `positions` now
+  accept plain string literals** (`exchangeSegment: "NSE_EQ"`,
+  `productType: "INTRADAY"`, `interval: "5"`), completing the enum-to-literal
+  transition across all SDK resources. New request interfaces
+  (`PlaceAlertRequest`, `ModifyAlertRequest`, `IntradayChartsInput`,
+  `HistoricalChartsInput`, `OptionChartInput`, `KnowYourMarginInput`,
+  `MultiScripMarginInput`, `MarginScriptItem`, `ConvertPositionRequest`)
+  derive literal unions via `` `${Enum}` `` template-literal types for zero
+  maintenance drift. Fixes #21. 5 new tests.
 - **`foreverOrders`, `conditionalTriggers`, and `edis` now accept plain
   string literals** (`transactionType: "BUY"`), matching every other
   resource in the SDK. Their request shapes previously passed the raw
@@ -303,7 +314,8 @@ First release published to npm, as `@shubhamtaywade82/dhanhq-ts`.
 Initial pre-release: REST resources, contracts, WebSocket market feed and
 order updates, auth helpers, and the OpenAPI-generated transport layer.
 
-[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.2.0...v0.4.0
 [0.2.0]: https://github.com/shubhamtaywade82/dhanhq-ts/releases/tag/v0.2.0

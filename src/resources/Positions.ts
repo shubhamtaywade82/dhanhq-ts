@@ -7,6 +7,24 @@ import type {
 
 import { HttpClient } from "../client/HttpClient";
 
+/**
+ * Plain string-literal request shape for {@link Positions.convert} — the
+ * generated `PositionConversionRequest` type uses TS enums for
+ * `fromProductType`/`exchangeSegment`/`positionType`/`toProductType`, so
+ * `fromProductType: "INTRADAY"` doesn't type-check against it directly.
+ * Deriving the literal unions from the enums via `${Enum}` keeps them in sync
+ * with `npm run generate` without hand-transcribing every member.
+ */
+export interface ConvertPositionRequest {
+  dhanClientId?: string;
+  fromProductType?: `${PositionConversionRequest.fromProductType}`;
+  exchangeSegment?: `${PositionConversionRequest.exchangeSegment}`;
+  positionType?: `${PositionConversionRequest.positionType}`;
+  securityId?: string;
+  convertQty?: number;
+  toProductType?: `${PositionConversionRequest.toProductType}`;
+}
+
 export class Positions {
   constructor(private readonly httpClient: HttpClient) {}
 
@@ -27,9 +45,9 @@ export class Positions {
   }
 
   public async convert(
-    request: PositionConversionRequest,
+    request: ConvertPositionRequest,
   ): Promise<unknown> {
-    return this.httpClient.request<unknown, PositionConversionRequest>({
+    return this.httpClient.request<unknown, ConvertPositionRequest>({
       method: "POST",
       url: "/positions/convert",
       data: request,

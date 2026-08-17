@@ -14,22 +14,17 @@ const holdings = await client.positions.listHoldings();
 ## Positions
 
 ```ts
-import { Generated } from "@shubhamtaywade82/dhanhq-ts";
-
 const positions = await client.positions.list();
 
-// Convert an intraday position to delivery, or vice versa. Unlike
-// orders/conditionalTriggers/edis, this one still takes the raw generated
-// enum type rather than a plain string — see
-// https://github.com/shubhamtaywade82/dhanhq-ts/issues/21.
+// Convert an intraday position to delivery, or vice versa
 await client.positions.convert({
   dhanClientId: process.env.DHAN_CLIENT_ID!,
-  fromProductType: Generated.PositionConversionRequest.fromProductType.INTRADAY,
-  exchangeSegment: Generated.PositionConversionRequest.exchangeSegment.NSE_EQ,
-  positionType: Generated.PositionConversionRequest.positionType.LONG,
+  fromProductType: "INTRADAY",
+  exchangeSegment: "NSE_EQ",
+  positionType: "LONG",
   securityId: "1333",
   convertQty: 10,
-  toProductType: Generated.PositionConversionRequest.toProductType.CNC,
+  toProductType: "CNC",
 });
 
 // Square off every open position

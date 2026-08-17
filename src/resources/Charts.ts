@@ -11,11 +11,54 @@ import { historicalChartsSchema, intradayChartsSchema } from "../contracts/chart
 import { ValidationError } from "../errors";
 import { adjustTradingDateRange } from "../ta/marketCalendar";
 
-export interface ExtendedIntradayChartsRequest extends IntradayChartsRequest {
+/**
+ * Plain string-literal request shapes for {@link Charts} — the generated
+ * `IntradayChartsRequest`/`HistoricalChartsRequest`/`OptionChartRequest` types
+ * use TS enums for `exchangeSegment`/`instrument`/`interval` (and, for option
+ * charts, `expiryFlag`/`drvOptionType`/`requiredData`), so
+ * `exchangeSegment: "NSE_EQ"` doesn't type-check against them directly.
+ * Deriving the literal unions from the enums via `${Enum}` keeps them in sync
+ * with `npm run generate`.
+ */
+export interface IntradayChartsInput {
+  securityId?: string;
+  exchangeSegment?: `${IntradayChartsRequest.exchangeSegment}`;
+  instrument?: `${IntradayChartsRequest.instrument}`;
+  interval?: `${IntradayChartsRequest.interval}`;
+  oi?: boolean;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface HistoricalChartsInput {
+  securityId?: string;
+  exchangeSegment?: `${HistoricalChartsRequest.exchangeSegment}`;
+  instrument?: `${HistoricalChartsRequest.instrument}`;
+  expiryCode?: number;
+  oi?: boolean;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface OptionChartInput {
+  exchangeSegment?: `${OptionChartRequest.exchangeSegment}`;
+  interval?: `${OptionChartRequest.interval}`;
+  securityId?: number;
+  instrument?: `${OptionChartRequest.instrument}`;
+  expiryFlag?: `${OptionChartRequest.expiryFlag}`;
+  expiryCode?: number;
+  strike?: string;
+  drvOptionType?: `${OptionChartRequest.drvOptionType}`;
+  requiredData?: `${OptionChartRequest.requiredData}`;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface ExtendedIntradayChartsRequest extends IntradayChartsInput {
   autoAdjustDates?: boolean;
 }
 
-export interface ExtendedHistoricalChartsRequest extends HistoricalChartsRequest {
+export interface ExtendedHistoricalChartsRequest extends HistoricalChartsInput {
   autoAdjustDates?: boolean;
 }
 
@@ -23,9 +66,9 @@ export class Charts {
   constructor(private readonly httpClient: HttpClient) {}
 
   public async option(
-    request: OptionChartRequest,
+    request: OptionChartInput,
   ): Promise<OptionChartResponse> {
-    return this.httpClient.request<OptionChartResponse, OptionChartRequest>({
+    return this.httpClient.request<OptionChartResponse, OptionChartInput>({
       method: "POST",
       url: "/charts/rollingoption",
       data: request,
@@ -54,7 +97,7 @@ export class Charts {
       throw new ValidationError(validated.error);
     }
 
-    return this.httpClient.request<ChartsResponse, IntradayChartsRequest>({
+    return this.httpClient.request<ChartsResponse, IntradayChartsInput>({
       method: "POST",
       url: "/charts/intraday",
       data: payload,
@@ -83,7 +126,7 @@ export class Charts {
       throw new ValidationError(validated.error);
     }
 
-    return this.httpClient.request<ChartsResponse, HistoricalChartsRequest>({
+    return this.httpClient.request<ChartsResponse, HistoricalChartsInput>({
       method: "POST",
       url: "/charts/historical",
       data: payload,
