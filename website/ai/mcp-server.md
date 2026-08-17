@@ -27,7 +27,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "dhanhq": {
       "command": "npx",
-      "args": ["-y", "@shubhamtaywade82/dhanhq-ts", "dhanhq-mcp"],
+      "args": ["-y", "@shubhamtaywade82/dhanhq-ts"],
       "env": {
         "DHAN_CLIENT_ID": "YOUR_CLIENT_ID",
         "DHAN_ACCESS_TOKEN": "YOUR_ACCESS_TOKEN",
@@ -40,20 +40,22 @@ Add to your `claude_desktop_config.json`:
 
 ## Agent Tools
 
-The MCP server exposes tools backed by the SDK:
+The MCP server exposes tools backed by the SDK (a partial list — see
+[`src/agent/catalogue.ts`](https://github.com/shubhamtaywade82/dhanhq-ts/blob/main/src/agent/catalogue.ts)
+for the full set, including the Global Stocks `dhan_global_*` tools):
 
 | Tool | Description | Scope Required |
 |------|-------------|----------------|
 | `dhan_search_instruments` | Search scrip master | `market:read` |
-| `dhan_get_quote` | Snapshot market data | `market:read` |
-| `dhan_get_option_chain` | Fetch option chain | `market:read` |
-| `dhan_compute_greeks` | Calculate option Greeks | `market:read` |
+| `dhan_quote` | Snapshot market data | `market:read` |
+| `dhan_option_chain` | Fetch option chain | `market:read` |
 | `dhan_technical_analysis` | Compute indicators | `market:read` |
+| `dhan_market_bias` | Multi-timeframe bias | `market:read` |
 | `dhan_order_preview` | Validate without placing | `orders:read` |
 | `dhan_place_order` | Execute a trade | `orders:write` |
-| `dhan_get_positions` | Current positions | `portfolio:read` |
-| `dhan_get_holdings` | Current holdings | `portfolio:read` |
-| `dhan_get_funds` | Available funds | `portfolio:read` |
+| `dhan_positions` | Current positions | `portfolio:read` |
+| `dhan_holdings` | Current holdings | `portfolio:read` |
+| `dhan_funds` | Available funds | `portfolio:read` |
 
 ## Policy Gates
 
@@ -92,11 +94,11 @@ The server exposes these resources:
 ## Prompt Templates
 
 Five built-in prompt templates for common trading tasks:
-- `analyze_market` — Market analysis workflow
-- `evaluate_option_strategy` — Options strategy evaluation  
-- `assess_risk` — Risk assessment
-- `prepare_order` — Order preparation with validation
-- `review_portfolio` — Portfolio review
+- `system_prompt` — Base system prompt for a DhanHQ trading assistant
+- `portfolio_summary` — Human-readable summary of holdings, positions and funds
+- `market_analysis` — Multi-timeframe technical bias for a symbol, with rationale
+- `risk_report` — Current risk exposure: open positions, P&L and limits
+- `order_preview` — Preview an order with contract and risk validation
 
 ## Security
 
@@ -112,15 +114,13 @@ import { AgentToolRegistry, Policy } from "@shubhamtaywade82/dhanhq-ts";
 
 const tools = new AgentToolRegistry({
   client,
-  policy: Policy.fromScopes(
-    "market:read",
-    "portfolio:read",
-    "orders:read",
-  ),
+  policy: new Policy({
+    scopes: ["market:read", "portfolio:read", "orders:read"],
+  }),
 });
 
 // Execute any tool
-const result = await tools.execute("dhan_get_option_chain", {
+const result = await tools.execute("dhan_option_chain", {
   underlyingScrip: 13,
   underlyingSeg: "IDX_I",
   expiry: "2026-08-04",

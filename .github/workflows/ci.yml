@@ -28,7 +28,9 @@ jobs:
 
       - run: npm run typecheck
 
-      - run: npm test -- --runInBand
+      - run: npm run lint
+
+      - run: npm test -- --runInBand --coverage
 
       - run: npm run build
 
@@ -60,4 +62,6 @@ jobs:
           npm install /tmp/*.tgz
           node -e "const s=require('@shubhamtaywade82/dhanhq-ts'); if (typeof s.DhanClient!=='function') throw new Error('CJS entry broken')"
           node --input-type=module -e "import {DhanClient} from '@shubhamtaywade82/dhanhq-ts'; if (typeof DhanClient!=='function') throw new Error('ESM entry broken')"
+          node -e "const b=require('@shubhamtaywade82/dhanhq-ts/browser'); if (typeof b.Pipeline!=='function') throw new Error('browser CJS entry broken'); if (typeof b.DhanClient!=='undefined') throw new Error('browser entry leaks DhanClient')"
+          node --input-type=module -e "import {Pipeline,rsi} from '@shubhamtaywade82/dhanhq-ts/browser'; if (typeof Pipeline!=='function' || typeof rsi!=='function') throw new Error('browser ESM entry broken')"
           ./node_modules/.bin/dhanhq-mcp && exit 1 || echo "bin exits non-zero without credentials, as expected"

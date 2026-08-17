@@ -19,20 +19,23 @@ const order = await client.orders.place({
   validity: "DAY",
   securityId: "12345",
   quantity: 15,
-  price: 0,                         // MARKET order
-  afterMarket: false,
-  boLegName: "NA",                  // not a bracket order
-  disclosedQuantity: 0,
   correlationId: "strategy-entry-001",
 });
+
+console.log(order.data.orderId);
 ```
 
-### Correlation ID (Required)
+`place()` returns `{ correlationId, data }` — `correlationId` is either the
+one you passed or an auto-generated one, useful for reconciling against the
+WebSocket order-update stream even if the REST call times out.
 
-Every trading order should include a `correlationId` for:
-- **Idempotency** — prevents duplicate submissions
-- **Recovery** — look up via `/orders/external/{id}`
-- **Traceability** — correlates order placement with WebSocket execution updates
+### Correlation ID
+
+Every order gets a `correlationId` — supply your own or one is generated —
+for:
+- **Idempotency** — a stable key to check before retrying
+- **Recovery** — look up via `client.orders.getByCorrelationId(id)`
+- **Traceability** — matches order placement to WebSocket fill updates
 
 ```ts
 const order = await client.orders.place({
@@ -42,7 +45,7 @@ const order = await client.orders.place({
 
 // Track via WebSocket
 client.ws.orders.on("order", (update) => {
-  if (update.CorrelationId === correlationId) {
+  if (update.correlationId === order.correlationId) {
     console.log("Fill update:", update);
   }
 });
@@ -62,8 +65,11 @@ client.ws.orders.on("order", (update) => {
 | ProductType | Description |
 |-------------|-------------|
 | `INTRADAY` | Intraday (MIS) — squared off by EOD |
-| `DELIVERY` | Delivery (CNC) — held overnight |
-| `CARRY_FORWARD` | NRML — F&O, currency, commodity |
+| `CNC` | Cash & Carry — held overnight |
+| `MARGIN` | Carry Forward — F&O, currency, commodity |
+| `BO` | Bracket order (entry + target + stop loss) |
+| `CO` | Cover order (entry + stop loss) |
+| `MTF` | Margin Trade Funding |
 
 ## Modify Order
 
@@ -71,7 +77,7 @@ client.ws.orders.on("order", (update) => {
 await client.orders.modify({
   orderId: "12345",
   orderType: "LIMIT",
-  price: 150.50,
+  price: 150.5,
   quantity: 20,
   validity: "DAY",
 });
@@ -80,85 +86,85 @@ await client.orders.modify({
 ## Cancel Order
 
 ```ts
-await client.orders.cancel({ orderId: "12345" });
+await client.orders.cancel("12345");
 ```
 
 ## Get Order by ID
 
 ```ts
-const order = await client.orders.getById({ orderId: "12345" });
+const order = await client.orders.getById("12345");
 ```
 
-## Get Order by External ID
+## Get Order by Correlation ID
+
+Look an order up by the `correlationId` you supplied at placement, rather
+than Dhan's own `orderId` — useful when your own system only knows the
+correlation ID it generated.
 
 ```ts
-const order = await client.orders.getByExternalId({
-  externalId: "strategy-entry-001",
+const order = await client.orders.getByCorrelationId("strategy-entry-001");
+```
+
+## List Orders and Trades
+
+```ts
+const orders = await client.orders.list();
+const trades = await client.orders.listTrades();
+const tradesForOrder = await client.orders.getTrades("12345");
+```
+
+## Trade History
+
+Trades across a date range, not tied to a single order — paginated.
+
+```ts
+const history = await client.orders.getTradeHistory({
+  fromDate: "2026-01-01",
+  toDate: "2026-01-31",
+  pageNumber: "0",
 });
 ```
 
-## Get All Orders
+## Slice a Large Order
+
+Same shape as `place()` — Dhan splits it server-side against freeze-quantity
+limits, returning one response per resulting order.
 
 ```ts
-const orders = await client.orders.getAll();
-```
-
-## Order History
-
-```ts
-const history = await client.orders.getHistory({ orderId: "12345" });
-```
-
-## Slice Order
-
-Split a large order into smaller slices:
-
-```ts
-await client.orders.slice({
+const slices = await client.orders.placeSlice({
   dhanClientId: process.env.DHAN_CLIENT_ID!,
   exchangeSegment: "NSE_EQ",
   transactionType: "BUY",
   productType: "INTRADAY",
   orderType: "MARKET",
-  securityId: "1333",
-  quantity: 500,
-  sliceQuantity: 100,
   validity: "DAY",
+  securityId: "1333",
+  quantity: 5000,
   correlationId: "slice-001",
 });
 ```
 
 ## Super Orders
 
-Multi-leg order structures:
+Multi-leg orders (entry + target + stop loss, with an optional trailing
+jump) in a single call — one `place()`, not a bracket/cover-specific method:
 
 ```ts
-// Bracket Order
-await client.superOrders.placeBracket({
-  // entry + stop loss + target legs
-});
-
-// Cover Order
-await client.superOrders.placeCover({
-  // entry + stop loss legs
-});
-```
-
-## Order Slice
-
-Split a large order into smaller slices:
-
-```ts
-await client.orders.slice({
+const superOrder = await client.superOrders.place({
   dhanClientId: process.env.DHAN_CLIENT_ID!,
-  exchangeSegment: "NSE_EQ",
   transactionType: "BUY",
+  exchangeSegment: "NSE_FNO",
   productType: "INTRADAY",
-  orderType: "MARKET",
-  securityId: "1333",
-  quantity: 500,
-  sliceQuantity: 100,
-  validity: "DAY",
-  correlationId: "slice-001",
+  orderType: "LIMIT",
+  securityId: "12345",
+  quantity: 15,
+  price: 100,
+  targetPrice: 110,
+  stopLossPrice: 95,
+  trailingJump: 1,
+  correlationId: "super-entry-001",
 });
+
+await client.superOrders.modify({ orderId: superOrder.data.orderId, targetPrice: 112 });
+await client.superOrders.cancel({ orderId: superOrder.data.orderId, orderLeg: "TARGET_LEG" });
 ```

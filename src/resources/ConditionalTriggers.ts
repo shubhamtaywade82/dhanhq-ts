@@ -1,17 +1,62 @@
 import type {
   AlertCondition,
   AlertOrder,
-  AlertOrderRequest,
   AlertOrderResponse,
   GetAlertResponse,
 } from "../generated";
-import { AlertCondition as AlertConditionEnum } from "../generated/models/AlertCondition";
 
 import { HttpClient } from "../client/HttpClient";
 
 /**
+ * Plain string-literal request shapes for {@link ConditionalTriggers} — the
+ * generated `AlertCondition`/`AlertOrder`/`AlertOrderRequest` types use TS
+ * enums for these fields, so `comparisonType: "PRICE_WITH_VALUE"` doesn't
+ * type-check against them directly. Deriving the literal unions from the
+ * enums via `${Enum}` keeps them in sync with `npm run generate` without
+ * hand-transcribing every member (`indicatorName` alone has 20+).
+ */
+export interface AlertConditionInput {
+  comparisonType?: `${AlertCondition.comparisonType}`;
+  exchangeSegment?: `${AlertCondition.exchangeSegment}`;
+  securityId: string;
+  indicatorName?: `${AlertCondition.indicatorName}`;
+  timeFrame?: `${AlertCondition.timeFrame}`;
+  operator?: `${AlertCondition.operator}`;
+  comparingValue?: number;
+  comparingIndicatorName?: `${AlertCondition.comparingIndicatorName}`;
+  /** Expiry date of alert */
+  expDate?: string;
+  frequency?: `${AlertCondition.frequency}`;
+  userNote?: string;
+}
+
+export interface AlertOrderInput {
+  transactionType: `${AlertOrder.transactionType}`;
+  exchangeSegment: `${AlertOrder.exchangeSegment}`;
+  productType: `${AlertOrder.productType}`;
+  orderType: `${AlertOrder.orderType}`;
+  securityId: string;
+  quantity: number;
+  validity: `${AlertOrder.validity}`;
+  /** e.g. "250.5" */
+  price?: string;
+  /** e.g. "100" */
+  discQuantity?: string;
+  /** e.g. "2500.0" */
+  triggerPrice?: string;
+}
+
+export interface PlaceConditionalTriggerRequest {
+  dhanClientId: string;
+  condition: AlertConditionInput;
+  orders: AlertOrderInput[];
+}
+
+export type ModifyConditionalTriggerRequest = Partial<PlaceConditionalTriggerRequest>;
+
+/**
  * Conditional Trigger Orders (Alert Orders) API wrapper.
- * 
+ *
  * This wraps the /v2/alerts/orders endpoints for placing orders triggered by
  * price or technical indicators. Unlike standard GTT/Forever orders, conditional
  * triggers support:
@@ -19,7 +64,7 @@ import { HttpClient } from "../client/HttpClient";
  * - TECHNICAL_WITH_VALUE: Trigger when an indicator (SMA, RSI, etc.) crosses a value
  * - TECHNICAL_WITH_INDICATOR: Trigger when one indicator crosses another (e.g., SMA_20 > SMA_50)
  * - Multiple orders can be triggered from a single condition
- * 
+ *
  * @see https://dhan.co/help/docs/api/v2/#alerts-orders
  */
 export class ConditionalTriggers {
@@ -49,11 +94,12 @@ export class ConditionalTriggers {
 
   /**
    * Place a new conditional trigger order.
-   * 
+   *
    * @example
    * ```ts
    * // Price-based trigger: Buy NIFTY 24500 CE when Nifty spot crosses 24,500
    * await client.conditionalTriggers.place({
+   *   dhanClientId: process.env.DHAN_CLIENT_ID!,
    *   condition: {
    *     comparisonType: "PRICE_WITH_VALUE",
    *     exchangeSegment: "IDX_I",
@@ -72,9 +118,10 @@ export class ConditionalTriggers {
    *     quantity: 50,
    *   }],
    * });
-   * 
+   *
    * // Technical trigger: Buy when RSI crosses above 30
    * await client.conditionalTriggers.place({
+   *   dhanClientId: process.env.DHAN_CLIENT_ID!,
    *   condition: {
    *     comparisonType: "TECHNICAL_WITH_VALUE",
    *     exchangeSegment: "NSE_EQ",
@@ -85,14 +132,14 @@ export class ConditionalTriggers {
    *     comparingValue: 30,
    *     frequency: "ONCE",
    *   },
-   *   orders: [{ ... }],
+   *   orders: [ { transactionType: "BUY", exchangeSegment: "NSE_FNO", productType: "INTRADAY", orderType: "MARKET", validity: "DAY", securityId: "44000", quantity: 50 } ],
    * });
    * ```
    */
   public async place(
-    request: AlertOrderRequest,
+    request: PlaceConditionalTriggerRequest,
   ): Promise<AlertOrderResponse> {
-    return this.httpClient.request<AlertOrderResponse, AlertOrderRequest>({
+    return this.httpClient.request<AlertOrderResponse, PlaceConditionalTriggerRequest>({
       method: "POST",
       url: "/alerts/orders",
       data: request,
@@ -105,9 +152,9 @@ export class ConditionalTriggers {
    */
   public async modify(
     alertId: string,
-    request: Partial<AlertOrderRequest>,
+    request: ModifyConditionalTriggerRequest,
   ): Promise<AlertOrderResponse> {
-    return this.httpClient.request<AlertOrderResponse, Partial<AlertOrderRequest>>({
+    return this.httpClient.request<AlertOrderResponse, ModifyConditionalTriggerRequest>({
       method: "PUT",
       url: `/alerts/orders/${encodeURIComponent(alertId)}`,
       data: request,
@@ -128,7 +175,7 @@ export class ConditionalTriggers {
 
   /**
    * Helper: Build a price-based condition for options buying stop-loss.
-   * 
+   *
    * @example
    * ```ts
    * const condition = ConditionalTriggers.buildPriceCondition({
@@ -139,37 +186,37 @@ export class ConditionalTriggers {
    * ```
    */
   public static buildPriceCondition(options: {
-    exchangeSegment: string;
+    exchangeSegment: AlertConditionInput["exchangeSegment"];
     securityId: string;
     triggerAbove?: number;
     triggerBelow?: number;
     frequency?: "ONCE";
-  }): AlertCondition {
+  }): AlertConditionInput {
     const { exchangeSegment, securityId, frequency = "ONCE" } = options;
-    
+
     if (options.triggerAbove !== undefined && options.triggerBelow !== undefined) {
       throw new Error("Specify either triggerAbove or triggerBelow, not both");
     }
 
     if (options.triggerAbove !== undefined) {
       return {
-        comparisonType: AlertConditionEnum.comparisonType.PRICE_WITH_VALUE,
-        exchangeSegment: exchangeSegment as AlertConditionEnum.exchangeSegment,
+        comparisonType: "PRICE_WITH_VALUE",
+        exchangeSegment,
         securityId,
-        operator: AlertConditionEnum.operator.GREATER_THAN,
+        operator: "GREATER_THAN",
         comparingValue: options.triggerAbove,
-        frequency: AlertConditionEnum.frequency.ONCE,
+        frequency,
       };
     }
 
     if (options.triggerBelow !== undefined) {
       return {
-        comparisonType: AlertConditionEnum.comparisonType.PRICE_WITH_VALUE,
-        exchangeSegment: exchangeSegment as AlertConditionEnum.exchangeSegment,
+        comparisonType: "PRICE_WITH_VALUE",
+        exchangeSegment,
         securityId,
-        operator: AlertConditionEnum.operator.LESS_THAN,
+        operator: "LESS_THAN",
         comparingValue: options.triggerBelow,
-        frequency: AlertConditionEnum.frequency.ONCE,
+        frequency,
       };
     }
 
@@ -178,7 +225,7 @@ export class ConditionalTriggers {
 
   /**
    * Helper: Build a technical indicator-based condition.
-   * 
+   *
    * @example
    * ```ts
    * const condition = ConditionalTriggers.buildTechnicalCondition({
@@ -191,43 +238,43 @@ export class ConditionalTriggers {
    * ```
    */
   public static buildTechnicalCondition(options: {
-    exchangeSegment: string;
+    exchangeSegment: AlertConditionInput["exchangeSegment"];
     securityId: string;
-    indicatorName: AlertCondition["indicatorName"];
-    timeFrame?: AlertCondition["timeFrame"];
+    indicatorName: AlertConditionInput["indicatorName"];
+    timeFrame?: AlertConditionInput["timeFrame"];
     crossingAbove?: number;
     crossingBelow?: number;
     frequency?: "ONCE";
-  }): AlertCondition {
+  }): AlertConditionInput {
     const { exchangeSegment, securityId, indicatorName, timeFrame = "FIFTEEN_MIN", frequency = "ONCE" } = options;
-    
+
     if (options.crossingAbove !== undefined && options.crossingBelow !== undefined) {
       throw new Error("Specify either crossingAbove or crossingBelow, not both");
     }
 
     if (options.crossingAbove !== undefined) {
       return {
-        comparisonType: AlertConditionEnum.comparisonType.TECHNICAL_WITH_VALUE,
-        exchangeSegment: exchangeSegment as AlertConditionEnum.exchangeSegment,
+        comparisonType: "TECHNICAL_WITH_VALUE",
+        exchangeSegment,
         securityId,
         indicatorName,
-        timeFrame: timeFrame as AlertConditionEnum.timeFrame,
-        operator: AlertConditionEnum.operator.CROSSING_UP,
+        timeFrame,
+        operator: "CROSSING_UP",
         comparingValue: options.crossingAbove,
-        frequency: AlertConditionEnum.frequency.ONCE,
+        frequency,
       };
     }
 
     if (options.crossingBelow !== undefined) {
       return {
-        comparisonType: AlertConditionEnum.comparisonType.TECHNICAL_WITH_VALUE,
-        exchangeSegment: exchangeSegment as AlertConditionEnum.exchangeSegment,
+        comparisonType: "TECHNICAL_WITH_VALUE",
+        exchangeSegment,
         securityId,
         indicatorName,
-        timeFrame: timeFrame as AlertConditionEnum.timeFrame,
-        operator: AlertConditionEnum.operator.CROSSING_DOWN,
+        timeFrame,
+        operator: "CROSSING_DOWN",
         comparingValue: options.crossingBelow,
-        frequency: AlertConditionEnum.frequency.ONCE,
+        frequency,
       };
     }
 

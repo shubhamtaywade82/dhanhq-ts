@@ -6,8 +6,13 @@ import type {
   OrderUpdateWSOptions,
   WebSocketLike,
 } from "../types/ws.types";
+import type { Logger } from "../types/logger.types";
 import { BaseWS } from "./BaseWS";
 import { OrderStore } from "./store/OrderStore";
+
+export interface OrderUpdateWSOptionsWithLogger extends OrderUpdateWSOptions {
+  logger?: Logger;
+}
 
 export class OrderUpdateWS extends BaseWS {
   private readonly authResolver: AuthResolver;
@@ -17,7 +22,7 @@ export class OrderUpdateWS extends BaseWS {
   private readonly partnerId?: string;
   private readonly partnerSecret?: string;
 
-  constructor(options: OrderUpdateWSOptions, orderStore: OrderStore) {
+  constructor(options: OrderUpdateWSOptionsWithLogger, orderStore: OrderStore) {
     const authResolver = new AuthResolver({
       token: options.token,
       tokenProvider: options.tokenProvider,
@@ -30,6 +35,7 @@ export class OrderUpdateWS extends BaseWS {
       options.webSocketFactory ?? defaultFactory,
       options.maxReconnectDelayMs,
       options.maxReconnectAttempts,
+      options.logger,
     );
     this.authResolver = authResolver;
     this.clientId = options.clientId;

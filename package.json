@@ -1,6 +1,6 @@
 {
   "name": "@shubhamtaywade82/dhanhq-ts",
-  "version": "0.3.1",
+  "version": "0.4.1",
   "description": "Production-grade TypeScript and Node.js SDK for DhanHQ API v2 with REST APIs, WebSocket market data, option analytics, technical analysis, risk management, trading skills and MCP server tools.",
   "keywords": [
     "dhan",
@@ -62,12 +62,25 @@
         "default": "./dist/mcp/index.cjs"
       }
     },
+    "./browser": {
+      "import": {
+        "types": "./dist/browser.d.mts",
+        "default": "./dist/browser.mjs"
+      },
+      "require": {
+        "types": "./dist/browser.d.ts",
+        "default": "./dist/browser.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
       "mcp": [
         "dist/mcp/index.d.ts"
+      ],
+      "browser": [
+        "dist/browser.d.ts"
       ]
     }
   },
@@ -93,16 +106,20 @@
     "dev": "tsup --watch",
     "test": "jest",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "npm run typecheck",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
     "smoke": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/smoke-test.ts",
     "generate": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/generate-sdk.ts",
     "mcp": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/bin/dhanhq-mcp.ts",
-    "docs:dev": "vitepress dev website",
-    "docs:build": "vitepress build website",
+    "docs:api": "typedoc",
+    "docs:dev": "npm run docs:api && vitepress dev website",
+    "docs:build": "npm run docs:api && vitepress build website",
     "docs:preview": "vitepress preview website",
     "clean": "rm -rf dist",
     "prepare": "npm run build",
-    "prepublishOnly": "npm run clean && npm run typecheck && npm test && npm run build"
+    "prepublishOnly": "npm run clean && npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
     "axios": "^1.13.6",
@@ -113,16 +130,25 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@types/dotenv": "^6.1.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",
     "@types/ws": "^8.18.1",
+    "@typescript-eslint/eslint-plugin": "^8.66.0",
+    "@typescript-eslint/parser": "^8.66.0",
     "dotenv": "^17.3.1",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.11.0",
     "jest": "^30.3.0",
     "openapi-typescript-codegen": "^0.30.0",
+    "prettier": "^3.9.6",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.1",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.12.0",
     "typescript": "^5.9.3",
     "vitepress": "^1.6.3"
   }

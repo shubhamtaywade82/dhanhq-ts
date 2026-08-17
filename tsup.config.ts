@@ -2,14 +2,20 @@ import { defineConfig } from "tsup";
 
 export default defineConfig({
   // `src/bin/dhanhq-mcp.ts` is its own entry so MCP clients can launch the
-  // server without loading the whole SDK barrel.
-  entry: ["src/index.ts", "src/mcp/index.ts", "src/bin/dhanhq-mcp.ts"],
+  // server without loading the whole SDK barrel. `src/browser.ts` is its
+  // own entry so a bundler never has to prove it can tree-shake away
+  // src/client/src/resources/src/ws — they're simply not in that entry's
+  // module graph.
+  entry: [
+    "src/index.ts",
+    "src/mcp/index.ts",
+    "src/bin/dhanhq-mcp.ts",
+    "src/browser.ts",
+  ],
   format: ["esm", "cjs"],
   dts: true,
   clean: true,
-  // ESM splitting dedupes the SDK shared by the three entry points; CJS cannot
-  // split, so its bin bundle stays self-contained.
-  splitting: true,
+  splitting: false,
   sourcemap: true,
   shims: true,
   treeshake: true,

@@ -15,6 +15,9 @@ npm install @shubhamtaywade82/dhanhq-ts
 Requires Node.js 18 or newer. Ships both ESM and CommonJS builds with
 TypeScript declarations for each.
 
+In a hurry? [`QUICKSTART.md`](QUICKSTART.md) covers the five things you'll
+do first in about fifty lines.
+
 ---
 
 ## Why This SDK
@@ -498,6 +501,16 @@ the REST API sends no `Access-Control-Allow-Origin`, so the browser blocks the
 response regardless. Run the SDK on a server and expose a narrow read-only API
 to your frontend — see [`docs/BROWSER.md`](docs/BROWSER.md) for the pattern.
 
+For the browser side of that pattern, import from the dedicated
+`@shubhamtaywade82/dhanhq-ts/browser` entry point rather than the main one —
+it's a separate build with `src/client`/`src/resources`/`src/ws` structurally
+absent from its module graph, not just tree-shaken out by a cooperative
+bundler:
+
+```ts
+import { rsi, greeks, PositionMonitor } from "@shubhamtaywade82/dhanhq-ts/browser";
+```
+
 ---
 
 ## Examples
@@ -514,6 +527,99 @@ See `/examples`:
 | `risk-controls.ts` | Pipeline, P&L auto-exit and kill switch (`APPLY=true` to arm) |
 | `global-stocks.ts` | US equities book (`PLACE_ORDER=true` to transmit) |
 | `analysis-and-skills.ts` | Indicators, option analytics, skills and agent tools |
+
+---
+
+## Less Common Features
+
+Fully wired, tested resources that don't come up in day-to-day usage enough
+to earn their own Quick Start step. Plain string literals work directly —
+`place()`/`form()`/etc. accept string-literal-typed request shapes derived
+from the generated OpenAPI enums, not the raw enums themselves.
+
+### Forever Orders (GTT)
+
+```ts
+await client.foreverOrders.place({
+  transactionType: "BUY",
+  exchangeSegment: "NSE_EQ",
+  productType: "CNC",
+  orderType: "LIMIT",
+  securityId: "1333",
+  quantity: 10,
+  price: 1450,
+  triggerPrice: 1460,
+});
+
+const pending = await client.foreverOrders.list();
+await client.foreverOrders.cancel(pending[0].orderId!);
+```
+
+### Conditional Trigger Orders
+
+Price- or indicator-based triggers, distinct from Forever Orders — see
+`/v2/alerts/orders`. Supports crossing a price level, an indicator value
+(RSI, SMA, ...), or one indicator crossing another.
+
+```ts
+// Buy NIFTY 24500 CE once the Nifty spot crosses 24,500
+await client.conditionalTriggers.place({
+  dhanClientId: process.env.DHAN_CLIENT_ID!,
+  condition: {
+    comparisonType: "PRICE_WITH_VALUE",
+    exchangeSegment: "IDX_I",
+    securityId: "1333", // Nifty 50 index
+    operator: "GREATER_THAN",
+    comparingValue: 24500,
+    frequency: "ONCE",
+  },
+  orders: [
+    {
+      transactionType: "BUY",
+      exchangeSegment: "NSE_FNO",
+      productType: "INTRADAY",
+      orderType: "MARKET",
+      validity: "DAY",
+      securityId: "44000", // NIFTY 24500 CE
+      quantity: 50,
+    },
+  ],
+});
+```
+
+Or build the condition with a helper instead of writing it by hand:
+
+```ts
+const condition = ConditionalTriggers.buildPriceCondition({
+  exchangeSegment: "IDX_I",
+  securityId: "1333",
+  triggerAbove: 24500,
+});
+```
+
+### eDIS (Electronic Delivery Instruction Slip)
+
+Required to sell holdings that aren't already pledged/POA-authorized —
+generates the CDSL/NSDL authorization form.
+
+```ts
+await client.edis.form({
+  isin: "INE002A01018", // Reliance
+  qty: 10,
+  exchange: "NSE",
+  segment: "EQ",
+  bulk: false,
+});
+
+const status = await client.edis.getQuantityStatus("INE002A01018");
+```
+
+### Static IP Whitelisting
+
+```ts
+await client.ipSetup.set({ ip: "203.0.113.10", ipFlag: "PRIMARY" });
+const current = await client.ipSetup.get();
+```
 
 ---
 
@@ -642,7 +748,7 @@ See `docs/` and `AGENTS.md` for repo-level architecture and trading constraints.
 - [x] Add advanced risk management examples around pnl exit and kill switch
 - [x] Global Stocks (US equities) book under `/v2/globalstocks/*`
 - [ ] Global Stocks binary WebSocket feed
-- [ ] Backtesting harness over the indicator layer
+- [x] Backtesting harness over the indicator layer
 
 ---
 

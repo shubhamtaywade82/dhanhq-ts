@@ -85,24 +85,52 @@ await client.traderControls.setKillSwitch("ACTIVATE");
 
 ## Position Sizing
 
-```ts
-import { positionSizing } from "@shubhamtaywade82/dhanhq-ts";
+Pure functions — no API access needed for planning:
 
-const size = positionSizing({
-  accountSize: 1_000_000,
-  riskPerTrade: 0.02,   // 2%
-  stopLossPoints: 50,
+```ts
+import { fixedRiskSize, volatilitySize, kellySize } from "@shubhamtaywade82/dhanhq-ts";
+
+// Fixed-percent risk: quantity such that a stop-out costs 2% of the account
+const size = fixedRiskSize({
+  accountBalance: 1_000_000,
+  riskPercent: 2,
+  entryPrice: 100,
+  stopLossPrice: 95,
+});
+
+// Same idea, but the stop distance comes from ATR
+const atrSize = volatilitySize({
+  accountBalance: 1_000_000,
+  riskPercent: 2,
+  entryPrice: 100,
+  atr: 7,
+  atrMultiplier: 2,
+});
+
+// Half-Kelly, scaled by historical win rate and average win/loss
+const kelly = kellySize({
+  winRate: 0.55,
+  avgWin: 8,
+  avgLoss: 5,
+  accountBalance: 1_000_000,
   entryPrice: 100,
 });
 ```
 
 ## Trailing Stops
 
-```ts
-import { trailingStop } from "@shubhamtaywade82/dhanhq-ts";
+`TrailManager` ratchets a stop up with the high-water mark and never moves it
+down:
 
-// ATR-based trailing stop
-const stop = trailingStop.atr({ atr: 7, multiplier: 2, highestHigh: 1428 });
-// Fixed percentage
-const stop2 = trailingStop.percent({ trailPercent: 0.02, highestHigh: 1428 });
+```ts
+import { TrailManager, atrStop, percentageStop } from "@shubhamtaywade82/dhanhq-ts";
+
+// Initial stop placement
+const initialStop = atrStop(100, 7, 2);        // ATR-based
+const percentStop = percentageStop(100, 2);    // fixed 2% below entry
+
+// Then feed live prices in as they arrive
+const trail = new TrailManager(100, initialStop, 7, 2);
+const update = trail.update(112);
+console.log(update.stop, update.highest, update.triggered);
 ```

@@ -9,6 +9,7 @@ import { AuthenticationError } from "../errors";
 import { GeneratedClient } from "./GeneratedClient";
 import { HttpClient, type HttpClientDependencies } from "./HttpClient";
 import type { DhanClientConfig } from "../types/common.types";
+import type { Logger } from "../types/logger.types";
 import {
   Alerts,
   Charts,
@@ -32,7 +33,9 @@ import {
 } from "../resources";
 import { DhanWS } from "../ws";
 
-export interface DhanClientDependencies extends HttpClientDependencies {}
+export interface DhanClientDependencies extends HttpClientDependencies {
+  logger?: Logger;
+}
 
 export class DhanClient {
   public readonly generated: GeneratedClient;
@@ -71,7 +74,12 @@ export class DhanClient {
     private readonly config: DhanClientConfig,
     dependencies: DhanClientDependencies = {},
   ) {
-    const httpClient = new HttpClient(config, dependencies);
+    const httpClient = new HttpClient(config, {
+      axiosInstance: dependencies.axiosInstance,
+      rateLimiter: dependencies.rateLimiter,
+      logger: dependencies.logger,
+      circuitBreaker: dependencies.circuitBreaker,
+    });
 
     this.generated = new GeneratedClient(config);
     this.orders = new Orders(httpClient);
@@ -105,6 +113,7 @@ export class DhanClient {
       orderUserType: config.wsOrderUserType,
       partnerId: config.partnerId,
       partnerSecret: config.partnerSecret,
+      logger: dependencies.logger,
     });
     this.auth = {
       generateAccessToken: DhanAuth.generateAccessToken,

@@ -1,4 +1,5 @@
 export * from "./BaseWS";
+export * from "./CandleAggregator";
 export * from "./DhanWS";
 export * from "./MarketDepthWS";
 export * from "./MarketFeedWS";

@@ -1,3 +1,5 @@
+import type { CircuitBreakerOptions } from "../client/CircuitBreaker";
+
 export interface DhanClientConfig {
   token?: string;
   clientId: string;
@@ -6,6 +8,11 @@ export interface DhanClientConfig {
   baseURL?: string;
   timeoutMs?: number;
   rateLimitMinTimeMs?: number;
+  /**
+   * Trips after consecutive network/5xx failures so a struggling backend
+   * doesn't get hammered by every in-flight caller. Pass `false` to disable.
+   */
+  circuitBreaker?: CircuitBreakerOptions | false;
   wsUrl?: string;
   marketFeedUrl?: string;
   orderUpdateUrl?: string;
