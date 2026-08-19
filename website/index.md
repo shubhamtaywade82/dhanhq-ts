@@ -10,7 +10,7 @@ A production-grade **TypeScript SDK and Node.js client** for the [DhanHQ](https:
 <div class="npm-install">
 
 ```bash
-npm install @shubhamtaywade82/dhanhq-ts
+npm install @nemesis-oss/dhanhq-sdk
 ```
 
 </div>
@@ -18,7 +18,7 @@ npm install @shubhamtaywade82/dhanhq-ts
 <div class="buttons">
   <a href="/getting-started" class="btn btn-primary">Get Started</a>
   <a href="https://github.com/shubhamtaywade82/dhanhq-ts" class="btn btn-secondary">GitHub</a>
-  <a href="https://www.npmjs.com/package/@shubhamtaywade82/dhanhq-ts" class="btn btn-secondary">npm</a>
+  <a href="https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk" class="btn btn-secondary">npm</a>
 </div>
 
 ## Features
@@ -35,7 +35,7 @@ npm install @shubhamtaywade82/dhanhq-ts
 ## Quick Example
 
 ```ts
-import { DhanClient } from "@shubhamtaywade82/dhanhq-ts";
+import { DhanClient } from "@nemesis-oss/dhanhq-sdk";
 
 const client = new DhanClient({
   token: process.env.DHAN_TOKEN!,
@@ -67,7 +67,7 @@ const order = await client.orders.place({
 | [Technical Analysis](/analytics/technical-analysis) | Indicators and multi-timeframe bias |
 | [MCP Server](/ai/mcp-server) | AI trading agent integration |
 | [GitHub](https://github.com/shubhamtaywade82/dhanhq-ts) | Source code and issues |
-| [npm](https://www.npmjs.com/package/@shubhamtaywade82/dhanhq-ts) | Package registry |
+| [npm](https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk) | Package registry |
 
 <hr />
 

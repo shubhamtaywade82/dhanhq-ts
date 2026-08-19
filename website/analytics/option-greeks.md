@@ -10,7 +10,7 @@ Quantitative options analytics for Indian markets including Black-Scholes pricin
 ## Greeks
 
 ```ts
-import { greeks } from "@shubhamtaywade82/dhanhq-ts";
+import { greeks } from "@nemesis-oss/dhanhq-sdk";
 
 const result = greeks({
   spot: 24_000,
@@ -30,7 +30,7 @@ console.log("Vega:", result.vega);
 ## Implied Volatility
 
 ```ts
-import { impliedVolatility } from "@shubhamtaywade82/dhanhq-ts";
+import { impliedVolatility } from "@nemesis-oss/dhanhq-sdk";
 
 const iv = impliedVolatility({
   spot: 24_000,
@@ -48,7 +48,7 @@ const iv = impliedVolatility({
 full pain curve, for plotting:
 
 ```ts
-import { detailedMaxPain, maxPain, openInterestFromChain } from "@shubhamtaywade82/dhanhq-ts";
+import { detailedMaxPain, maxPain, openInterestFromChain } from "@nemesis-oss/dhanhq-sdk";
 
 const chain = await client.optionChain.fetchNormalized({
   underlyingScrip: 13,
@@ -68,7 +68,7 @@ console.log("Total pain at max pain:", detail?.totalPain);
 By open interest, and separately by traded volume:
 
 ```ts
-import { openInterestFromChain, putCallRatio, volumePutCallRatio } from "@shubhamtaywade82/dhanhq-ts";
+import { openInterestFromChain, putCallRatio, volumePutCallRatio } from "@nemesis-oss/dhanhq-sdk";
 
 console.log("PCR (OI):", putCallRatio(openInterestFromChain(chain)));
 console.log("PCR (Volume):", volumePutCallRatio(chain));
@@ -80,7 +80,7 @@ The strikes carrying the most OI on each side — support (put OI) and
 resistance (call OI):
 
 ```ts
-import { highestCallOi, highestPutOi } from "@shubhamtaywade82/dhanhq-ts";
+import { highestCallOi, highestPutOi } from "@nemesis-oss/dhanhq-sdk";
 
 console.log("Resistance (highest call OI):", highestCallOi(chain, 3));
 console.log("Support (highest put OI):", highestPutOi(chain, 3));

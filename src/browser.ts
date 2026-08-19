@@ -7,7 +7,7 @@
  * here is structurally unreachable from `src/client`, `src/resources`,
  * `src/ws`, `src/agent`, and `src/mcp`, so nothing that touches a token or
  * makes a request can end up in a bundle that imports only
- * `@shubhamtaywade82/dhanhq-ts/browser`, regardless of how the consumer's
+ * `@nemesis-oss/dhanhq-sdk/browser`, regardless of how the consumer's
  * bundler tree-shakes.
  */
 

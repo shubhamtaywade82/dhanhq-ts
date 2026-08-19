@@ -12,7 +12,7 @@ Built-in technical indicators for algorithmic trading — pure functions over nu
 All indicators are pure functions:
 
 ```ts
-import { rsi, sma, ema, macd, bollinger, atr, adx, stochastic, supertrend, vwap, obv, latest } from "@shubhamtaywade82/dhanhq-ts";
+import { rsi, sma, ema, macd, bollinger, atr, adx, stochastic, supertrend, vwap, obv, latest } from "@nemesis-oss/dhanhq-sdk";
 
 // RSI
 const values = [100, 102, 101, 105, 103, 107, /* ... */];
@@ -57,7 +57,7 @@ Every indicator returns an array the same length as its input, with `null` where
 Compute every timeframe at once and blend them into one trading bias:
 
 ```ts
-import { TechnicalAnalysis, analyzeMultiTimeframe } from "@shubhamtaywade82/dhanhq-ts";
+import { TechnicalAnalysis, analyzeMultiTimeframe } from "@nemesis-oss/dhanhq-sdk";
 
 const analysis = new TechnicalAnalysis(client.charts);
 

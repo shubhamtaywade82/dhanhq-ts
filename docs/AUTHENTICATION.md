@@ -121,7 +121,7 @@ hands out tokens.
 ## Generating tokens directly
 
 ```ts
-import { DhanAuth } from "@shubhamtaywade82/dhanhq-ts";
+import { DhanAuth } from "@nemesis-oss/dhanhq-sdk";
 
 const totp = DhanAuth.generateTotp(process.env.DHAN_TOTP_SECRET!);
 const token = await DhanAuth.generateAccessToken({ clientId, pin, totp });

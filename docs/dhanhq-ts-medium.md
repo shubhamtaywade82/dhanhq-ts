@@ -20,12 +20,12 @@ You end up stitching together five libraries, writing your own WebSocket parser,
 [DhanHQ TS](https://github.com/shubhamtaywade82/dhanhq-ts) is my attempt to close that gap. It's a single, typed, production-grade SDK that covers the full lifecycle: authentication, order placement, real-time data, analytics, risk management, and AI agent integration.
 
 ```bash
-npm install @shubhamtaywade82/dhanhq-ts
+npm install @nemesis-oss/dhanhq-sdk
 ```
 
 **Links:**
 - GitHub: [github.com/shubhamtaywade82/dhanhq-ts](https://github.com/shubhamtaywade82/dhanhq-ts)
-- npm: [npmjs.com/package/@shubhamtaywade82/dhanhq-ts](https://www.npmjs.com/package/@shubhamtaywade82/dhanhq-ts)
+- npm: [npmjs.com/package/@nemesis-oss/dhanhq-sdk](https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk)
 - Documentation: [shubhamtaywade82.github.io/dhanhq-ts](https://shubhamtaywade82.github.io/dhanhq-ts/)
 
 ---
@@ -35,7 +35,7 @@ npm install @shubhamtaywade82/dhanhq-ts
 The SDK is organized around a single `DhanClient` instance that exposes typed resource clients:
 
 ```typescript
-import { DhanClient } from "@shubhamtaywade82/dhanhq-ts";
+import { DhanClient } from "@nemesis-oss/dhanhq-sdk";
 
 const client = new DhanClient({
   token: process.env.DHAN_TOKEN!,
@@ -166,7 +166,7 @@ import {
   sma, ema, rsi, macd, bollingerBands,
   atr, adx, stochastic, supertrend, vwap, obv,
   latest,
-} from "@shubhamtaywade82/dhanhq-ts";
+} from "@nemesis-oss/dhanhq-sdk";
 
 const closes = [/* your OHLC close array */];
 
@@ -185,7 +185,7 @@ Every indicator returns an array the same length as its input, with `null` where
 This is the feature I use most in my own systems. It computes indicators across multiple intervals and produces a blended directional bias:
 
 ```typescript
-import { TechnicalAnalysis, analyzeMultiTimeframe } from "@shubhamtaywade82/dhanhq-ts";
+import { TechnicalAnalysis, analyzeMultiTimeframe } from "@nemesis-oss/dhanhq-sdk";
 
 const ta = new TechnicalAnalysis(client.charts);
 
@@ -218,7 +218,7 @@ For options traders, the SDK computes everything locally from the option chain d
 import {
   blackScholes, greeks, impliedVolatility,
   maxPain, putCallRatio, openInterestFromChain,
-} from "@shubhamtaywade82/dhanhq-ts";
+} from "@nemesis-oss/dhanhq-sdk";
 
 // Fetch the chain from DhanHQ
 const chain = await client.optionChain.fetchNormalized({
@@ -273,7 +273,7 @@ This means you can build an options dashboard, a volatility scanner, or a max-pa
 This is the part most SDKs skip entirely. DhanHQ TS includes a configurable pre-trade risk pipeline that runs before every order hits the exchange:
 
 ```typescript
-import { Pipeline, riskProviderFor } from "@shubhamtaywade82/dhanhq-ts";
+import { Pipeline, riskProviderFor } from "@nemesis-oss/dhanhq-sdk";
 
 const pipeline = new Pipeline({
   provider: riskProviderFor(client),
@@ -336,7 +336,7 @@ Claude Desktop configuration:
   "mcpServers": {
     "dhanhq": {
       "command": "npx",
-      "args": ["-y", "@shubhamtaywade82/dhanhq-ts", "dhanhq-mcp"],
+      "args": ["-y", "@nemesis-oss/dhanhq-sdk", "dhanhq-mcp"],
       "env": {
         "DHAN_CLIENT_ID": "your-client-id",
         "DHAN_ACCESS_TOKEN": "your-token",
@@ -390,11 +390,11 @@ Let me be direct about boundaries:
 ## Getting Started
 
 ```bash
-npm install @shubhamtaywade82/dhanhq-ts
+npm install @nemesis-oss/dhanhq-sdk
 ```
 
 ```typescript
-import { DhanClient } from "@shubhamtaywade82/dhanhq-ts";
+import { DhanClient } from "@nemesis-oss/dhanhq-sdk";
 
 const client = new DhanClient({
   token: process.env.DHAN_TOKEN!,
@@ -429,7 +429,7 @@ Full documentation with guides for every module: [shubhamtaywade82.github.io/dha
 ## Links
 
 - **GitHub:** [github.com/shubhamtaywade82/dhanhq-ts](https://github.com/shubhamtaywade82/dhanhq-ts)
-- **npm:** [npmjs.com/package/@shubhamtaywade82/dhanhq-ts](https://www.npmjs.com/package/@shubhamtaywade82/dhanhq-ts)
+- **npm:** [npmjs.com/package/@nemesis-oss/dhanhq-sdk](https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk)
 - **Documentation:** [shubhamtaywade82.github.io/dhanhq-ts](https://shubhamtaywade82.github.io/dhanhq-ts/)
 - **DhanHQ Official API Docs:** [dhanhq.co/docs/v2](https://dhanhq.co/docs/v2/)
 - **DhanHQ API Community:** [community.dhanhq.co](https://community.dhanhq.co/)
@@ -446,7 +446,7 @@ The current version is **0.3.1**. The roadmap includes:
 - A React hooks package for dashboard builders
 - OpenTelemetry instrumentation for order latency tracking
 
-If you build algo trading systems in TypeScript and use Dhan as your broker, I'd genuinely appreciate a star on the [GitHub repo](https://github.com/shubhamtaywade82/dhanhq-ts), an install from [npm](https://www.npmjs.com/package/@shubhamtaywade82/dhanhq-ts), or a question in the issues. The SDK improves fastest when real trading systems stress-test its edges.
+If you build algo trading systems in TypeScript and use Dhan as your broker, I'd genuinely appreciate a star on the [GitHub repo](https://github.com/shubhamtaywade82/dhanhq-ts), an install from [npm](https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk), or a question in the issues. The SDK improves fastest when real trading systems stress-test its edges.
 
 ---
 

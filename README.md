@@ -9,7 +9,7 @@ Production-grade TypeScript SDK and Node.js client for the [DhanHQ](https://dhan
 ## Installation
 
 ```bash
-npm install @shubhamtaywade82/dhanhq-ts
+npm install @nemesis-oss/dhanhq-sdk
 ```
 
 Requires Node.js 18 or newer. Ships both ESM and CommonJS builds with
@@ -40,7 +40,7 @@ do first in about fifty lines.
 ### 1. Initialize Client
 
 ```ts
-import { DhanClient } from "@shubhamtaywade82/dhanhq-ts";
+import { DhanClient } from "@nemesis-oss/dhanhq-sdk";
 
 // Option A: Direct static token
 const client = new DhanClient({
@@ -159,7 +159,7 @@ All market data, charts, option chain, and expired options requests pass through
   - To disable auto-adjustment and enforce strict error throwing, pass `{ autoAdjustDates: false }`.
 
 ```ts
-import { adjustTradingDateRange, getMarketSessionInfo } from "@shubhamtaywade82/dhanhq-ts";
+import { adjustTradingDateRange, getMarketSessionInfo } from "@nemesis-oss/dhanhq-sdk";
 
 // Check market session state in IST
 const session = getMarketSessionInfo();
@@ -177,7 +177,7 @@ const normalized = adjustTradingDateRange({
 ### 6. Technical Analysis
 
 ```ts
-import { TechnicalAnalysis, analyzeMultiTimeframe, rsi, latest } from "@shubhamtaywade82/dhanhq-ts";
+import { TechnicalAnalysis, analyzeMultiTimeframe, rsi, latest } from "@nemesis-oss/dhanhq-sdk";
 
 // Indicators are pure functions over number arrays
 latest(rsi([100, 102, 101, 105 /* … */], 14));
@@ -204,7 +204,7 @@ without re-aligning it.
 ### 7. Option Analytics
 
 ```ts
-import { greeks, impliedVolatility, maxPain, openInterestFromChain } from "@shubhamtaywade82/dhanhq-ts";
+import { greeks, impliedVolatility, maxPain, openInterestFromChain } from "@nemesis-oss/dhanhq-sdk";
 
 greeks({
   spot: 24_000,
@@ -223,7 +223,7 @@ maxPain(openInterestFromChain(chain));
 ### 8. Risk Pipeline
 
 ```ts
-import { Pipeline, riskProviderFor } from "@shubhamtaywade82/dhanhq-ts";
+import { Pipeline, riskProviderFor } from "@nemesis-oss/dhanhq-sdk";
 
 const pipeline = new Pipeline({
   provider: riskProviderFor(client),
@@ -255,7 +255,7 @@ skills stop at an `intent` — they resolve strikes and premiums but never place
 orders, leaving execution to an explicit, separately-gated call.
 
 ```ts
-import { createSkillRegistry } from "@shubhamtaywade82/dhanhq-ts";
+import { createSkillRegistry } from "@nemesis-oss/dhanhq-sdk";
 
 const skills = createSkillRegistry();
 
@@ -282,7 +282,7 @@ Every resource, analysis helper and skill is exposed as a tool behind a
 permission policy.
 
 ```ts
-import { AgentToolRegistry, Policy } from "@shubhamtaywade82/dhanhq-ts";
+import { AgentToolRegistry, Policy } from "@nemesis-oss/dhanhq-sdk";
 
 const tools = new AgentToolRegistry({ client, policy: Policy.readOnly() });
 
@@ -307,7 +307,7 @@ Claude Desktop / MCP client configuration:
   "mcpServers": {
     "dhanhq": {
       "command": "npx",
-      "args": ["-y", "@shubhamtaywade82/dhanhq-ts", "dhanhq-mcp"],
+      "args": ["-y", "@nemesis-oss/dhanhq-sdk", "dhanhq-mcp"],
       "env": {
         "DHAN_CLIENT_ID": "...",
         "DHAN_ACCESS_TOKEN": "...",
@@ -330,7 +330,7 @@ order to its fill using order-update events instead of polling
 `GET /orders/{id}`, and `PositionMonitor` turns market ticks into exit signals.
 
 ```ts
-import { OrderTracker, PositionMonitor } from "@shubhamtaywade82/dhanhq-ts";
+import { OrderTracker, PositionMonitor } from "@nemesis-oss/dhanhq-sdk";
 
 const tracker = new OrderTracker();
 const monitor = new PositionMonitor();
@@ -502,13 +502,13 @@ response regardless. Run the SDK on a server and expose a narrow read-only API
 to your frontend — see [`docs/BROWSER.md`](docs/BROWSER.md) for the pattern.
 
 For the browser side of that pattern, import from the dedicated
-`@shubhamtaywade82/dhanhq-ts/browser` entry point rather than the main one —
+`@nemesis-oss/dhanhq-sdk/browser` entry point rather than the main one —
 it's a separate build with `src/client`/`src/resources`/`src/ws` structurally
 absent from its module graph, not just tree-shaken out by a cooperative
 bundler:
 
 ```ts
-import { rsi, greeks, PositionMonitor } from "@shubhamtaywade82/dhanhq-ts/browser";
+import { rsi, greeks, PositionMonitor } from "@nemesis-oss/dhanhq-sdk/browser";
 ```
 
 ---

@@ -6,6 +6,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-19
+
+### Changed
+
+- **Package renamed to `@nemesis-oss/dhanhq-sdk`.** The SDK now publishes
+  under the `@nemesis-oss` scope instead of `@shubhamtaywade82`. All imports,
+  the `npx`/MCP invocation, and the `/browser` and `/mcp` subpath exports
+  move to the new scope; the API surface is otherwise unchanged from
+  `0.4.2`. `@shubhamtaywade82/dhanhq-ts` is deprecated on npm in favor of
+  this package — existing installs keep working, but new installs and
+  updates should target `@nemesis-oss/dhanhq-sdk`.
+
 ## [0.4.2] - 2026-08-17
 
 ### Changed
@@ -314,7 +326,8 @@ First release published to npm, as `@shubhamtaywade82/dhanhq-ts`.
 Initial pre-release: REST resources, contracts, WebSocket market feed and
 order updates, auth helpers, and the OpenAPI-generated transport layer.
 
-[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.2...v1.0.0
 [0.4.2]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.2.0...v0.4.0

@@ -35,7 +35,7 @@ Browser  ──▶  Your API  ──▶  DhanHQ
 ```ts
 // server.ts — the only place the token exists
 import express from "express";
-import { DhanClient } from "@shubhamtaywade82/dhanhq-ts";
+import { DhanClient } from "@nemesis-oss/dhanhq-sdk";
 
 const client = new DhanClient({
   clientId: process.env.DHAN_CLIENT_ID!,
@@ -90,14 +90,14 @@ client.ws.market.on("tick", (tick) => {
 
 Parts of this SDK are pure computation with no credentials and no network, and
 those bundle into a frontend fine. Import them from
-**`@shubhamtaywade82/dhanhq-ts/browser`**, a dedicated entry point that only
+**`@nemesis-oss/dhanhq-sdk/browser`**, a dedicated entry point that only
 contains this subset — not a promise that your bundler will tree-shake the
 rest away, but a build with `src/client`, `src/resources`, and `src/ws`
 structurally absent from its module graph:
 
 ```ts
 // Charting a position in the browser, no credentials involved
-import { rsi, latest, bollingerBands, greeks } from "@shubhamtaywade82/dhanhq-ts/browser";
+import { rsi, latest, bollingerBands, greeks } from "@nemesis-oss/dhanhq-sdk/browser";
 
 const signal = latest(rsi(closesFromYourApi, 14));
 ```
@@ -114,7 +114,7 @@ const signal = latest(rsi(closesFromYourApi, 14));
 | `src/ws` | ❌ | Needs a token |
 | `src/agent`, `src/mcp` | ❌ | Node-only; MCP reads stdin/stdout |
 
-The main entry (`@shubhamtaywade82/dhanhq-ts`) still exports everything,
+The main entry (`@nemesis-oss/dhanhq-sdk`) still exports everything,
 `/browser` included, for server-side code that wants one import path — the
 package sets `sideEffects: false` so a bundler *can* tree-shake that down
 too, but `/browser` doesn't ask you to trust that it will.
@@ -124,7 +124,7 @@ too, but `/browser` doesn't ask you to trust that it will.
 let the server act on the decision:
 
 ```ts
-import { PositionMonitor } from "@shubhamtaywade82/dhanhq-ts/browser";
+import { PositionMonitor } from "@nemesis-oss/dhanhq-sdk/browser";
 
 const monitor = new PositionMonitor();
 monitor.track({ securityId: "2885", exchangeSegment: "NSE_EQ", quantity: 10, entryPrice: 1400, stopLoss: 1386 });

@@ -934,7 +934,7 @@ public async place(order: OrderRequest): Promise<OrderResponse> {
  * authentication methods.
  */
 
-import { DhanClient } from '@shubhamtaywade82/dhanhq-ts';
+import { DhanClient } from '@nemesis-oss/dhanhq-sdk';
 
 async function main() {
   // Method 1: Direct token
@@ -1590,7 +1590,7 @@ RateLimitError: Too many requests
 ### 12.1 Browser-Safe Bundle — Done
 
 Implemented as `src/browser.ts`, built as its own tsup entry and shipped at
-the subpath `@shubhamtaywade82/dhanhq-ts/browser` — a real subpath
+the subpath `@nemesis-oss/dhanhq-sdk/browser` — a real subpath
 (matching the existing `/mcp` pattern) rather than a `"browser"` exports
 *condition* on `"."` as originally sketched, since a subpath resolves the
 same way under plain `require`/`import` regardless of whether the consumer's
@@ -1684,7 +1684,7 @@ Update `package.json`:
 ```typescript
 // examples/backend-proxy/server.ts
 import express from 'express';
-import { DhanClient } from '@shubhamtaywade82/dhanhq-ts';
+import { DhanClient } from '@nemesis-oss/dhanhq-sdk';
 
 const app = express();
 const client = DhanClient.fromEnv();

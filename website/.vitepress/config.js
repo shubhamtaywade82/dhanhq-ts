@@ -125,7 +125,7 @@ export default defineConfig({
 
     socialLinks: [
       { icon: "github", link: "https://github.com/shubhamtaywade82/dhanhq-ts" },
-      { icon: "npm", link: "https://www.npmjs.com/package/@shubhamtaywade82/dhanhq-ts" },
+      { icon: "npm", link: "https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk" },
     ],
 
     footer: {

@@ -4,13 +4,13 @@ The five things you'll do first. Full detail: [README](README.md),
 [docs/](docs/), or the [generated reference](https://shubhamtaywade82.github.io/dhanhq-ts/reference/).
 
 ```bash
-npm install @shubhamtaywade82/dhanhq-ts
+npm install @nemesis-oss/dhanhq-sdk
 ```
 
 ## 1. Connect
 
 ```ts
-import { DhanClient } from "@shubhamtaywade82/dhanhq-ts";
+import { DhanClient } from "@nemesis-oss/dhanhq-sdk";
 
 const client = new DhanClient({
   clientId: process.env.DHAN_CLIENT_ID!,
@@ -59,7 +59,7 @@ await client.ws.connect();
 ## 5. Option chain and Greeks
 
 ```ts
-import { greeks, yearsToExpiry } from "@shubhamtaywade82/dhanhq-ts";
+import { greeks, yearsToExpiry } from "@nemesis-oss/dhanhq-sdk";
 
 const nifty = await client.instruments.find("IDX_I", "NIFTY", { exactMatch: true });
 const expiries = await client.optionChain.expiryList({
@@ -88,6 +88,6 @@ const delta = greeks({
 - [`/examples`](examples) — runnable end-to-end scripts (order placement,
   WS execution, risk controls, a full bot skeleton)
 - [`docs/BROWSER.md`](docs/BROWSER.md) — the read-only-dashboard pattern,
-  via `@shubhamtaywade82/dhanhq-ts/browser`
+  via `@nemesis-oss/dhanhq-sdk/browser`
 - [README § Less Common Features](README.md#less-common-features) — Forever
   Orders, Conditional Triggers, eDIS, IP whitelisting

@@ -8,7 +8,7 @@ description: Install and configure the DhanHQ TypeScript SDK for Node.js. Learn 
 ## Installation
 
 ```bash
-npm install @shubhamtaywade82/dhanhq-ts
+npm install @nemesis-oss/dhanhq-sdk
 ```
 
 Requires **Node.js 18 or newer**. Ships both ESM and CommonJS builds with TypeScript declarations.
@@ -16,7 +16,7 @@ Requires **Node.js 18 or newer**. Ships both ESM and CommonJS builds with TypeSc
 ## Quick Start
 
 ```ts
-import { DhanClient } from "@shubhamtaywade82/dhanhq-ts";
+import { DhanClient } from "@nemesis-oss/dhanhq-sdk";
 
 const client = new DhanClient({
   token: process.env.DHAN_TOKEN!,

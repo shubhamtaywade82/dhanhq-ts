@@ -28,7 +28,7 @@ client.ws.orders.on("order", (order) => {
 The `OrderTracker` resolves a placed order to its fill using order-update events instead of polling:
 
 ```ts
-import { OrderTracker } from "@shubhamtaywade82/dhanhq-ts";
+import { OrderTracker } from "@nemesis-oss/dhanhq-sdk";
 
 const tracker = new OrderTracker();
 
