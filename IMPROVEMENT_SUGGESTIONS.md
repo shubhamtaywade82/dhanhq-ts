@@ -987,7 +987,7 @@ export class AuthenticationError extends Error {
     console.error(`\n❌ ${this.message}`);
     console.error('\n💡 Suggestions:');
     this.suggestions.forEach(s => console.error(`   • ${s}`));
-    console.error('\n📚 Documentation: https://github.com/shubhamtaywade82/dhanhq-ts/docs/AUTHENTICATION.md\n');
+    console.error('\n📚 Documentation: https://github.com/shubhamtaywade82/dhanhq-sdk/docs/AUTHENTICATION.md\n');
   }
 }
 
@@ -1402,7 +1402,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Smoke Test Failure*\nRepository: shubhamtaywade82/dhanhq-ts\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    "text": "*Smoke Test Failure*\nRepository: shubhamtaywade82/dhanhq-sdk\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
                 }
               ]

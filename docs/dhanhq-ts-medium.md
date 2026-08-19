@@ -17,16 +17,16 @@ If you trade on NSE or BSE through [Dhan](https://dhan.co) and you build in Type
 
 You end up stitching together five libraries, writing your own WebSocket parser, and hoping your risk checks don't have a gap at 3:29 PM on expiry day.
 
-[DhanHQ TS](https://github.com/shubhamtaywade82/dhanhq-ts) is my attempt to close that gap. It's a single, typed, production-grade SDK that covers the full lifecycle: authentication, order placement, real-time data, analytics, risk management, and AI agent integration.
+[DhanHQ TS](https://github.com/shubhamtaywade82/dhanhq-sdk) is my attempt to close that gap. It's a single, typed, production-grade SDK that covers the full lifecycle: authentication, order placement, real-time data, analytics, risk management, and AI agent integration.
 
 ```bash
 npm install @nemesis-oss/dhanhq-sdk
 ```
 
 **Links:**
-- GitHub: [github.com/shubhamtaywade82/dhanhq-ts](https://github.com/shubhamtaywade82/dhanhq-ts)
+- GitHub: [github.com/shubhamtaywade82/dhanhq-sdk](https://github.com/shubhamtaywade82/dhanhq-sdk)
 - npm: [npmjs.com/package/@nemesis-oss/dhanhq-sdk](https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk)
-- Documentation: [shubhamtaywade82.github.io/dhanhq-ts](https://shubhamtaywade82.github.io/dhanhq-ts/)
+- Documentation: [shubhamtaywade82.github.io/dhanhq-sdk](https://shubhamtaywade82.github.io/dhanhq-sdk/)
 
 ---
 
@@ -101,7 +101,7 @@ Two implementation details that matter in production:
 - **Concurrent callers share one login.** Parallel token generation can invalidate the previous session. The SDK serializes this internally.
 - **Offset-less expiry timestamps are read as IST.** Dhan returns expiry times without timezone offsets. On a UTC server, naive parsing introduces a 5.5-hour drift that can cause premature token refresh or, worse, expired-token errors mid-trade. The SDK handles this correctly.
 
-Full details in the [authentication docs](https://shubhamtaywade82.github.io/dhanhq-ts/getting-started/authentication).
+Full details in the [authentication docs](https://shubhamtaywade82.github.io/dhanhq-sdk/getting-started/authentication).
 
 ---
 
@@ -422,15 +422,15 @@ client.ws.market.subscribe([
 client.ws.market.on("tick", (t) => console.log(t.ltp));
 ```
 
-Full documentation with guides for every module: [shubhamtaywade82.github.io/dhanhq-ts](https://shubhamtaywade82.github.io/dhanhq-ts/)
+Full documentation with guides for every module: [shubhamtaywade82.github.io/dhanhq-sdk](https://shubhamtaywade82.github.io/dhanhq-sdk/)
 
 ---
 
 ## Links
 
-- **GitHub:** [github.com/shubhamtaywade82/dhanhq-ts](https://github.com/shubhamtaywade82/dhanhq-ts)
+- **GitHub:** [github.com/shubhamtaywade82/dhanhq-sdk](https://github.com/shubhamtaywade82/dhanhq-sdk)
 - **npm:** [npmjs.com/package/@nemesis-oss/dhanhq-sdk](https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk)
-- **Documentation:** [shubhamtaywade82.github.io/dhanhq-ts](https://shubhamtaywade82.github.io/dhanhq-ts/)
+- **Documentation:** [shubhamtaywade82.github.io/dhanhq-sdk](https://shubhamtaywade82.github.io/dhanhq-sdk/)
 - **DhanHQ Official API Docs:** [dhanhq.co/docs/v2](https://dhanhq.co/docs/v2/)
 - **DhanHQ API Community:** [community.dhanhq.co](https://community.dhanhq.co/)
 
@@ -446,8 +446,8 @@ The current version is **0.3.1**. The roadmap includes:
 - A React hooks package for dashboard builders
 - OpenTelemetry instrumentation for order latency tracking
 
-If you build algo trading systems in TypeScript and use Dhan as your broker, I'd genuinely appreciate a star on the [GitHub repo](https://github.com/shubhamtaywade82/dhanhq-ts), an install from [npm](https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk), or a question in the issues. The SDK improves fastest when real trading systems stress-test its edges.
+If you build algo trading systems in TypeScript and use Dhan as your broker, I'd genuinely appreciate a star on the [GitHub repo](https://github.com/shubhamtaywade82/dhanhq-sdk), an install from [npm](https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk), or a question in the issues. The SDK improves fastest when real trading systems stress-test its edges.
 
 ---
 
-*Shubham Taywade builds trading infrastructure in TypeScript and Ruby. He maintains the [DhanHQ TypeScript SDK](https://github.com/shubhamtaywade82/dhanhq-ts) and the [DhanHQ Ruby SDK](https://github.com/shubhamtaywade82/dhanhq-client).*
+*Shubham Taywade builds trading infrastructure in TypeScript and Ruby. He maintains the [DhanHQ TypeScript SDK](https://github.com/shubhamtaywade82/dhanhq-sdk) and the [DhanHQ Ruby SDK](https://github.com/shubhamtaywade82/dhanhq-client).*

@@ -17,7 +17,7 @@ npm install @nemesis-oss/dhanhq-sdk
 
 <div class="buttons">
   <a href="/getting-started" class="btn btn-primary">Get Started</a>
-  <a href="https://github.com/shubhamtaywade82/dhanhq-ts" class="btn btn-secondary">GitHub</a>
+  <a href="https://github.com/shubhamtaywade82/dhanhq-sdk" class="btn btn-secondary">GitHub</a>
   <a href="https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk" class="btn btn-secondary">npm</a>
 </div>
 
@@ -66,7 +66,7 @@ const order = await client.orders.place({
 | [Option Chain & Greeks](/api/option-chain) | Resolve option chains and compute Greeks |
 | [Technical Analysis](/analytics/technical-analysis) | Indicators and multi-timeframe bias |
 | [MCP Server](/ai/mcp-server) | AI trading agent integration |
-| [GitHub](https://github.com/shubhamtaywade82/dhanhq-ts) | Source code and issues |
+| [GitHub](https://github.com/shubhamtaywade82/dhanhq-sdk) | Source code and issues |
 | [npm](https://www.npmjs.com/package/@nemesis-oss/dhanhq-sdk) | Package registry |
 
 <hr />

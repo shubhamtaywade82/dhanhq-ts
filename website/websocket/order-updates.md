@@ -46,4 +46,4 @@ console.log(fill.status, fill.filledQuantity, fill.averagePrice);
 
 ## Full Example
 
-See [`examples/ws-execution.ts`](https://github.com/shubhamtaywade82/dhanhq-ts/blob/main/examples/ws-execution.ts) for the complete order placement → fill tracking → exit signal loop.
+See [`examples/ws-execution.ts`](https://github.com/shubhamtaywade82/dhanhq-sdk/blob/main/examples/ws-execution.ts) for the complete order placement → fill tracking → exit signal loop.

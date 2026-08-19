@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/</loc><priority>1.0</priority></url>
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/getting-started</loc><priority>0.9</priority></url>
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/api/orders</loc><priority>0.8</priority></url>
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/api/option-chain</loc><priority>0.8</priority></url>
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/api/market-feed</loc><priority>0.8</priority></url>
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/api/portfolio</loc><priority>0.7</priority></url>
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/websocket/market-feed</loc><priority>0.8</priority></url>
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/websocket/order-updates</loc><priority>0.7</priority></url>
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/analytics/technical-analysis</loc><priority>0.8</priority></url>
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/analytics/option-greeks</loc><priority>0.7</priority></url>
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/risk/</loc><priority>0.7</priority></url>
-  <url><loc>https://shubhamtaywade82.github.io/dhanhq-ts/ai/mcp-server</loc><priority>0.8</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/</loc><priority>1.0</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/getting-started</loc><priority>0.9</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/api/orders</loc><priority>0.8</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/api/option-chain</loc><priority>0.8</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/api/market-feed</loc><priority>0.8</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/api/portfolio</loc><priority>0.7</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/websocket/market-feed</loc><priority>0.8</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/websocket/order-updates</loc><priority>0.7</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/analytics/technical-analysis</loc><priority>0.8</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/analytics/option-greeks</loc><priority>0.7</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/risk/</loc><priority>0.7</priority></url>
+  <url><loc>https://shubhamtaywade82.github.io/dhanhq-sdk/ai/mcp-server</loc><priority>0.8</priority></url>
 </urlset>

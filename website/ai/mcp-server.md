@@ -41,7 +41,7 @@ Add to your `claude_desktop_config.json`:
 ## Agent Tools
 
 The MCP server exposes tools backed by the SDK (a partial list — see
-[`src/agent/catalogue.ts`](https://github.com/shubhamtaywade82/dhanhq-ts/blob/main/src/agent/catalogue.ts)
+[`src/agent/catalogue.ts`](https://github.com/shubhamtaywade82/dhanhq-sdk/blob/main/src/agent/catalogue.ts)
 for the full set, including the Global Stocks `dhan_global_*` tools):
 
 | Tool | Description | Scope Required |

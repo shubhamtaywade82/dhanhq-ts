@@ -1,7 +1,7 @@
 # Quickstart
 
 The five things you'll do first. Full detail: [README](README.md),
-[docs/](docs/), or the [generated reference](https://shubhamtaywade82.github.io/dhanhq-ts/reference/).
+[docs/](docs/), or the [generated reference](https://shubhamtaywade82.github.io/dhanhq-sdk/reference/).
 
 ```bash
 npm install @nemesis-oss/dhanhq-sdk

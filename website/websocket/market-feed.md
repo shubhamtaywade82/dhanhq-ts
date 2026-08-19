@@ -106,4 +106,4 @@ const ltp = client.ws.ltpStore.get("NSE_EQ:1333");
 console.log("Latest LTP:", ltp);
 ```
 
-For the binary protocol reference, see the [WS Protocol docs](https://github.com/shubhamtaywade82/dhanhq-ts/blob/main/docs/WS_PROTOCOL.md).
+For the binary protocol reference, see the [WS Protocol docs](https://github.com/shubhamtaywade82/dhanhq-sdk/blob/main/docs/WS_PROTOCOL.md).
