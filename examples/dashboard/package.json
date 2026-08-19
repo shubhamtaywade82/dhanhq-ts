@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@shubhamtaywade82/dhanhq-ts": "^0.3.0",
+    "@nemesis-oss/dhanhq-sdk": "^1.0.0",
     "axios": "^1.13.6",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",

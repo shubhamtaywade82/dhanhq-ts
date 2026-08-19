@@ -345,7 +345,7 @@ export function App() {
             <div>
               <div style={{ fontSize: "16px", fontWeight: 700, letterSpacing: "-0.5px" }}>DhanHQ Pro Terminal</div>
               <div style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-                @shubhamtaywade82/dhanhq-ts <span style={{ color: "var(--accent-green)" }}>v0.3.0</span>
+                @nemesis-oss/dhanhq-sdk <span style={{ color: "var(--accent-green)" }}>v1.0.0</span>
               </div>
             </div>
           </div>

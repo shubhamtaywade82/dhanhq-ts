@@ -1,6 +1,6 @@
 # Releasing
 
-The package publishes as **`@shubhamtaywade82/dhanhq-ts`**.
+The package publishes as **`@nemesis-oss/dhanhq-sdk`**.
 
 > This is a community SDK. Dhan publishes its own official clients as
 > [`dhanhq`](https://www.npmjs.com/package/dhanhq) and

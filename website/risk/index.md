@@ -12,7 +12,7 @@ Multi-layer risk management: pre-trade checks, position monitoring, and account-
 Validates every order before it reaches the exchange:
 
 ```ts
-import { Pipeline, riskProviderFor } from "@shubhamtaywade82/dhanhq-ts";
+import { Pipeline, riskProviderFor } from "@nemesis-oss/dhanhq-sdk";
 
 const pipeline = new Pipeline({
   provider: riskProviderFor(client),
@@ -45,7 +45,7 @@ These checks are NSE/BSE-specific and do not apply to Global Stocks.
 Real-time exit signals driven by WebSocket ticks:
 
 ```ts
-import { PositionMonitor } from "@shubhamtaywade82/dhanhq-ts";
+import { PositionMonitor } from "@nemesis-oss/dhanhq-sdk";
 
 const monitor = new PositionMonitor();
 
@@ -88,7 +88,7 @@ await client.traderControls.setKillSwitch("ACTIVATE");
 Pure functions — no API access needed for planning:
 
 ```ts
-import { fixedRiskSize, volatilitySize, kellySize } from "@shubhamtaywade82/dhanhq-ts";
+import { fixedRiskSize, volatilitySize, kellySize } from "@nemesis-oss/dhanhq-sdk";
 
 // Fixed-percent risk: quantity such that a stop-out costs 2% of the account
 const size = fixedRiskSize({
@@ -123,7 +123,7 @@ const kelly = kellySize({
 down:
 
 ```ts
-import { TrailManager, atrStop, percentageStop } from "@shubhamtaywade82/dhanhq-ts";
+import { TrailManager, atrStop, percentageStop } from "@nemesis-oss/dhanhq-sdk";
 
 // Initial stop placement
 const initialStop = atrStop(100, 7, 2);        // ATR-based

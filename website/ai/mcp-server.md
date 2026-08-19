@@ -27,7 +27,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "dhanhq": {
       "command": "npx",
-      "args": ["-y", "@shubhamtaywade82/dhanhq-ts"],
+      "args": ["-y", "@nemesis-oss/dhanhq-sdk"],
       "env": {
         "DHAN_CLIENT_ID": "YOUR_CLIENT_ID",
         "DHAN_ACCESS_TOKEN": "YOUR_ACCESS_TOKEN",
@@ -65,7 +65,7 @@ Two independent gates guard writes:
 2. **Environment flags** — both `DHANHQ_MCP_ENABLE_WRITES=true` and `LIVE_TRADING=true`
 
 ```ts
-import { AgentToolRegistry, Policy } from "@shubhamtaywade82/dhanhq-ts";
+import { AgentToolRegistry, Policy } from "@nemesis-oss/dhanhq-sdk";
 
 // Read-only access
 const tools = new AgentToolRegistry({
@@ -110,7 +110,7 @@ Five built-in prompt templates for common trading tasks:
 ## Programmatic Use
 
 ```ts
-import { AgentToolRegistry, Policy } from "@shubhamtaywade82/dhanhq-ts";
+import { AgentToolRegistry, Policy } from "@nemesis-oss/dhanhq-sdk";
 
 const tools = new AgentToolRegistry({
   client,

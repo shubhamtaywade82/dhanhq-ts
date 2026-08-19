@@ -5,7 +5,7 @@ const http = require("http");
 const { WebSocketServer, WebSocket } = require("ws");
 const path = require("path");
 
-// Require published @shubhamtaywade82/dhanhq-ts package
+// Require published @nemesis-oss/dhanhq-sdk package
 const {
   DhanClient,
   getMarketSessionInfo,
@@ -14,7 +14,7 @@ const {
   analyzeMultiTimeframe,
   greeks,
   impliedVolatility,
-} = require("@shubhamtaywade82/dhanhq-ts");
+} = require("@nemesis-oss/dhanhq-sdk");
 
 dotenv.config({ path: path.join(__dirname, "../../.env") });
 dotenv.config({ path: path.join(__dirname, ".env") });
@@ -479,5 +479,5 @@ app.get("*", (req, res) => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`🚀 Real-Time Market Dashboard Data Engine running at http://localhost:${PORT}`);
-  console.log(`📦 Powered by @shubhamtaywade82/dhanhq-ts v0.3.0`);
+  console.log(`📦 Powered by @nemesis-oss/dhanhq-sdk v1.0.0`);
 });
