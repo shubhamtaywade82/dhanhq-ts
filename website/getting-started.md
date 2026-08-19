@@ -76,4 +76,4 @@ const client = await DhanClient.fromTokenEndpoint({
 });
 ```
 
-See the full [authentication guide](https://github.com/shubhamtaywade82/dhanhq-ts/blob/main/docs/AUTHENTICATION.md) for details on TOTP generation, SELF vs PARTNER auth, and token lifecycle.
+See the full [authentication guide](https://github.com/shubhamtaywade82/dhanhq-sdk/blob/main/docs/AUTHENTICATION.md) for details on TOTP generation, SELF vs PARTNER auth, and token lifecycle.

@@ -29,13 +29,13 @@
   ],
   "license": "MIT",
   "author": "Shubham Taywade <shubhamtaywade82@gmail.com>",
-  "homepage": "https://shubhamtaywade82.github.io/dhanhq-ts/",
+  "homepage": "https://shubhamtaywade82.github.io/dhanhq-sdk/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/shubhamtaywade82/dhanhq-ts.git"
+    "url": "git+https://github.com/shubhamtaywade82/dhanhq-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/shubhamtaywade82/dhanhq-ts/issues"
+    "url": "https://github.com/shubhamtaywade82/dhanhq-sdk/issues"
   },
   "type": "commonjs",
   "main": "dist/index.cjs",

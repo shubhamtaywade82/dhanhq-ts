@@ -326,10 +326,10 @@ First release published to npm, as `@shubhamtaywade82/dhanhq-ts`.
 Initial pre-release: REST resources, contracts, WebSocket market feed and
 order updates, auth helpers, and the OpenAPI-generated transport layer.
 
-[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.2...v1.0.0
-[0.4.2]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.1...v0.4.2
-[0.4.1]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.4.0...v0.4.1
-[0.4.0]: https://github.com/shubhamtaywade82/dhanhq-ts/compare/v0.2.0...v0.4.0
-[0.2.0]: https://github.com/shubhamtaywade82/dhanhq-ts/releases/tag/v0.2.0
-[0.1.0]: https://github.com/shubhamtaywade82/dhanhq-ts/releases/tag/v0.1.0
+[Unreleased]: https://github.com/shubhamtaywade82/dhanhq-sdk/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/shubhamtaywade82/dhanhq-sdk/compare/v0.4.2...v1.0.0
+[0.4.2]: https://github.com/shubhamtaywade82/dhanhq-sdk/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/shubhamtaywade82/dhanhq-sdk/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/shubhamtaywade82/dhanhq-sdk/compare/v0.2.0...v0.4.0
+[0.2.0]: https://github.com/shubhamtaywade82/dhanhq-sdk/releases/tag/v0.2.0
+[0.1.0]: https://github.com/shubhamtaywade82/dhanhq-sdk/releases/tag/v0.1.0

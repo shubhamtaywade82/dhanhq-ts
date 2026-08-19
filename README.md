@@ -645,7 +645,7 @@ Relies on `.env` carrying `DHAN_TOKEN` and `DHAN_CLIENT_ID`.
 Repository:
 
 ```text
-https://github.com/shubhamtaywade82/dhanhq-ts
+https://github.com/shubhamtaywade82/dhanhq-sdk
 ```
 
 ---
